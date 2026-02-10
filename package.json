@@ -13,6 +13,7 @@
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
     "lint": "pnpm -r --if-present run lint",
+    "lint42": "eslint",
     "typecheck": "pnpm -r --if-present run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
