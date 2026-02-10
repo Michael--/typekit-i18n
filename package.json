@@ -1,0 +1,30 @@
+{
+  "name": "typekit-i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "generate": "tsx scripts/translation-generator.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm run generate && pnpm run typecheck && pnpm run test"
+  },
+  "dependencies": {
+    "@typescript-eslint/typescript-estree": "^8.43.0",
+    "picocolors": "^1.1.1",
+    "fast-csv": "^5.0.5",
+    "glob": "^11.0.3",
+    "simple-git": "^3.28.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

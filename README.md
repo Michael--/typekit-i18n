@@ -29,6 +29,28 @@ What v1 does not include:
 - Hard coupling to cloud translation providers
 - First-class multi-language SDKs beyond TypeScript (e.g. Swift generator as next phase)
 
+## Minimum Requirements
+
+- Node.js `>= 20.11.0`
+- `pnpm` (project uses `pnpm@10.28.1`)
+- TypeScript toolchain configured via `tsconfig.json`
+- Test runner configured via Vitest
+
+Setup and verification:
+
+```bash
+pnpm install
+pnpm run generate
+pnpm run typecheck
+pnpm run test
+```
+
+One-shot check:
+
+```bash
+pnpm run check
+```
+
 ## Public API (v1)
 
 Primary API surface:

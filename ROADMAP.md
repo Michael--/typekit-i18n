@@ -6,7 +6,7 @@ Status: Arbeitsplan zum gemeinsamen Abarbeiten und Abhaken.
 
 - [x] Blaupause aus Helio10 in separates Projekt uebernommen (`sessionX.jsonl`, `ts/translations`, `scripts/`).
 - [x] Aktuellen Stand kurz dokumentieren (`README.md`: Ziel, aktueller Umfang, bekannte Luecken).
-- [ ] Mindestanforderungen definieren (Node/TS-Version, Build-/Test-Setup).
+- [x] Mindestanforderungen definieren (Node/TS-Version, Build-/Test-Setup).
 
 ## Phase 1 - Produkt-Schnitt festlegen
 
