@@ -16,12 +16,16 @@
     "dist"
   ],
   "scripts": {
+    "clean": "rm -rf dist",
+    "gen": "pnpm -w run gen:legacy",
     "build": "vite build && tsc -p tsconfig.build.json",
     "dev": "vite build --watch",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "lint": "pnpm -w exec eslint \"src/**/*.ts\"",
+    "test": "pnpm -w exec vitest run --passWithNoTests",
+    "typecheck": "pnpm -w exec tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "typescript": "workspace:*",
+    "typescript": "^5.9.3",
     "vite": "^6.2.0"
   }
 }

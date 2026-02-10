@@ -4,15 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "clean": "rm -rf docs/.vitepress/dist",
     "docs:dev": "vitepress dev docs --port 4174",
+    "gen": "echo \"No code generation defined for docs-site\"",
+    "build": "pnpm run docs:build",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs --port 4175"
+    "docs:preview": "vitepress preview docs --port 4175",
+    "lint": "pnpm -w exec eslint \"docs/.vitepress/**/*.ts\"",
+    "test": "pnpm -w exec vitest run --passWithNoTests",
+    "typecheck": "pnpm -w exec tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "typekit-i18n": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "workspace:*",
+    "typescript": "^5.9.3",
     "vitepress": "^1.6.3"
   }
 }

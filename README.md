@@ -118,6 +118,7 @@ Monorepo target structure:
 Current migration state:
 
 - skeleton folders and starter configs are present for all three targets
+- legacy-to-target mapping is documented in `/Volumes/MR-SX5/projects/typekit-i18n/MIGRATION_MAP.md`
 
 Root direction:
 

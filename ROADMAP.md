@@ -15,7 +15,8 @@ Hinweis:
 - [x] `apps/playground-ts` als Integrations-App
 - [x] `apps/docs-site` als VitePress-Doku-App
 - [x] Monorepo-Skeleton angelegt (`packages/typekit-i18n`, `apps/playground-ts`, `apps/docs-site`).
-- [ ] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
+- [x] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
+- [x] Workspace-Skripte fuer `clean/gen/build/test/lint/typecheck` in den Zielprojekten vorbereitet.
 - [ ] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
 - [ ] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
 
