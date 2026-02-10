@@ -52,7 +52,7 @@ Hinweis:
 
 ## Phase 3 - Laufzeit-API stabilisieren
 
-- [ ] Runtime API von internem Datenlayout entkoppeln (`packages/typekit-i18n/src/runtime/translation.ts` als stabile Public API).
+- [x] Runtime API von internem Datenlayout entkoppeln (`packages/typekit-i18n/src/runtime/translation.ts` als stabile Public API).
 - [x] Fallback-Strategie konfigurierbar machen (strict vs. fallback).
 - [ ] Entwicklerfreundliche Diagnostik:
 - [x] fehlende Uebersetzungen sammeln/reporten

@@ -3,10 +3,12 @@ import type { TranslateKeys } from '../../src/generated/translationTable.js'
 import {
   clearCollectedMissingTranslations,
   configureTranslationRuntime,
+  createTranslationRuntime,
   createConsoleMissingTranslationReporter,
   getCollectedMissingTranslations,
   translate,
 } from '../../src/runtime/translation.js'
+import type { TranslationTable } from '../../src/runtime/types.js'
 
 const missingKey = '__missing_translation_key__' as unknown as TranslateKeys
 
@@ -64,5 +66,25 @@ describe('translate', () => {
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('Missing translation for key "__missing_translation_key__"')
     )
+  })
+
+  test('creates isolated runtime independent from generated default table', () => {
+    type CustomLanguage = 'en' | 'fr'
+    type CustomKey = 'hello'
+
+    const customTable: TranslationTable<CustomKey, CustomLanguage> = {
+      hello: {
+        description: 'Custom greeting',
+        en: 'Hello',
+        fr: 'Bonjour',
+      },
+    }
+
+    const customRuntime = createTranslationRuntime(customTable, {
+      defaultLanguage: 'en',
+      missingStrategy: 'strict',
+    })
+
+    expect(customRuntime.translate('hello', 'fr')).toBe('Bonjour')
   })
 })

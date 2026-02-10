@@ -1,5 +1,10 @@
 import { createTranslator } from './translator.js'
-import { MissingTranslationEvent, MissingTranslationStrategy, Placeholder } from './types.js'
+import {
+  MissingTranslationEvent,
+  MissingTranslationStrategy,
+  Placeholder,
+  TranslationTable,
+} from './types.js'
 import {
   TranslateLanguage,
   TranslateKeys,
@@ -39,6 +44,198 @@ export const supportedLanguages: ReadonlyArray<ILanguage> = [
 ]
 
 /**
+ * Runtime configuration options.
+ */
+export interface TranslationRuntimeConfiguration<TLanguage extends string, TKey extends string> {
+  /**
+   * Default fallback language.
+   */
+  defaultLanguage?: TLanguage
+  /**
+   * Missing translation behavior strategy.
+   */
+  missingStrategy?: MissingTranslationStrategy
+  /**
+   * Optional runtime callback for missing translation reporting.
+   * Pass `null` to clear the current callback.
+   */
+  onMissingTranslation?: ((event: MissingTranslationEvent<TKey, TLanguage>) => void) | null
+  /**
+   * Enables in-memory collection of missing translation events.
+   */
+  collectMissingTranslations?: boolean
+}
+
+/**
+ * Runtime API object.
+ */
+export interface TranslationRuntime<TKey extends string, TLanguage extends string> {
+  /**
+   * Translates one key for one language.
+   *
+   * @param key Translation key.
+   * @param language Target language.
+   * @param placeholder Optional placeholder replacements.
+   * @returns Translated string or key fallback.
+   * @throws When `missingStrategy` is `strict` and a translation cannot be resolved.
+   */
+  translate: (key: TKey, language: TLanguage, placeholder?: Placeholder) => string
+  /**
+   * Updates runtime behavior.
+   *
+   * @param options Runtime behavior overrides.
+   * @returns Nothing.
+   */
+  configure: (options: TranslationRuntimeConfiguration<TLanguage, TKey>) => void
+  /**
+   * Returns collected missing translation events.
+   *
+   * @returns Missing translation events snapshot.
+   */
+  getCollectedMissingTranslations: () => ReadonlyArray<MissingTranslationEvent<TKey, TLanguage>>
+  /**
+   * Clears collected missing translation events.
+   *
+   * @returns Nothing.
+   */
+  clearCollectedMissingTranslations: () => void
+}
+
+/**
+ * Initial options to create a translation runtime.
+ */
+export interface CreateTranslationRuntimeOptions<TLanguage extends string, TKey extends string> {
+  /**
+   * Default fallback language.
+   */
+  defaultLanguage: TLanguage
+  /**
+   * Missing translation behavior strategy.
+   */
+  missingStrategy?: MissingTranslationStrategy
+  /**
+   * Optional runtime callback for missing translation reporting.
+   */
+  onMissingTranslation?: (event: MissingTranslationEvent<TKey, TLanguage>) => void
+  /**
+   * Enables in-memory collection of missing translation events.
+   */
+  collectMissingTranslations?: boolean
+}
+
+interface TranslationRuntimeState<TLanguage extends string, TKey extends string> {
+  defaultLanguage: TLanguage
+  missingStrategy: MissingTranslationStrategy
+  onMissingTranslation?: (event: MissingTranslationEvent<TKey, TLanguage>) => void
+  collectMissingTranslations: boolean
+}
+
+/**
+ * Creates a console warning reporter for missing translation events.
+ *
+ * @param writer Console-like logger target. Defaults to global console.
+ * @returns Missing translation reporter callback.
+ */
+export const createConsoleMissingTranslationReporter = <
+  TKey extends string = string,
+  TLanguage extends string = string,
+>(
+  writer: Pick<Console, 'warn'> = console
+): ((event: MissingTranslationEvent<TKey, TLanguage>) => void) => {
+  return (event: MissingTranslationEvent<TKey, TLanguage>): void => {
+    writer.warn(
+      `Missing translation for key "${event.key}" in "${event.language}" (default "${event.defaultLanguage}", reason "${event.reason}").`
+    )
+  }
+}
+
+/**
+ * Creates an isolated translation runtime bound to one translation table.
+ *
+ * @param table Translation table used by this runtime.
+ * @param options Initial runtime options.
+ * @returns Runtime API object.
+ */
+export const createTranslationRuntime = <
+  TLanguage extends string,
+  TKey extends string,
+  TTable extends TranslationTable<TKey, TLanguage>,
+>(
+  table: TTable,
+  options: CreateTranslationRuntimeOptions<TLanguage, TKey>
+): TranslationRuntime<TKey, TLanguage> => {
+  const runtimeState: TranslationRuntimeState<TLanguage, TKey> = {
+    defaultLanguage: options.defaultLanguage,
+    missingStrategy: options.missingStrategy ?? 'fallback',
+    onMissingTranslation: options.onMissingTranslation,
+    collectMissingTranslations: options.collectMissingTranslations ?? false,
+  }
+
+  const missingTranslationEvents: MissingTranslationEvent<TKey, TLanguage>[] = []
+
+  const runtimeMissingTranslationHandler = (
+    event: MissingTranslationEvent<TKey, TLanguage>
+  ): void => {
+    if (runtimeState.collectMissingTranslations) {
+      missingTranslationEvents.push(event)
+    }
+    runtimeState.onMissingTranslation?.(event)
+  }
+
+  let runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
+    defaultLanguage: runtimeState.defaultLanguage,
+    missingStrategy: runtimeState.missingStrategy,
+    onMissingTranslation: runtimeMissingTranslationHandler,
+  })
+
+  const rebuildRuntimeTranslator = (): void => {
+    runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
+      defaultLanguage: runtimeState.defaultLanguage,
+      missingStrategy: runtimeState.missingStrategy,
+      onMissingTranslation: runtimeMissingTranslationHandler,
+    })
+  }
+
+  const configure = (nextOptions: TranslationRuntimeConfiguration<TLanguage, TKey>): void => {
+    if (nextOptions.defaultLanguage) {
+      runtimeState.defaultLanguage = nextOptions.defaultLanguage
+    }
+    if (nextOptions.missingStrategy) {
+      runtimeState.missingStrategy = nextOptions.missingStrategy
+    }
+    if (nextOptions.collectMissingTranslations !== undefined) {
+      runtimeState.collectMissingTranslations = nextOptions.collectMissingTranslations
+    }
+    if ('onMissingTranslation' in nextOptions) {
+      runtimeState.onMissingTranslation = nextOptions.onMissingTranslation ?? undefined
+    }
+
+    rebuildRuntimeTranslator()
+  }
+
+  const getCollectedMissingTranslations = (): ReadonlyArray<
+    MissingTranslationEvent<TKey, TLanguage>
+  > => [...missingTranslationEvents]
+
+  const clearCollectedMissingTranslations = (): void => {
+    missingTranslationEvents.length = 0
+  }
+
+  const translateWithRuntime = (
+    key: TKey,
+    language: TLanguage,
+    placeholder?: Placeholder
+  ): string => runtimeTranslator(key, language, placeholder)
+
+  return {
+    translate: translateWithRuntime,
+    configure,
+    getCollectedMissingTranslations,
+    clearCollectedMissingTranslations,
+  }
+}
+
+/**
  * Runtime missing translation event type for the generated default table.
  */
 export type RuntimeMissingTranslationEvent = MissingTranslationEvent<
@@ -52,125 +249,46 @@ export type RuntimeMissingTranslationEvent = MissingTranslationEvent<
 export type RuntimeMissingTranslationHandler = (event: RuntimeMissingTranslationEvent) => void
 
 /**
- * Configures runtime behavior for `translate`.
+ * Configures runtime behavior for the default `translate` API.
  */
-export interface TranslationRuntimeOptions {
-  /**
-   * Default fallback language.
-   */
-  defaultLanguage?: TranslateLanguage
-  /**
-   * Missing translation behavior strategy.
-   */
-  missingStrategy?: MissingTranslationStrategy
-  /**
-   * Optional runtime callback for missing translation reporting.
-   * Pass `null` to clear the current callback.
-   */
-  onMissingTranslation?: RuntimeMissingTranslationHandler | null
-  /**
-   * Enables in-memory collection of missing translation events.
-   */
-  collectMissingTranslations?: boolean
-}
+export type TranslationRuntimeOptions = TranslationRuntimeConfiguration<
+  TranslateLanguage,
+  TranslateKeys
+>
 
-interface TranslationRuntimeState {
-  defaultLanguage: TranslateLanguage
-  missingStrategy: MissingTranslationStrategy
-  onMissingTranslation?: RuntimeMissingTranslationHandler
-  collectMissingTranslations: boolean
-}
-
-const runtimeState: TranslationRuntimeState = {
+const defaultRuntime = createTranslationRuntime<
+  TranslateLanguage,
+  TranslateKeys,
+  typeof translationTable
+>(translationTable, {
   defaultLanguage: 'en',
-  missingStrategy: 'fallback',
-  onMissingTranslation: undefined,
-  collectMissingTranslations: false,
-}
-
-const missingTranslationEvents: RuntimeMissingTranslationEvent[] = []
-
-const runtimeMissingTranslationHandler = (event: RuntimeMissingTranslationEvent): void => {
-  if (runtimeState.collectMissingTranslations) {
-    missingTranslationEvents.push(event)
-  }
-  runtimeState.onMissingTranslation?.(event)
-}
-
-let baseTranslator = createTranslator<TranslateLanguage, TranslateKeys, typeof translationTable>(
-  translationTable,
-  {
-    defaultLanguage: runtimeState.defaultLanguage,
-    missingStrategy: runtimeState.missingStrategy,
-    onMissingTranslation: runtimeMissingTranslationHandler,
-  }
-)
-
-const rebuildBaseTranslator = (): void => {
-  baseTranslator = createTranslator<TranslateLanguage, TranslateKeys, typeof translationTable>(
-    translationTable,
-    {
-      defaultLanguage: runtimeState.defaultLanguage,
-      missingStrategy: runtimeState.missingStrategy,
-      onMissingTranslation: runtimeMissingTranslationHandler,
-    }
-  )
-}
+})
 
 /**
- * Creates a console warning reporter for missing translation events.
- *
- * @param writer Console-like logger target. Defaults to global console.
- * @returns Missing translation reporter callback.
- */
-export const createConsoleMissingTranslationReporter = (
-  writer: Pick<Console, 'warn'> = console
-): RuntimeMissingTranslationHandler => {
-  return (event: RuntimeMissingTranslationEvent): void => {
-    writer.warn(
-      `Missing translation for key "${event.key}" in "${event.language}" (default "${event.defaultLanguage}", reason "${event.reason}").`
-    )
-  }
-}
-
-/**
- * Updates runtime behavior for `translate`.
+ * Updates runtime behavior for the default `translate` API.
  *
  * @param options Runtime behavior overrides.
  * @returns Nothing.
  */
 export const configureTranslationRuntime = (options: TranslationRuntimeOptions): void => {
-  if (options.defaultLanguage) {
-    runtimeState.defaultLanguage = options.defaultLanguage
-  }
-  if (options.missingStrategy) {
-    runtimeState.missingStrategy = options.missingStrategy
-  }
-  if (options.collectMissingTranslations !== undefined) {
-    runtimeState.collectMissingTranslations = options.collectMissingTranslations
-  }
-  if ('onMissingTranslation' in options) {
-    runtimeState.onMissingTranslation = options.onMissingTranslation ?? undefined
-  }
-
-  rebuildBaseTranslator()
+  defaultRuntime.configure(options)
 }
 
 /**
- * Returns collected missing translation events.
+ * Returns collected missing translation events for the default `translate` API.
  *
  * @returns Missing translation events snapshot.
  */
-export const getCollectedMissingTranslations =
-  (): ReadonlyArray<RuntimeMissingTranslationEvent> => [...missingTranslationEvents]
+export const getCollectedMissingTranslations = (): ReadonlyArray<RuntimeMissingTranslationEvent> =>
+  defaultRuntime.getCollectedMissingTranslations()
 
 /**
- * Clears collected missing translation events.
+ * Clears collected missing translation events for the default `translate` API.
  *
  * @returns Nothing.
  */
 export const clearCollectedMissingTranslations = (): void => {
-  missingTranslationEvents.length = 0
+  defaultRuntime.clearCollectedMissingTranslations()
 }
 
 /**
@@ -187,5 +305,5 @@ export const translate = (
   language: Iso639CodeType,
   placeholder?: Placeholder
 ): string => {
-  return baseTranslator(key, language, placeholder)
+  return defaultRuntime.translate(key, language, placeholder)
 }
