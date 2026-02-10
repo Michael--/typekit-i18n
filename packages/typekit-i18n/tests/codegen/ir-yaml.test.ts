@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { toIrProjectFromYamlContent } from '../../src/codegen/ir/yaml.js'
+import { TranslationIrProject } from '../../src/codegen/ir/types.js'
+import {
+  toIrProjectFromYamlContent,
+  toYamlContentFromIrProject,
+} from '../../src/codegen/ir/yaml.js'
 
 describe('toIrProjectFromYamlContent', () => {
   test('parses valid YAML document into IR', () => {
@@ -91,5 +95,53 @@ entries:
     expect(() => toIrProjectFromYamlContent(content)).toThrow(
       /Duplicate key "greeting" at "root.entries\[1\]"/
     )
+  })
+
+  test('roundtrips IR through YAML content', () => {
+    const project: TranslationIrProject<'en' | 'de'> = {
+      version: '1',
+      sourceLanguage: 'en',
+      languages: ['en', 'de'],
+      entries: [
+        {
+          key: 'item_count',
+          description: 'Summary line with count placeholder',
+          status: 'approved',
+          tags: ['ui', 'summary'],
+          placeholders: [{ name: 'count', type: 'number', formatHint: 'integer' }],
+          values: {
+            en: 'You currently have {count} items.',
+            de: 'Du hast aktuell {count} Eintraege.',
+          },
+        },
+      ],
+    }
+
+    const content = toYamlContentFromIrProject(project)
+    const parsed = toIrProjectFromYamlContent(content)
+    expect(parsed).toEqual(project)
+  })
+
+  test('omits optional metadata fields when empty', () => {
+    const project: TranslationIrProject<'en' | 'de'> = {
+      version: '1',
+      sourceLanguage: 'en',
+      languages: ['en', 'de'],
+      entries: [
+        {
+          key: 'title',
+          description: 'Simple title',
+          values: {
+            en: 'Title',
+            de: 'Titel',
+          },
+        },
+      ],
+    }
+
+    const content = toYamlContentFromIrProject(project)
+    expect(content).not.toContain('status:')
+    expect(content).not.toContain('tags:')
+    expect(content).not.toContain('placeholders:')
   })
 })

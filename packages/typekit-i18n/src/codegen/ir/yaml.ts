@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises'
-import { parseDocument } from 'yaml'
+import { readFile, writeFile } from 'node:fs/promises'
+import { parseDocument, stringify } from 'yaml'
 import {
   TranslationIrEntry,
   TranslationIrEntryStatus,
@@ -249,4 +249,61 @@ export const toIrProjectFromYamlFile = async <TLanguage extends string = string>
 ): Promise<TranslationIrProject<TLanguage>> => {
   const content = await readFile(filePath, 'utf-8')
   return toIrProjectFromYamlContent(content)
+}
+
+/**
+ * Converts translation IR into YAML content.
+ *
+ * @param project Normalized IR project object.
+ * @returns YAML document content.
+ * @throws When project shape is invalid.
+ */
+export const toYamlContentFromIrProject = <TLanguage extends string = string>(
+  project: TranslationIrProject<TLanguage>
+): string => {
+  if (project.languages.length === 0) {
+    throw new Error('Invalid IR project: "languages" must include at least one language.')
+  }
+  if (!project.languages.includes(project.sourceLanguage)) {
+    throw new Error(
+      `Invalid IR project: source language "${project.sourceLanguage}" is not part of "languages".`
+    )
+  }
+
+  const serialized = {
+    version: project.version,
+    sourceLanguage: project.sourceLanguage,
+    languages: project.languages,
+    entries: project.entries.map((entry) => ({
+      key: entry.key,
+      description: entry.description,
+      ...(entry.status ? { status: entry.status } : {}),
+      ...(entry.tags && entry.tags.length > 0 ? { tags: entry.tags } : {}),
+      ...(entry.placeholders && entry.placeholders.length > 0
+        ? { placeholders: entry.placeholders }
+        : {}),
+      values: entry.values,
+    })),
+  }
+
+  return stringify(serialized, {
+    defaultStringType: 'QUOTE_DOUBLE',
+    lineWidth: 0,
+  })
+}
+
+/**
+ * Writes translation IR as YAML file content.
+ *
+ * @param filePath Output YAML path.
+ * @param project Normalized IR project object.
+ * @returns Resolves after writing file content.
+ * @throws When project shape is invalid.
+ */
+export const writeYamlFileFromIrProject = async <TLanguage extends string = string>(
+  filePath: string,
+  project: TranslationIrProject<TLanguage>
+): Promise<void> => {
+  const content = toYamlContentFromIrProject(project)
+  await writeFile(filePath, content, 'utf-8')
 }

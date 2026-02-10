@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { toIrProjectFromCsvRows } from '../../src/codegen/ir/csv.js'
+import { parseCsvContent } from '../../src/codegen/csv.js'
+import { toCsvContentFromIrProject, toIrProjectFromCsvRows } from '../../src/codegen/ir/csv.js'
+import { TranslationIrProject } from '../../src/codegen/ir/types.js'
 import { TranslationCsvRow } from '../../src/codegen/types.js'
 
 describe('toIrProjectFromCsvRows', () => {
@@ -94,5 +96,57 @@ describe('toIrProjectFromCsvRows', () => {
         filePath: 'translations.csv',
       })
     ).toThrow(/Missing value for source language "en" in translations\.csv at row 2\./)
+  })
+
+  test('roundtrips IR through CSV content including metadata columns', async () => {
+    const project: TranslationIrProject<'en' | 'de'> = {
+      version: '1',
+      sourceLanguage: 'en',
+      languages: ['en', 'de'],
+      entries: [
+        {
+          key: 'item_count',
+          description: 'Summary line with count placeholder',
+          status: 'review',
+          tags: ['ui', 'summary'],
+          placeholders: [{ name: 'count', type: 'number', formatHint: 'integer' }],
+          values: {
+            en: 'You currently have {count} items.',
+            de: 'Du hast aktuell {count} Eintraege.',
+          },
+        },
+      ],
+    }
+
+    const content = toCsvContentFromIrProject(project)
+    const rows = await parseCsvContent(content)
+    const parsed = toIrProjectFromCsvRows(rows, {
+      languages: ['en', 'de'],
+      sourceLanguage: 'en',
+    })
+
+    expect(parsed).toEqual(project)
+  })
+
+  test('omits optional metadata columns when no entry uses them', () => {
+    const project: TranslationIrProject<'en' | 'de'> = {
+      version: '1',
+      sourceLanguage: 'en',
+      languages: ['en', 'de'],
+      entries: [
+        {
+          key: 'title',
+          description: 'Simple title',
+          values: {
+            en: 'Title',
+            de: 'Titel',
+          },
+        },
+      ],
+    }
+
+    const content = toCsvContentFromIrProject(project)
+    const header = content.trim().split('\n')[0]
+    expect(header).toBe('key;description;en;de')
   })
 })
