@@ -83,6 +83,7 @@ Hinweis:
 ## Phase 6 - Mehrsprachige Targets (TS + Swift)
 
 - [x] Sequenz festgelegt: Swift/IR erst nach Abschluss der Basis (Phase 2-4) als Wiedervorlage aufnehmen.
+- [x] IR + Multi-Format Entwurf (CSV/YAML, Konvertierung, CLI, VSCode-Ansatz) dokumentiert in `FORMAT_IR_PLAN.md`.
 - [ ] Zielbild fuer Multi-Target festlegen:
 - [ ] nur TypeScript in v1
 - [ ] Swift-Generator als v1.1/v2
