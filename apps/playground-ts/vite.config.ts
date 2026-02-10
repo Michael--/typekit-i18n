@@ -8,7 +8,7 @@ const thisDirPath = dirname(thisFilePath)
 export default defineConfig({
   resolve: {
     alias: {
-      '@gen': resolve(thisDirPath, 'dist/generated'),
+      '@gen': resolve(thisDirPath, 'generated'),
     },
   },
   server: {

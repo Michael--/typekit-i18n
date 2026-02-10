@@ -21,7 +21,7 @@
     }
   },
   "scripts": {
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist generated",
     "gen": "node --import tsx src/codegen/cli.ts",
     "build": "vite build && tsc -p tsconfig.build.json",
     "dev": "vite build --watch",

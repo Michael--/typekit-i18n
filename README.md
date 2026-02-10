@@ -11,7 +11,7 @@ Current implementation in this repository:
 - Translation resources in CSV (`packages/typekit-i18n/resources/translations/*.csv`)
 - Generator pipeline (`packages/typekit-i18n/src/codegen/*`)
 - Typed runtime access (`packages/typekit-i18n/src/runtime/*`)
-- Generated source of truth (`packages/typekit-i18n/dist/generated/translationTable.ts`)
+- Generated source of truth (`packages/typekit-i18n/generated/translationTable.ts`)
 
 ## Current Project Status
 

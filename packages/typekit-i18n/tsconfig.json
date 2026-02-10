@@ -8,10 +8,10 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@gen/*": ["dist/generated/*"]
+      "@gen/*": ["generated/*"]
     },
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "dist/generated/**/*.ts"],
+  "include": ["src/**/*.ts", "generated/**/*.ts"],
   "exclude": []
 }
