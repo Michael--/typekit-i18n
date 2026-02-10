@@ -11,6 +11,11 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    */
   output: string
   /**
+   * Optional output file path for generated key/language type exports.
+   * Defaults to `translationKeys.ts` in the same directory as `output`.
+   */
+  outputKeys?: string
+  /**
    * Supported language columns in the input resources.
    */
   languages: ReadonlyArray<TLanguage>

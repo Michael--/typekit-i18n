@@ -41,14 +41,14 @@ Hinweis:
 ## Phase 2 - Datenmodell und Codegen haerten
 
 - [x] `translation*.csv` Schema validieren (fehlende Keys, doppelte Keys, leere Pflichtwerte).
-- [ ] Generator robust machen (`packages/typekit-i18n/src/codegen/generate.ts`):
+- [x] Generator robust machen (`packages/typekit-i18n/src/codegen/generate.ts`):
 - [x] deterministische Dateireihenfolge
 - [x] escaping/sicheres String-Handling
 - [x] klare Fehlerausgaben mit Datei/Zeile
-- [ ] Generierten Output trennen in:
-- [ ] `translationTable.ts` (Daten)
-- [ ] `translationKeys.ts` oder Typ-Exports (API klar halten)
-- [ ] Placeholder-Typisierung ausbauen (`packages/typekit-i18n/src/runtime/types.ts`), damit Werte nicht nur `string` sein muessen.
+- [x] Generierten Output trennen in:
+- [x] `translationTable.ts` (Daten)
+- [x] `translationKeys.ts` oder Typ-Exports (API klar halten)
+- [x] Placeholder-Typisierung ausbauen (`packages/typekit-i18n/src/runtime/types.ts`), damit Werte nicht nur `string` sein muessen.
 
 ## Phase 3 - Laufzeit-API stabilisieren
 

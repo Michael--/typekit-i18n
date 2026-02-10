@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type { TranslateKeys } from '../../src/generated/translationTable.js'
+import type { TranslateKeys } from '../../src/generated/translationKeys.js'
 import {
   clearCollectedMissingTranslations,
   configureTranslationRuntime,

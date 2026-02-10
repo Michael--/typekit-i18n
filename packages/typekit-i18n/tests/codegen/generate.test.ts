@@ -27,7 +27,8 @@ describe('generateTranslationTable', () => {
     const directory = await createTempDirectory()
     const aCsvPath = join(directory, 'a.csv')
     const bCsvPath = join(directory, 'b.csv')
-    const outputPath = join(directory, 'translationTable.ts')
+    const outputTablePath = join(directory, 'translationTable.ts')
+    const outputKeysPath = join(directory, 'translationKeys.ts')
 
     await writeFile(
       bCsvPath,
@@ -46,16 +47,18 @@ a_key;Text A;A english;A deutsch
 
     const config: TypekitI18nConfig<'en' | 'de'> = {
       input: [bCsvPath, aCsvPath],
-      output: outputPath,
+      output: outputTablePath,
       languages: ['en', 'de'],
       defaultLanguage: 'en',
     }
 
     await generateTranslationTable(config)
-    const source = await readFile(outputPath, 'utf-8')
-    const normalizedSource = normalizeTempPath(source, directory)
+    const tableSource = await readFile(outputTablePath, 'utf-8')
+    const keysSource = await readFile(outputKeysPath, 'utf-8')
+    const normalizedTableSource = normalizeTempPath(tableSource, directory)
+    const normalizedKeysSource = normalizeTempPath(keysSource, directory)
 
-    expect(normalizedSource).toMatchInlineSnapshot(`
+    expect(normalizedTableSource).toMatchInlineSnapshot(`
       "/*
          This file is generated.
          Source files:
@@ -77,7 +80,20 @@ a_key;Text A;A english;A deutsch
         },
       } as const
 
-      export type TranslateKey = keyof typeof translationTable
+      export type { TranslateKey, TranslateKeys, TranslateLanguage } from "./translationKeys.js"
+      "
+    `)
+
+    expect(normalizedKeysSource).toMatchInlineSnapshot(`
+      "/*
+         This file is generated.
+         Source files:
+         [1/2] "<TEMP_DIR>/a.csv"
+         [2/2] "<TEMP_DIR>/b.csv"
+      */
+      // cspell:disable
+
+      export type TranslateKey = "a_key" | "b_key"
       export type TranslateKeys = TranslateKey
       export type TranslateLanguage = "en" | "de"
       "
@@ -88,7 +104,7 @@ a_key;Text A;A english;A deutsch
     const directory = await createTempDirectory()
     const firstCsvPath = join(directory, 'first.csv')
     const secondCsvPath = join(directory, 'second.csv')
-    const outputPath = join(directory, 'translationTable.ts')
+    const outputTablePath = join(directory, 'translationTable.ts')
 
     await writeFile(
       firstCsvPath,
@@ -107,7 +123,7 @@ same_key;Second row;Second EN;Second DE
 
     const config: TypekitI18nConfig<'en' | 'de'> = {
       input: [firstCsvPath, secondCsvPath],
-      output: outputPath,
+      output: outputTablePath,
       languages: ['en', 'de'],
       defaultLanguage: 'en',
     }
@@ -120,7 +136,7 @@ same_key;Second row;Second EN;Second DE
   test('throws when default language value is empty', async () => {
     const directory = await createTempDirectory()
     const csvPath = join(directory, 'translations.csv')
-    const outputPath = join(directory, 'translationTable.ts')
+    const outputTablePath = join(directory, 'translationTable.ts')
 
     await writeFile(
       csvPath,
@@ -132,13 +148,39 @@ empty_default;Default is empty;;Nicht leer
 
     const config: TypekitI18nConfig<'en' | 'de'> = {
       input: [csvPath],
-      output: outputPath,
+      output: outputTablePath,
       languages: ['en', 'de'],
       defaultLanguage: 'en',
     }
 
     await expect(generateTranslationTable(config)).rejects.toThrow(
       /Missing value for default language "en" in .*translations\.csv at row 2\./
+    )
+  })
+
+  test('throws when output and outputKeys target the same file', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translations.generated.ts')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+one;Only row;One;Eins
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputKeys: outputPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await expect(generateTranslationTable(config)).rejects.toThrow(
+      /"output" and "outputKeys" must not point to the same file/
     )
   })
 })

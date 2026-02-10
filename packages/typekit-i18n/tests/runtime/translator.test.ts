@@ -30,6 +30,11 @@ const table: TranslationTable<string, TestLanguage> = {
     en: 'Value: {amount|does_not_exist}',
     de: 'Wert: {amount|does_not_exist}',
   },
+  numericPlaceholder: {
+    description: 'Numeric placeholder value',
+    en: 'Items: {count}',
+    de: 'Eintraege: {count}',
+  },
   emptyEverywhere: {
     description: 'No language has content',
     en: '',
@@ -112,6 +117,18 @@ describe('createTranslator', () => {
         data: [{ key: 'amount', value: '12.50' }],
       })
     ).toBe('Value: 12.50')
+  })
+
+  test('renders non-string placeholder values', () => {
+    const translate = createTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(
+      translate('numericPlaceholder', 'en', {
+        data: [{ key: 'count', value: 3 }],
+      })
+    ).toBe('Items: 3')
   })
 
   test('returns key when neither target nor fallback text is available', () => {

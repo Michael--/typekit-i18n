@@ -9,8 +9,13 @@ export interface FormatPlaceholder {
   /**
    * Placeholder replacement value.
    */
-  value: string
+  value: PlaceholderValue
 }
+
+/**
+ * Placeholder replacement value types.
+ */
+export type PlaceholderValue = string | number | boolean | bigint | Date
 
 /**
  * Placeholder payload for translation interpolation.
@@ -102,7 +107,7 @@ export interface PlaceholderFormatterContext<TKey extends string, TLanguage exte
  * Placeholder formatter callback.
  */
 export type PlaceholderFormatter<TKey extends string, TLanguage extends string> = (
-  value: string,
+  value: PlaceholderValue,
   context: PlaceholderFormatterContext<TKey, TLanguage>
 ) => string
 

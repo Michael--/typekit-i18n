@@ -1,9 +1,6 @@
 import { createTranslator } from 'typekit-i18n'
-import {
-  translationTable,
-  type TranslateKey,
-  type TranslateLanguage,
-} from './generated/translationTable'
+import { type TranslateKey, type TranslateLanguage } from './generated/translationKeys'
+import { translationTable } from './generated/translationTable'
 
 const root = document.querySelector<HTMLDivElement>('#app')
 
@@ -30,7 +27,7 @@ body.textContent = translate('greeting_body', currentLanguage, {
 
 const count = document.createElement('p')
 count.textContent = translate('item_count', currentLanguage, {
-  data: [{ key: 'count', value: '3' }],
+  data: [{ key: 'count', value: 3 }],
 })
 
 root.append(heading, body, count)

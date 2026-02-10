@@ -1,5 +1,5 @@
 import { glob } from 'glob'
-import { dirname, resolve } from 'node:path'
+import { dirname, extname, join, relative, resolve } from 'node:path'
 import { mkdir, writeFile } from 'node:fs/promises'
 import pc from 'picocolors'
 import { readCsvFile } from './csv.js'
@@ -8,6 +8,9 @@ import { TranslationRecord, TypekitI18nConfig } from './types.js'
 const requiredHeaders = ['key', 'description'] as const
 
 const quote = (value: string): string => JSON.stringify(value)
+
+const toTypeUnion = (values: ReadonlyArray<string>): string =>
+  values.length === 0 ? 'never' : values.map((value) => quote(value)).join(' | ')
 
 const validateLanguageConfig = <TLanguage extends string>(
   config: TypekitI18nConfig<TLanguage>
@@ -77,13 +80,37 @@ const toHeaderComment = (files: ReadonlyArray<string>): string => {
 `
 }
 
-const toTypeModuleSource = <TLanguage extends string>(
+const toKeysModuleSource = <TLanguage extends string>(
   files: ReadonlyArray<string>,
   records: ReadonlyArray<TranslationRecord<TLanguage>>,
   languages: ReadonlyArray<TLanguage>
 ): string => {
-  const languageUnion = languages.map((language) => quote(language)).join(' | ')
+  const keyUnion = toTypeUnion(records.map((record) => record.key))
+  const languageUnion = toTypeUnion(languages)
 
+  return `${toHeaderComment(files)}
+export type TranslateKey = ${keyUnion}
+export type TranslateKeys = TranslateKey
+export type TranslateLanguage = ${languageUnion}
+`
+}
+
+const resolveTypeImportPath = (outputPath: string, outputKeysPath: string): string => {
+  const relativePath = relative(dirname(outputPath), outputKeysPath)
+  const normalizedPath = relativePath.split('\\').join('/')
+  const withPrefix = normalizedPath.startsWith('.') ? normalizedPath : `./${normalizedPath}`
+  const extension = extname(withPrefix)
+  const withoutExtension =
+    extension.length > 0 ? withPrefix.slice(0, -extension.length) : withPrefix
+  return `${withoutExtension}.js`
+}
+
+const toTableModuleSource = <TLanguage extends string>(
+  files: ReadonlyArray<string>,
+  records: ReadonlyArray<TranslationRecord<TLanguage>>,
+  languages: ReadonlyArray<TLanguage>,
+  typeImportPath: string
+): string => {
   const recordSource = records
     .map((record) => {
       const languageLines = languages
@@ -102,9 +129,7 @@ export const translationTable = {
 ${recordSource}
 } as const
 
-export type TranslateKey = keyof typeof translationTable
-export type TranslateKeys = TranslateKey
-export type TranslateLanguage = ${languageUnion}
+export type { TranslateKey, TranslateKeys, TranslateLanguage } from ${quote(typeImportPath)}
 `
 }
 
@@ -127,7 +152,7 @@ const resolveInputFiles = async (
  */
 export const generateTranslationTable = async <TLanguage extends string>(
   config: TypekitI18nConfig<TLanguage>
-): Promise<{ outputPath: string; keyCount: number }> => {
+): Promise<{ outputPath: string; outputKeysPath: string; keyCount: number }> => {
   validateLanguageConfig(config)
 
   const inputPatterns = Array.isArray(config.input) ? config.input : [config.input]
@@ -155,14 +180,43 @@ export const generateTranslationTable = async <TLanguage extends string>(
   }
 
   const outputPath = resolve(config.output)
-  const outputDir = dirname(outputPath)
-  await mkdir(outputDir, { recursive: true })
-  const source = toTypeModuleSource(files, records, config.languages)
-  await writeFile(outputPath, source, 'utf-8')
-  process.stdout.write(`${pc.green(`Generated "${outputPath}" with ${records.length} keys.`)}\n`)
+  const outputKeysPath = resolve(
+    config.outputKeys ?? join(dirname(outputPath), 'translationKeys.ts')
+  )
+
+  if (outputPath === outputKeysPath) {
+    throw new Error(
+      'Invalid configuration: "output" and "outputKeys" must not point to the same file.'
+    )
+  }
+
+  await Promise.all([
+    mkdir(dirname(outputPath), { recursive: true }),
+    mkdir(dirname(outputKeysPath), { recursive: true }),
+  ])
+
+  const tableSource = toTableModuleSource(
+    files,
+    records,
+    config.languages,
+    resolveTypeImportPath(outputPath, outputKeysPath)
+  )
+  const keysSource = toKeysModuleSource(files, records, config.languages)
+
+  await Promise.all([
+    writeFile(outputPath, tableSource, 'utf-8'),
+    writeFile(outputKeysPath, keysSource, 'utf-8'),
+  ])
+
+  process.stdout.write(
+    `${pc.green(
+      `Generated "${outputPath}" and "${outputKeysPath}" with ${records.length} keys.`
+    )}\n`
+  )
 
   return {
     outputPath,
+    outputKeysPath,
     keyCount: records.length,
   }
 }

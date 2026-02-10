@@ -22,15 +22,16 @@ const applyPlaceholders = <TKey extends string, TLanguage extends string>(
 
   let output = template
   placeholder.data.forEach((entry) => {
+    const fallbackValue = String(entry.value)
     const matcher = new RegExp(`\\{${escapeRegExp(entry.key)}(?:\\|([a-zA-Z0-9_-]+))?\\}`, 'g')
     output = output.replace(matcher, (_match: string, formatterName?: string) => {
       if (!formatterName) {
-        return entry.value
+        return fallbackValue
       }
 
       const formatter = formatters?.[formatterName]
       if (!formatter) {
-        return entry.value
+        return fallbackValue
       }
 
       return formatter(entry.value, {
