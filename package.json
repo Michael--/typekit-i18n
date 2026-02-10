@@ -1,5 +1,5 @@
 {
-  "name": "typekit-i18n",
+  "name": "typekit-i18n-workspace",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,6 +8,9 @@
     "node": ">=20.11.0"
   },
   "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev:playground": "pnpm --filter @typekit-i18n/playground-ts dev",
+    "dev:docs": "pnpm --filter @typekit-i18n/docs-site docs:dev",
     "generate": "tsx scripts/translation-generator.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

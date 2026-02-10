@@ -1,9 +1,6 @@
 packages:
   - apps/*
-  - apps/*/*
-  - docs-site
   - packages/*
-  - examples/*
 
 onlyBuiltDependencies:
   - esbuild

@@ -115,6 +115,10 @@ Monorepo target structure:
 - `apps/docs-site`
 - documentation site based on VitePress
 
+Current migration state:
+
+- skeleton folders and starter configs are present for all three targets
+
 Root direction:
 
 - keep root package minimal over time

@@ -14,6 +14,7 @@ Hinweis:
 - [x] `packages/typekit-i18n` als konsolidiertes, spaeter publishbares npm-Paket
 - [x] `apps/playground-ts` als Integrations-App
 - [x] `apps/docs-site` als VitePress-Doku-App
+- [x] Monorepo-Skeleton angelegt (`packages/typekit-i18n`, `apps/playground-ts`, `apps/docs-site`).
 - [ ] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
 - [ ] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
 - [ ] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
