@@ -1,30 +1,119 @@
 #!/usr/bin/env node
 
+import { mkdir } from 'node:fs/promises'
+import { dirname, extname } from 'node:path'
 import pc from 'picocolors'
 import { loadTypekitI18nConfig } from './config.js'
 import { generateTranslationTable } from './generate.js'
+import { toIrProjectFromCsvFile, writeCsvFileFromIrProject } from './ir/csv.js'
+import { validateIrProject } from './ir/validation.js'
+import { toIrProjectFromYamlFile, writeYamlFileFromIrProject } from './ir/yaml.js'
 
-const resolveArgValue = (name: string): string | undefined => {
+type CliCommand = 'generate' | 'validate' | 'convert'
+type TranslationFormat = 'csv' | 'yaml'
+
+const resolveArgValue = (args: ReadonlyArray<string>, name: string): string | undefined => {
   const prefixed = `${name}=`
-  const inlineArg = process.argv.find((arg) => arg.startsWith(prefixed))
+  const inlineArg = args.find((arg) => arg.startsWith(prefixed))
   if (inlineArg) {
     return inlineArg.slice(prefixed.length)
   }
 
-  const argIndex = process.argv.indexOf(name)
-  if (argIndex >= 0 && process.argv[argIndex + 1]) {
-    return process.argv[argIndex + 1]
+  const argIndex = args.indexOf(name)
+  if (argIndex >= 0 && args[argIndex + 1]) {
+    return args[argIndex + 1]
   }
   return undefined
 }
 
-/**
- * Runs the Typekit i18n CLI for CSV code generation.
- *
- * @returns Process exit code.
- */
-export const runCli = async (): Promise<number> => {
-  const configArg = resolveArgValue('--config')
+const resolveRequiredArg = (args: ReadonlyArray<string>, name: string): string => {
+  const value = resolveArgValue(args, name)
+  if (!value) {
+    throw new Error(`Missing required argument "${name}".`)
+  }
+  return value
+}
+
+const resolveCommand = (argv: ReadonlyArray<string>): { command: CliCommand; args: string[] } => {
+  const [firstArg, ...restArgs] = argv
+  if (firstArg === 'generate' || firstArg === 'validate' || firstArg === 'convert') {
+    return {
+      command: firstArg,
+      args: restArgs,
+    }
+  }
+
+  return {
+    command: 'generate',
+    args: [...argv],
+  }
+}
+
+const toFormat = (value: string, argumentName: string): TranslationFormat => {
+  if (value === 'csv' || value === 'yaml') {
+    return value
+  }
+  throw new Error(`Invalid value for "${argumentName}": "${value}". Use "csv" or "yaml".`)
+}
+
+const inferFormatFromPath = (filePath: string): TranslationFormat => {
+  const extension = extname(filePath).toLowerCase()
+  if (extension === '.yaml' || extension === '.yml') {
+    return 'yaml'
+  }
+  return 'csv'
+}
+
+const parseLanguages = (value: string): ReadonlyArray<string> =>
+  value
+    .split(',')
+    .map((language) => language.trim())
+    .filter((language) => language.length > 0)
+
+const resolveCsvContextArgs = (
+  args: ReadonlyArray<string>
+): { languages: ReadonlyArray<string>; sourceLanguage: string } => {
+  const languagesArg = resolveRequiredArg(args, '--languages')
+  const languages = parseLanguages(languagesArg)
+  if (languages.length === 0) {
+    throw new Error('Invalid "--languages": expected at least one comma-separated language code.')
+  }
+
+  const sourceLanguage =
+    resolveArgValue(args, '--source-language') ?? resolveArgValue(args, '--sourceLanguage')
+  if (!sourceLanguage) {
+    throw new Error('Missing required argument "--source-language" for CSV input.')
+  }
+
+  if (!languages.includes(sourceLanguage)) {
+    throw new Error(
+      `Invalid CSV context: source language "${sourceLanguage}" is not part of --languages.`
+    )
+  }
+
+  return {
+    languages,
+    sourceLanguage,
+  }
+}
+
+const loadProject = async (
+  format: TranslationFormat,
+  filePath: string,
+  args: ReadonlyArray<string>
+) => {
+  if (format === 'csv') {
+    const csvContext = resolveCsvContextArgs(args)
+    return toIrProjectFromCsvFile(filePath, {
+      languages: csvContext.languages,
+      sourceLanguage: csvContext.sourceLanguage,
+    })
+  }
+  return toIrProjectFromYamlFile(filePath)
+}
+
+const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
+  const configArg = resolveArgValue(args, '--config')
   const loaded = await loadTypekitI18nConfig(configArg)
 
   if (!loaded) {
@@ -37,12 +126,62 @@ export const runCli = async (): Promise<number> => {
   return 0
 }
 
+const runValidateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
+  const inputPath = resolveRequiredArg(args, '--input')
+  const formatArg = resolveArgValue(args, '--format')
+  const format = formatArg ? toFormat(formatArg, '--format') : inferFormatFromPath(inputPath)
+  const project = await loadProject(format, inputPath, args)
+
+  validateIrProject(project)
+  process.stdout.write(pc.green(`Validation passed for "${inputPath}" (${format}).\n`))
+  return 0
+}
+
+const runConvertCommand = async (args: ReadonlyArray<string>): Promise<number> => {
+  const from = toFormat(resolveRequiredArg(args, '--from'), '--from')
+  const to = toFormat(resolveRequiredArg(args, '--to'), '--to')
+  const inputPath = resolveRequiredArg(args, '--input')
+  const outputPath = resolveRequiredArg(args, '--output')
+
+  const project = await loadProject(from, inputPath, args)
+  await mkdir(dirname(outputPath), { recursive: true })
+
+  if (to === 'csv') {
+    await writeCsvFileFromIrProject(outputPath, project)
+  } else {
+    await writeYamlFileFromIrProject(outputPath, project)
+  }
+
+  process.stdout.write(
+    pc.green(`Converted "${inputPath}" from ${from} to ${to} at "${outputPath}".\n`)
+  )
+  return 0
+}
+
+/**
+ * Runs Typekit i18n CLI commands.
+ *
+ * @returns Process exit code.
+ */
+export const runCli = async (): Promise<number> => {
+  const argv = process.argv.slice(2)
+  const resolved = resolveCommand(argv)
+
+  if (resolved.command === 'generate') {
+    return runGenerateCommand(resolved.args)
+  }
+  if (resolved.command === 'validate') {
+    return runValidateCommand(resolved.args)
+  }
+  return runConvertCommand(resolved.args)
+}
+
 runCli()
   .then((code) => {
     process.exitCode = code
   })
   .catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error)
-    console.error(pc.red(`Generation failed: ${message}`))
+    console.error(pc.red(`Command failed: ${message}`))
     process.exitCode = 1
   })
