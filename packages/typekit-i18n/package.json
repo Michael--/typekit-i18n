@@ -32,7 +32,8 @@
   "dependencies": {
     "fast-csv": "^5.0.5",
     "glob": "^11.0.3",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
