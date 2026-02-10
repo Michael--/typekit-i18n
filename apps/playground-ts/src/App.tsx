@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   Container,
   Title,
@@ -53,19 +53,26 @@ export const App = (): JSX.Element => {
 
   const onMissingTranslation = useCallback(
     (event: MissingTranslationEvent<TranslateKey, TranslateLanguage>) => {
-      setMissingEvents((prev) => [...prev, event])
+      setMissingEvents((prev) => {
+        // Prevent duplicate entries
+        const exists = prev.some(
+          (e) => e.key === event.key && e.language === event.language && e.reason === event.reason
+        )
+        return exists ? prev : [...prev, event]
+      })
     },
     []
   )
 
-  const translate = createTranslator<TranslateLanguage, TranslateKey, typeof translationTable>(
-    translationTable,
-    {
-      defaultLanguage: 'en',
-      missingStrategy: mode,
-      formatters,
-      onMissingTranslation,
-    }
+  const translate = useMemo(
+    () =>
+      createTranslator<TranslateLanguage, TranslateKey, typeof translationTable>(translationTable, {
+        defaultLanguage: 'en',
+        missingStrategy: mode,
+        formatters,
+        onMissingTranslation,
+      }),
+    [mode, onMissingTranslation]
   )
 
   const clearDiagnostics = (): void => {
