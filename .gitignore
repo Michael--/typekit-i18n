@@ -4,3 +4,4 @@ AGENTS.md
 /build/
 /coverage/
 /.vscode/
+*.tsbuildinfo
