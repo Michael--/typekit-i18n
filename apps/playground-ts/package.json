@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist src/generated",
     "dev": "vite",
-    "gen": "echo \"No code generation defined for playground-ts\"",
+    "gen": "node --import tsx scripts/gen.ts",
     "build": "vite build",
-    "lint": "pnpm -w exec eslint \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
     "preview": "vite preview",
-    "test": "pnpm -w exec vitest run --passWithNoTests",
-    "typecheck": "pnpm -w exec tsc -p tsconfig.json --noEmit"
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "typekit-i18n": "workspace:*"

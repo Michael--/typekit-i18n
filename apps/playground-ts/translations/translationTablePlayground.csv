@@ -1,0 +1,4 @@
+key;description;en;de
+greeting_title;Headline text for the playground;Welcome to typekit-i18n;Willkommen bei typekit-i18n
+greeting_body;Greeting message with user placeholder;Hello {name}, nice to see you.;Hallo {name}, schoen dich zu sehen.
+item_count;Summary line with count placeholder;You currently have {count} items.;Du hast aktuell {count} Eintraege.

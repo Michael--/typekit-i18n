@@ -22,7 +22,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "gen": "pnpm -w exec tsx src/codegen/cli.ts",
+    "gen": "node --import tsx src/codegen/cli.ts",
     "build": "vite build && tsc -p tsconfig.build.json",
     "dev": "vite build --watch",
     "lint": "eslint \"src/**/*.ts\"",
