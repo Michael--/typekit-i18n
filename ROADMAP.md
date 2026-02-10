@@ -5,17 +5,17 @@ Status: Arbeitsplan zum gemeinsamen Abarbeiten und Abhaken.
 ## Phase 0 - Ausgangslage sichern
 
 - [x] Blaupause aus Helio10 in separates Projekt uebernommen (`sessionX.jsonl`, `ts/translations`, `scripts/`).
-- [ ] Aktuellen Stand kurz dokumentieren (`README.md`: Ziel, aktueller Umfang, bekannte Luecken).
+- [x] Aktuellen Stand kurz dokumentieren (`README.md`: Ziel, aktueller Umfang, bekannte Luecken).
 - [ ] Mindestanforderungen definieren (Node/TS-Version, Build-/Test-Setup).
 
 ## Phase 1 - Produkt-Schnitt festlegen
 
-- [ ] Scope fuer v1 festlegen: "Type-safe i18n Toolkit fuer TS-Projekte".
-- [ ] Non-Goals dokumentieren (z. B. kein Full-CMS, kein Runtime-Editor in v1).
-- [ ] API-Form festlegen:
-- [ ] `translate(key, language, placeholders?)`
-- [ ] `supportedLanguages`
-- [ ] Fallback-Verhalten (Default-Sprache, Warnungen, Fehler-Modus)
+- [x] Scope fuer v1 festlegen: "Type-safe i18n Toolkit fuer TS-Projekte".
+- [x] Non-Goals dokumentieren (z. B. kein Full-CMS, kein Runtime-Editor in v1).
+- [x] API-Form festlegen:
+- [x] `translate(key, language, placeholders?)`
+- [x] `supportedLanguages`
+- [x] Fallback-Verhalten (Default-Sprache, Warnungen, Fehler-Modus)
 - [ ] Datenvertrag fuer Translation-Ressourcen festlegen (CSV-Spalten, Pflichtfelder, Encoding).
 
 ## Phase 2 - Datenmodell und Codegen haerten
@@ -98,4 +98,4 @@ Status: Arbeitsplan zum gemeinsamen Abarbeiten und Abhaken.
 
 ## Naechster konkreter Schritt
 
-- [ ] Phase 1 abschliessen: v1 Scope + Public API in einem kurzen `README`-Entwurf festhalten.
+- [x] Phase 1 abschliessen: v1 Scope + Public API in einem kurzen `README`-Entwurf festhalten.
