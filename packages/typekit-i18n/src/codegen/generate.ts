@@ -89,6 +89,7 @@ ${recordSource}
 } as const
 
 export type TranslateKey = keyof typeof translationTable
+export type TranslateKeys = TranslateKey
 export type TranslateLanguage = ${languageUnion}
 `
 }

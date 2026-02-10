@@ -22,16 +22,8 @@
     "dev:playground": "pnpm --filter @typekit-i18n/playground-ts dev",
     "dev:docs": "pnpm --filter @typekit-i18n/docs-site docs:dev",
     "generate": "pnpm run gen",
-    "gen:legacy": "node --import tsx scripts/translation-generator.ts",
     "test:watch": "vitest",
     "check": "pnpm run gen && pnpm run typecheck && pnpm run test"
-  },
-  "dependencies": {
-    "@typescript-eslint/typescript-estree": "^8.43.0",
-    "picocolors": "^1.1.1",
-    "fast-csv": "^5.0.5",
-    "glob": "^11.0.3",
-    "simple-git": "^3.28.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
@@ -39,6 +31,7 @@
     "@commitlint/config-conventional": "^20.3.1",
     "@eslint/js": "^9.39.2",
     "@number10/ci-runner-cli": "^0.2.0",
+    "@typescript-eslint/typescript-estree": "^8.43.0",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "cspell": "^9.6.0",

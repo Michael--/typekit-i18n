@@ -24,4 +24,5 @@ export const translationTable = {
 } as const
 
 export type TranslateKey = keyof typeof translationTable
+export type TranslateKeys = TranslateKey
 export type TranslateLanguage = 'en' | 'de'
