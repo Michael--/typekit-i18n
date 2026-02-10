@@ -5,7 +5,7 @@ Status: Arbeitsplan zum gemeinsamen Abarbeiten und Abhaken.
 Hinweis:
 
 - Aktueller Stand ist eine Blaupause mit bewusst vorlaeufigen Dateiorten.
-- `typecheck`/`test` sind derzeit nicht als Release-Gate zu verstehen, bis die Zielstruktur steht.
+- Root-`typecheck`/`test` laufen auf den Workspace-Zielen (`packages/*`, `apps/*`), Legacy-Referenzpfade sind bewusst ausgeklammert.
 
 ## Phase -1 - Strukturmigration vorbereiten
 
@@ -17,6 +17,7 @@ Hinweis:
 - [x] Monorepo-Skeleton angelegt (`packages/typekit-i18n`, `apps/playground-ts`, `apps/docs-site`).
 - [x] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
 - [x] Workspace-Skripte fuer `clean/gen/build/test/lint/typecheck` in den Zielprojekten vorbereitet.
+- [x] Playground als Consumer validiert (CSV -> generate -> typed usage via `typekit-i18n`).
 - [ ] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
 - [ ] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
 
@@ -75,7 +76,7 @@ Hinweis:
 - [x] `packages/typekit-i18n` als v1 Paket (konsolidiert statt frueher Aufsplittung)
 - [ ] Optional spaeteres Splitten nur bei realem Bedarf (z. B. separate Provider/Targets)
 - [ ] CLI fuer Codegen bereitstellen (`typekit-i18n generate`).
-- [ ] Konfigurationsdatei definieren (`typekit-i18n.config.ts/json`).
+- [x] Konfigurationsdatei definieren (`typekit-i18n.config.ts/json`).
 - [ ] SemVer + Release-Prozess aufsetzen (changelog, tags, npm publishing).
 
 ## Phase 6 - Mehrsprachige Targets (TS + Swift)

@@ -19,7 +19,8 @@ This repository is currently a blueprint extraction stage.
 
 - Existing code fragments are reference implementations
 - Module locations and package boundaries are expected to change
-- Current `typecheck`/`test` commands are defined but not yet hard quality gates until the structure migration is complete
+- Root `typecheck`/`test` are now workspace-scoped quality gates for `packages/*` and `apps/*`
+- Legacy reference paths remain outside those gates until migration is complete
 
 ## v1 Scope
 
@@ -101,6 +102,13 @@ Format notes:
 2. Run generator `scripts/translation-generator.ts`
 3. Use generated keys/API from `ts/translations/translation.ts`
 4. Verify behavior with tests in `ts/translations/tests/translation.test.ts`
+
+Current workspace-first workflow:
+
+1. Maintain consumer CSV files, for example `apps/playground-ts/translations/*.csv`
+2. Define per-consumer config in `typekit-i18n.config.ts`
+3. Run consumer generation via `pnpm --filter @typekit-i18n/playground-ts run gen`
+4. Consume generated table in app code with runtime imports from `typekit-i18n`
 
 ## Architecture Direction (next)
 

@@ -7,6 +7,7 @@ This document defines how legacy blueprint files map into the monorepo target st
 - Legacy directories `ts/translations` and `scripts` are now reference-only.
 - New feature work should target `packages/typekit-i18n` first.
 - Existing legacy files are kept temporarily to preserve context during migration.
+- A consumer prototype already exists in `apps/playground-ts` and uses `typekit-i18n` via workspace mapping.
 
 ## Path Mapping
 

@@ -10,9 +10,9 @@
     "build": "pnpm run docs:build",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs --port 4175",
-    "lint": "pnpm -w exec eslint \"docs/.vitepress/**/*.ts\"",
-    "test": "pnpm -w exec vitest run --passWithNoTests",
-    "typecheck": "pnpm -w exec tsc -p tsconfig.json --noEmit"
+    "lint": "eslint --no-error-on-unmatched-pattern \"docs/**/*.ts\"",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "typekit-i18n": "workspace:*"

@@ -22,7 +22,7 @@
     "dev:playground": "pnpm --filter @typekit-i18n/playground-ts dev",
     "dev:docs": "pnpm --filter @typekit-i18n/docs-site docs:dev",
     "generate": "pnpm run gen",
-    "gen:legacy": "tsx scripts/translation-generator.ts",
+    "gen:legacy": "node --import tsx scripts/translation-generator.ts",
     "test:watch": "vitest",
     "check": "pnpm run gen && pnpm run typecheck && pnpm run test"
   },
