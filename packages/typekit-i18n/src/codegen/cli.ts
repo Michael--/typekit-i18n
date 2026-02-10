@@ -5,9 +5,9 @@ import { dirname, extname } from 'node:path'
 import pc from 'picocolors'
 import { loadTypekitI18nConfig } from './config.js'
 import { generateTranslationTable } from './generate.js'
-import { toIrProjectFromCsvFile, writeCsvFileFromIrProject } from './ir/csv.js'
-import { validateIrProject } from './ir/validation.js'
-import { toIrProjectFromYamlFile, writeYamlFileFromIrProject } from './ir/yaml.js'
+import { writeCsvFileFromIrProject } from './ir/csv.js'
+import { writeYamlFileFromIrProject } from './ir/yaml.js'
+import { validateTranslationFile } from './validate.js'
 
 type CliCommand = 'generate' | 'validate' | 'convert'
 type TranslationFormat = 'csv' | 'yaml'
@@ -72,7 +72,10 @@ const parseLanguages = (value: string): ReadonlyArray<string> =>
 
 const resolveCsvContextArgs = (
   args: ReadonlyArray<string>
-): { languages: ReadonlyArray<string>; sourceLanguage: string } => {
+): {
+  languages?: ReadonlyArray<string>
+  sourceLanguage?: string
+} => {
   const languagesArg = resolveRequiredArg(args, '--languages')
   const languages = parseLanguages(languagesArg)
   if (languages.length === 0) {
@@ -81,11 +84,7 @@ const resolveCsvContextArgs = (
 
   const sourceLanguage =
     resolveArgValue(args, '--source-language') ?? resolveArgValue(args, '--sourceLanguage')
-  if (!sourceLanguage) {
-    throw new Error('Missing required argument "--source-language" for CSV input.')
-  }
-
-  if (!languages.includes(sourceLanguage)) {
+  if (sourceLanguage && !languages.includes(sourceLanguage)) {
     throw new Error(
       `Invalid CSV context: source language "${sourceLanguage}" is not part of --languages.`
     )
@@ -104,12 +103,20 @@ const loadProject = async (
 ) => {
   if (format === 'csv') {
     const csvContext = resolveCsvContextArgs(args)
-    return toIrProjectFromCsvFile(filePath, {
+    if (!csvContext.languages || !csvContext.sourceLanguage) {
+      throw new Error('CSV input requires "--languages" and "--source-language".')
+    }
+    return validateTranslationFile({
+      inputPath: filePath,
+      format: 'csv',
       languages: csvContext.languages,
       sourceLanguage: csvContext.sourceLanguage,
     })
   }
-  return toIrProjectFromYamlFile(filePath)
+  return validateTranslationFile({
+    inputPath: filePath,
+    format: 'yaml',
+  })
 }
 
 const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
@@ -130,9 +137,13 @@ const runValidateCommand = async (args: ReadonlyArray<string>): Promise<number> 
   const inputPath = resolveRequiredArg(args, '--input')
   const formatArg = resolveArgValue(args, '--format')
   const format = formatArg ? toFormat(formatArg, '--format') : inferFormatFromPath(inputPath)
-  const project = await loadProject(format, inputPath, args)
-
-  validateIrProject(project)
+  const csvContext = format === 'csv' ? resolveCsvContextArgs(args) : {}
+  await validateTranslationFile({
+    inputPath,
+    format,
+    languages: csvContext.languages,
+    sourceLanguage: csvContext.sourceLanguage,
+  })
   process.stdout.write(pc.green(`Validation passed for "${inputPath}" (${format}).\n`))
   return 0
 }
@@ -143,7 +154,8 @@ const runConvertCommand = async (args: ReadonlyArray<string>): Promise<number> =
   const inputPath = resolveRequiredArg(args, '--input')
   const outputPath = resolveRequiredArg(args, '--output')
 
-  const project = await loadProject(from, inputPath, args)
+  const loaded = await loadProject(from, inputPath, args)
+  const project = loaded.project
   await mkdir(dirname(outputPath), { recursive: true })
 
   if (to === 'csv') {

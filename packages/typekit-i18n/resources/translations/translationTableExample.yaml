@@ -1,0 +1,79 @@
+version: '1'
+sourceLanguage: en
+languages:
+  - en
+  - de
+
+entries:
+  - key: app.title
+    description: Main page title on the home screen.
+    status: approved
+    tags: [ui, home]
+    placeholders:
+      - name: productName
+        type: string
+    values:
+      en: 'Welcome to {productName}'
+      de: 'Willkommen bei {productName}'
+
+  - key: app.subtitle
+    description: Subtitle shown below the page title.
+    status: review
+    tags: [ui, home]
+    values:
+      en: 'Type-safe localization for modern TypeScript apps.'
+      de: 'Typsichere Lokalisierung fuer moderne TypeScript-Apps.'
+
+  - key: onboarding.instructions
+    description: Multi-line onboarding instructions in setup dialog.
+    status: draft
+    tags: [onboarding]
+    placeholders:
+      - name: supportEmail
+        type: string
+        formatHint: email
+    values:
+      en: |
+        Step 1: Open Settings.
+        Step 2: Enable Sync.
+        Questions? Contact {supportEmail}.
+      de: |
+        Schritt 1: Oeffne Einstellungen.
+        Schritt 2: Aktiviere Sync.
+        Fragen? Kontaktiere {supportEmail}.
+
+  - key: dashboard.itemCount
+    description: Summary line with count placeholder.
+    status: approved
+    tags: [dashboard]
+    placeholders:
+      - name: count
+        type: number
+        formatHint: integer
+    values:
+      en: 'You currently have {count} items.'
+      de: 'Du hast aktuell {count} Eintraege.'
+
+  - key: billing.lastUpdated
+    description: Last update timestamp in billing view.
+    status: approved
+    tags: [billing]
+    placeholders:
+      - name: date
+        type: date
+        formatHint: short
+    values:
+      en: 'Last updated on {date}'
+      de: 'Zuletzt aktualisiert am {date}'
+
+  - key: profile.completion
+    description: Profile completion percentage in account section.
+    status: review
+    tags: [profile]
+    placeholders:
+      - name: percent
+        type: number
+        formatHint: percent
+    values:
+      en: 'Your profile is {percent}% complete.'
+      de: 'Dein Profil ist zu {percent}% abgeschlossen.'
