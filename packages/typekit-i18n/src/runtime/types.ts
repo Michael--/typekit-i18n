@@ -73,6 +73,48 @@ export type MissingTranslationReason = 'missing_key' | 'missing_language' | 'mis
 export type MissingTranslationStrategy = 'fallback' | 'strict'
 
 /**
+ * Context passed to placeholder formatters.
+ */
+export interface PlaceholderFormatterContext<TKey extends string, TLanguage extends string> {
+  /**
+   * Translation key.
+   */
+  key: TKey
+  /**
+   * Requested language.
+   */
+  language: TLanguage
+  /**
+   * Fallback language.
+   */
+  defaultLanguage: TLanguage
+  /**
+   * Placeholder key from the template.
+   */
+  placeholderKey: string
+  /**
+   * Formatter identifier from the template (e.g. `{value|currency}`).
+   */
+  formatter: string
+}
+
+/**
+ * Placeholder formatter callback.
+ */
+export type PlaceholderFormatter<TKey extends string, TLanguage extends string> = (
+  value: string,
+  context: PlaceholderFormatterContext<TKey, TLanguage>
+) => string
+
+/**
+ * Map of available placeholder formatters by formatter identifier.
+ */
+export type PlaceholderFormatterMap<TKey extends string, TLanguage extends string> = Record<
+  string,
+  PlaceholderFormatter<TKey, TLanguage>
+>
+
+/**
  * Runtime configuration for translator creation.
  */
 export interface TranslatorOptions<TKey extends string, TLanguage extends string> {
@@ -84,6 +126,10 @@ export interface TranslatorOptions<TKey extends string, TLanguage extends string
    * Missing translation behavior strategy.
    */
   missingStrategy?: MissingTranslationStrategy
+  /**
+   * Optional placeholder formatter hooks.
+   */
+  formatters?: PlaceholderFormatterMap<TKey, TLanguage>
   /**
    * Optional callback for missing translation reporting.
    */

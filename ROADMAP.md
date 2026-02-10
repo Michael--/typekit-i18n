@@ -57,7 +57,7 @@ Hinweis:
 - [ ] Entwicklerfreundliche Diagnostik:
 - [x] fehlende Uebersetzungen sammeln/reporten
 - [x] optionales Logging statt festem `console.warn`
-- [ ] Optional: kleine Formatter-Schicht fuer Placeholder (z. B. Zahlen/Datum-Hooks).
+- [x] Optional: kleine Formatter-Schicht fuer Placeholder (z. B. Zahlen/Datum-Hooks).
 
 ## Phase 4 - Qualitaet und Tests
 
@@ -121,4 +121,4 @@ Hinweis:
 
 - [x] Phase 1 abschliessen: v1 Scope + Public API in einem kurzen `README`-Entwurf festhalten.
 - [x] Phase 2 + 4 baseline abschliessen: leere Pflichtwerte validieren, Testmatrix erweitern, Codegen-drift Gate (`generate && git diff --exit-code`) ergaenzen.
-- [ ] Phase 3 abschliessen: Runtime API final entkoppeln und Formatter-Hooks vorbereiten.
+- [x] Phase 3 abschliessen: Runtime API final entkoppeln und Formatter-Hooks vorbereiten.

@@ -20,6 +20,16 @@ const table: TranslationTable<string, TestLanguage> = {
     en: '{name} says hi to {name}.',
     de: '{name} sagt Hallo zu {name}.',
   },
+  formattedPlaceholder: {
+    description: 'Placeholder with optional formatter',
+    en: 'Total: {amount|currency}',
+    de: 'Summe: {amount|currency}',
+  },
+  unknownFormatter: {
+    description: 'Placeholder formatter fallback behavior',
+    en: 'Value: {amount|does_not_exist}',
+    de: 'Wert: {amount|does_not_exist}',
+  },
   emptyEverywhere: {
     description: 'No language has content',
     en: '',
@@ -72,6 +82,36 @@ describe('createTranslator', () => {
         data: [{ key: 'name', value: 'Mara' }],
       })
     ).toBe('Mara says hi to Mara.')
+  })
+
+  test('applies named formatter hooks when present', () => {
+    const translate = createTranslator(table, {
+      defaultLanguage: 'en',
+      formatters: {
+        currency: (value) => `EUR ${value}`,
+      },
+    })
+
+    expect(
+      translate('formattedPlaceholder', 'en', {
+        data: [{ key: 'amount', value: '12.50' }],
+      })
+    ).toBe('Total: EUR 12.50')
+  })
+
+  test('falls back to raw placeholder value when formatter is unknown', () => {
+    const translate = createTranslator(table, {
+      defaultLanguage: 'en',
+      formatters: {
+        currency: (value) => `EUR ${value}`,
+      },
+    })
+
+    expect(
+      translate('unknownFormatter', 'en', {
+        data: [{ key: 'amount', value: '12.50' }],
+      })
+    ).toBe('Value: 12.50')
   })
 
   test('returns key when neither target nor fallback text is available', () => {

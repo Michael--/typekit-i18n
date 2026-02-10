@@ -3,6 +3,7 @@ import {
   MissingTranslationEvent,
   MissingTranslationStrategy,
   Placeholder,
+  PlaceholderFormatterMap,
   TranslationTable,
 } from './types.js'
 import {
@@ -61,6 +62,11 @@ export interface TranslationRuntimeConfiguration<TLanguage extends string, TKey 
    */
   onMissingTranslation?: ((event: MissingTranslationEvent<TKey, TLanguage>) => void) | null
   /**
+   * Optional placeholder formatter hooks.
+   * Pass `null` to clear configured formatters.
+   */
+  formatters?: PlaceholderFormatterMap<TKey, TLanguage> | null
+  /**
    * Enables in-memory collection of missing translation events.
    */
   collectMissingTranslations?: boolean
@@ -118,6 +124,10 @@ export interface CreateTranslationRuntimeOptions<TLanguage extends string, TKey 
    */
   onMissingTranslation?: (event: MissingTranslationEvent<TKey, TLanguage>) => void
   /**
+   * Optional placeholder formatter hooks.
+   */
+  formatters?: PlaceholderFormatterMap<TKey, TLanguage>
+  /**
    * Enables in-memory collection of missing translation events.
    */
   collectMissingTranslations?: boolean
@@ -127,6 +137,7 @@ interface TranslationRuntimeState<TLanguage extends string, TKey extends string>
   defaultLanguage: TLanguage
   missingStrategy: MissingTranslationStrategy
   onMissingTranslation?: (event: MissingTranslationEvent<TKey, TLanguage>) => void
+  formatters?: PlaceholderFormatterMap<TKey, TLanguage>
   collectMissingTranslations: boolean
 }
 
@@ -168,6 +179,7 @@ export const createTranslationRuntime = <
     defaultLanguage: options.defaultLanguage,
     missingStrategy: options.missingStrategy ?? 'fallback',
     onMissingTranslation: options.onMissingTranslation,
+    formatters: options.formatters,
     collectMissingTranslations: options.collectMissingTranslations ?? false,
   }
 
@@ -185,6 +197,7 @@ export const createTranslationRuntime = <
   let runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
     defaultLanguage: runtimeState.defaultLanguage,
     missingStrategy: runtimeState.missingStrategy,
+    formatters: runtimeState.formatters,
     onMissingTranslation: runtimeMissingTranslationHandler,
   })
 
@@ -192,6 +205,7 @@ export const createTranslationRuntime = <
     runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
       defaultLanguage: runtimeState.defaultLanguage,
       missingStrategy: runtimeState.missingStrategy,
+      formatters: runtimeState.formatters,
       onMissingTranslation: runtimeMissingTranslationHandler,
     })
   }
@@ -208,6 +222,9 @@ export const createTranslationRuntime = <
     }
     if ('onMissingTranslation' in nextOptions) {
       runtimeState.onMissingTranslation = nextOptions.onMissingTranslation ?? undefined
+    }
+    if ('formatters' in nextOptions) {
+      runtimeState.formatters = nextOptions.formatters ?? undefined
     }
 
     rebuildRuntimeTranslator()

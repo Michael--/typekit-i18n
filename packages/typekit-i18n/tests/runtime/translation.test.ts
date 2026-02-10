@@ -70,13 +70,18 @@ describe('translate', () => {
 
   test('creates isolated runtime independent from generated default table', () => {
     type CustomLanguage = 'en' | 'fr'
-    type CustomKey = 'hello'
+    type CustomKey = 'hello' | 'price'
 
     const customTable: TranslationTable<CustomKey, CustomLanguage> = {
       hello: {
         description: 'Custom greeting',
         en: 'Hello',
         fr: 'Bonjour',
+      },
+      price: {
+        description: 'Price label with formatter',
+        en: 'Price: {amount|currency}',
+        fr: 'Prix: {amount|currency}',
       },
     }
 
@@ -86,5 +91,17 @@ describe('translate', () => {
     })
 
     expect(customRuntime.translate('hello', 'fr')).toBe('Bonjour')
+
+    customRuntime.configure({
+      formatters: {
+        currency: (value) => `${value} EUR`,
+      },
+    })
+
+    expect(
+      customRuntime.translate('price', 'fr', {
+        data: [{ key: 'amount', value: '10' }],
+      })
+    ).toBe('Prix: 10 EUR')
   })
 })

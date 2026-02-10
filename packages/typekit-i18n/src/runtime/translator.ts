@@ -1,14 +1,46 @@
 import {
   MissingTranslationEvent,
   Placeholder,
+  PlaceholderFormatterMap,
   TranslationTable,
   TranslatorOptions,
 } from './types.js'
 
-const applyPlaceholders = (template: string, placeholder?: Placeholder): string => {
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const applyPlaceholders = <TKey extends string, TLanguage extends string>(
+  template: string,
+  placeholder: Placeholder | undefined,
+  key: TKey,
+  language: TLanguage,
+  defaultLanguage: TLanguage,
+  formatters?: PlaceholderFormatterMap<TKey, TLanguage>
+): string => {
+  if (!placeholder) {
+    return template
+  }
+
   let output = template
-  placeholder?.data.forEach((entry) => {
-    output = output.replace(new RegExp(`{${entry.key}}`, 'g'), entry.value)
+  placeholder.data.forEach((entry) => {
+    const matcher = new RegExp(`\\{${escapeRegExp(entry.key)}(?:\\|([a-zA-Z0-9_-]+))?\\}`, 'g')
+    output = output.replace(matcher, (_match: string, formatterName?: string) => {
+      if (!formatterName) {
+        return entry.value
+      }
+
+      const formatter = formatters?.[formatterName]
+      if (!formatter) {
+        return entry.value
+      }
+
+      return formatter(entry.value, {
+        key,
+        language,
+        defaultLanguage,
+        placeholderKey: entry.key,
+        formatter: formatterName,
+      })
+    })
   })
   return output
 }
@@ -56,7 +88,14 @@ export const createTranslator = <
 
     const requestedText = translation[language]
     if (requestedText.length > 0) {
-      return applyPlaceholders(requestedText, placeholder)
+      return applyPlaceholders(
+        requestedText,
+        placeholder,
+        key,
+        language,
+        options.defaultLanguage,
+        options.formatters
+      )
     }
 
     const fallbackText = translation[options.defaultLanguage]
@@ -68,7 +107,14 @@ export const createTranslator = <
     })
 
     if (fallbackText.length > 0) {
-      return applyPlaceholders(fallbackText, placeholder)
+      return applyPlaceholders(
+        fallbackText,
+        placeholder,
+        key,
+        language,
+        options.defaultLanguage,
+        options.formatters
+      )
     }
 
     return key
