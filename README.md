@@ -13,6 +13,14 @@ Current blueprint in this repository:
 - Typed runtime access (`ts/translations/translation.ts`)
 - Generated source of truth (`ts/translations/translationTable.ts`)
 
+## Current Project Status
+
+This repository is currently a blueprint extraction stage.
+
+- Existing code fragments are reference implementations
+- Module locations and package boundaries are expected to change
+- Current `typecheck`/`test` commands are defined but not yet hard quality gates until the structure migration is complete
+
 ## v1 Scope
 
 What v1 includes:

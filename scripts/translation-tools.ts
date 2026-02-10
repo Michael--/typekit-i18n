@@ -1,11 +1,8 @@
-import colors from "colors"
 import { simpleGit } from "simple-git"
 import * as path from "path"
 import * as fs from "fs"
 import * as csv from "fast-csv"
 import { Writable } from "stream"
-
-colors.enable()
 
 export async function getGitFileContent(filePath: string, ref: string) {
     const reference = `${ref}:${filePath}`

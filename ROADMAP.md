@@ -2,6 +2,17 @@
 
 Status: Arbeitsplan zum gemeinsamen Abarbeiten und Abhaken.
 
+Hinweis:
+
+- Aktueller Stand ist eine Blaupause mit bewusst vorlaeufigen Dateiorten.
+- `typecheck`/`test` sind derzeit nicht als Release-Gate zu verstehen, bis die Zielstruktur steht.
+
+## Phase -1 - Strukturmigration vorbereiten
+
+- [ ] Zielstruktur festlegen (wohin `ts/translations`, `scripts`, spaetere Pakete wandern).
+- [ ] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
+- [ ] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
+
 ## Phase 0 - Ausgangslage sichern
 
 - [x] Blaupause aus Helio10 in separates Projekt uebernommen (`sessionX.jsonl`, `ts/translations`, `scripts/`).

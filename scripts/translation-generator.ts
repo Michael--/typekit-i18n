@@ -1,10 +1,7 @@
-import colors from "colors"
+import pc from "picocolors"
 import * as fs from "fs"
 import { glob } from "glob"
 import { IFlatEntryArray, ReadTranslationCSV } from "./translation-tools.js"
-
-// just make colors implicit available, e.g. to use "output string".green
-colors.enable()
 
 const header = (input: string[]) => {
     const files = input.map((e, i) => `[${i + 1}/${input.length}] "${e}"`)
@@ -53,11 +50,11 @@ async function main() {
     for (const file of files) {
         const translations = await ReadTranslationCSV(file)
         allTranslations = allTranslations.concat(translations)
-        console.log(`Read "${file}" with ${translations.length} accessible translation keys`.green)
+        console.log(pc.green(`Read "${file}" with ${translations.length} accessible translation keys`))
     }
 
     await exportTranslationTable(output, allTranslations, files)
-    console.log(`Write "${output}" created with ${allTranslations.length} accessible translation keys`.yellow)
+    console.log(pc.yellow(`Write "${output}" created with ${allTranslations.length} accessible translation keys`))
 }
 
 main()
