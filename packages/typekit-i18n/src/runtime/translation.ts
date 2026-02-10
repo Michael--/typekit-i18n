@@ -6,8 +6,8 @@ import {
   PlaceholderFormatterMap,
   TranslationTable,
 } from './types.js'
-import { TranslateLanguage, TranslateKeys } from '@gen/translationKeys.js'
-import { translationTable } from '@gen/translationTable.js'
+import { TranslateLanguage, TranslateKeys } from '@gen/translationKeys'
+import { translationTable } from '@gen/translationTable'
 
 /**
  * Supported language codes.

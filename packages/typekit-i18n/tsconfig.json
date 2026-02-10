@@ -4,11 +4,10 @@
     "composite": true,
     "rootDir": ".",
     "outDir": "dist",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@gen/*.js": ["dist/generated/*.ts"],
       "@gen/*": ["dist/generated/*"]
     },
     "types": ["node"]
