@@ -3,7 +3,7 @@ import {
   translationTable,
   type TranslateKey,
   type TranslateLanguage,
-} from './generated/translationTable.js'
+} from './generated/translationTable'
 
 const root = document.querySelector<HTMLDivElement>('#app')
 

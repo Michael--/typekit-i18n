@@ -7,7 +7,7 @@
     "clean": "rm -rf dist src/generated",
     "dev": "vite",
     "gen": "node --import tsx scripts/gen.ts",
-    "build": "vite build",
+    "build": "pnpm run gen && vite build",
     "lint": "eslint \"src/**/*.ts\"",
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
