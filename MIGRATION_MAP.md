@@ -16,7 +16,7 @@ This document defines how legacy blueprint files map into the monorepo target st
 | ------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------- |
 | `ts/translations/translation.ts`            | `packages/typekit-i18n/src/runtime/translation.ts`                 | Public runtime API (migrated)                   |
 | `ts/translations/translationTypes.ts`       | `packages/typekit-i18n/src/runtime/types.ts`                       | Placeholder contracts                           |
-| `ts/translations/translationTable.ts`       | `packages/typekit-i18n/src/generated/translationTable.ts`          | Generated file output location                  |
+| `ts/translations/translationTable.ts`       | `packages/typekit-i18n/dist/generated/translationTable.ts`         | Generated file output location                  |
 | `ts/translations/translationTable*.csv`     | `packages/typekit-i18n/resources/translations/*.csv`               | Source translation resources (migrated)         |
 | `ts/translations/tests/translation.test.ts` | `packages/typekit-i18n/tests/runtime/translation.test.ts`          | Runtime tests (migrated)                        |
 | `scripts/translation-generator.ts`          | `packages/typekit-i18n/src/codegen/generate.ts`                    | Internal generator logic (migrated)             |

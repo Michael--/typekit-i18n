@@ -1,6 +1,6 @@
 import { createTranslator } from 'typekit-i18n'
-import { type TranslateKey, type TranslateLanguage } from './generated/translationKeys'
-import { translationTable } from './generated/translationTable'
+import { type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
+import { translationTable } from '@gen/translationTable'
 
 const root = document.querySelector<HTMLDivElement>('#app')
 

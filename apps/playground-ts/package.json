@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "rm -rf dist src/generated",
+    "clean": "rm -rf dist",
     "dev": "vite",
     "gen": "node --import tsx scripts/gen.ts",
     "build": "pnpm run gen && vite build",

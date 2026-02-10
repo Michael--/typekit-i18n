@@ -6,6 +6,11 @@ const thisFilePath = fileURLToPath(import.meta.url)
 const thisDirPath = dirname(thisFilePath)
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@gen': resolve(thisDirPath, 'dist/generated'),
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

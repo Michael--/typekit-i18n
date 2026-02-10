@@ -4,7 +4,17 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@gen/*": ["dist/generated/*"]
+    },
     "types": ["vite/client", "node"]
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts", "vite.config.ts", "typekit-i18n.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "dist/generated/**/*.ts",
+    "vite.config.ts",
+    "typekit-i18n.config.ts"
+  ]
 }
