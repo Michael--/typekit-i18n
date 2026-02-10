@@ -1,0 +1,122 @@
+key;description;en;de
+Summary View;Tab title of the sun summary view;Summary;Übersicht
+Solar Summary for Location;Title of the solar summary for a location;Summary for {name};Übersicht für {name}
+Locations View;Tab title for the location list view;Locations;Orte
+Current Location Name;Default name for the current location entry;Current Location;Aktueller Standort
+Solar Plants View;Tab title for the solar plants list view;Solar Plants;Solaranlagen
+Expected energy;Label expected energy yearly;Expected energy yearly;Erwartete Energie jährlich
+Expected energy monthly daily;Label expected energy with monthly and daily breakdown in month;daily / monthly;täglich / monatlich
+Add solar plant;Button text to add a new solar plant;Add solar plant;Solaranlage hinzufügen
+No solar plants;Label when no solar plants are configured;No solar plants configured.;Keine Solaranlagen konfiguriert.
+Add a solar plant to get started;Description text when no solar plants are configured;Add a solar plant to get started;Fügen Sie eine Solaranlage hinzu, um zu beginnen
+AR View;Tab title for the AR view;AR View;AR Ansicht
+Initializing AR;Label shown when AR view is initializing;Initializing AR...;AR wird initialisiert...
+Settings;Settings Dialog Name;Settings;Einstellungen
+ar settings;AR settings section title;AR Settings;AR Einstellungen
+purchase settings;Purchase settings section title;Purchases;Käufe
+purchase enabled;display state of purchase;Unlocked;Freigeschaltet
+purchase disabled;display state of purchase;Locked;Gesperrt
+purchase button;Button text to purchase;Unlock;Freischalten
+purchase Processing;Label when purchase is processing;Processing...;Wird verarbeitet..
+purchased lifetime;short label when lifetime purchase is done;Lifetime Unlocked;Lebenslang freigeschaltet
+Restore Purchases;Button text to restore purchases;Restore Purchases;Käufe wiederherstellen
+available products;Available products section title;Available Products;Verfügbare Käufe
+already purchased;Label display below restore purchase button;Already purchased? Restore here.;Bereits gekauft? Hier wiederherstellen.
+location limit title;Alert title when location limit is reached;Location Limit Reached;Standortlimit erreicht
+location limit message;Alert message explaining location limit;"You have reached the maximum of {0} locations for free users. Upgrade to Unlimited Storage to add more locations.";"Sie haben das Maximum von {0} Standorten für kostenlose Benutzer erreicht. Upgraden Sie auf Unlimited Storage, um weitere Standorte hinzuzufügen."
+solar plant limit title;Alert title when solar plant limit is reached;Solar Plant Limit Reached;Solaranlagenlimit erreicht
+solar plant limit message;Alert message explaining solar plant limit;"You have reached the maximum of {0} solar plants for free users. Upgrade to Unlimited Storage to add more solar plants.";"Sie haben das Maximum von {0} Solaranlagen für kostenlose Benutzer erreicht. Upgraden Sie auf Unlimited Storage, um weitere Solaranlagen hinzuzufügen."
+Clear Text;Clear button text;Clear;Löschen
+Done Text;Done button text;Done;Fertig
+Cancel Text;Cancel button text;Cancel;Abbrechen
+General Settings;General settings section title;General Settings;Allgemeine Einstellungen
+"Show Sky Rotation Settings";"Show sun offset toggle label";Show Sun Offset Carousel;Sonnenversatz-Carousel anzeigen
+"Show Sky Rotation Description";"Description for show sun offset setting";Display an additional carousel to manually adjust the sun’s horizontal offset in the AR view.;Zeigt ein zusätzliches Carousel, mit dem sich der horizontale Sonnenversatz in der AR-Ansicht manuell anpassen lässt.
+Language Settings;Language selection label;Language;Sprache
+Show Help Badges Settings;Show help badges toggle label;Show Help Badges;Hilfehinweise anzeigen
+AR Reset;AR view reset button text (very short, use language specific translation with care);AR;AR
+Monthly Text; Monthly menu text selection;Monthly View;Monatliche Ansicht
+Daily Text; Daily menu text selection;Daily View;Tägliche Ansicht
+Hourly Text; Hourly menu text selection;Hourly View;Stündliche Ansicht
+Sun Offset; Sun offset carousel hint text (horizontal offset of the view to the sun);Sun Offset;Sonnenversatz
+Compass Label;Label from North clockwise in 45° distance, spaced by # symbol = 8 directions;N#NE#E#SE#S#SW#W#NW;N#NO#O#SO#S#SW#W#NW
+"AR View Description";"description of AR view";"**AR view** — overlays the Sun’s path on the camera.\n\n- Horizon + compass for orientation\n- Live Sun position; selectable date/time shows the Sun at that moment\n- Choose date directly or via carousel (day/month/hour)\n- Optional AR offset carousel (Settings) to nudge alignment; or use the calibrate button (rosette)\n- Tip: perform a figure-eight motion to improve sensor calibration\n- Check: when the real Sun covers the AR Sun, alignment is correct\n- Useful for shadow/solar planning, gardening, photography\n\nMore: [Wikipedia – Sun path](https://en.wikipedia.org/wiki/Sun_path)";"**AR-Ansicht** — blendet den Sonnenverlauf in die Kamera ein.\n\n- Horizont + Kompass zur Orientierung\n- Aktuelle Sonnenposition; wählbares Datum/Uhrzeit zeigt die Sonne zu diesem Zeitpunkt\n- Datum direkt wählen oder über Carousel (Tag/Monat/Stunde)\n- Optionales AR-Offset-Carousel (in Einstellungen) zum Nachjustieren; alternativ Kalibrieren-Button (Rosette)\n- Tipp: iPhone in Achtern bewegen (Figure-Eight), verbessert die Sensor-Kalibrierung\n- Check: Deckt die reale Sonne die AR-Sonne, stimmt die Ausrichtung\n- Nützlich für Schattenanalyse (PV, Garten), Planung, Fotografie\n\nMehr: [Wikipedia – Sonnenbahn](https://de.wikipedia.org/wiki/Sonnenbahn)"
+Unknown Location;Label when no location is set;Unknown Location;Unbekannter Ort
+cardinal compass directions;Just 4 cardinal directions, no intermediate, 4 letters;NSEW;NSOW
+Test Placeholders;test Placeholders and its replace;Name:{name} Age:{age};Name:{name} Age:{age}
+Delete;Delete action label;Delete;Löschen
+Edit;Edit action label;Edit;Bearbeiten
+Save;Save action label;Save;Speichern
+Add;Add action label;Add;Hinzufügen
+chart Week;Chart label for week view (X AreaMark);Week;Woche
+chart Energy; Chart label for energy (Y AreaMark);Energy (kWh);Energie (kWh)
+chart Energy Total;Tooltip label for total energy in week chart (short word);Total;Gesamt
+chart Y Axis;Y Axis label for energy chart per week;DC Energy (kWh/week);DC Energie (kWh/Woche)
+chart Legend;Chart legend label for energy chart;"Weekly Solar Energy Production";Wöchentliche Solarenergieproduktion
+chart Content unavailable;Chart content unavailable label;Chart data unavailable;Diagrammdaten nicht verfügbar
+chart No Data Description;Chart no data description text;Select a solar plant to view yearly energy chart;Wählen Sie eine Solaranlage, um das Jahresenergie-Diagramm anzuzeigen
+chart hide chart;Accessibility label to hide the chart;Hide Chart;Diagramm ausblenden
+chart show chart;Accessibility label to show the chart;Show Chart;Diagramm anzeigen
+plant Basic Info;Basic information section title;Basic Info;Grundinformationen
+plant Name;Solar plant name label;Name;Name
+plant Description;Solar plant description label;Description;Beschreibung
+plant Location;Solar plant location picker label;Location;Ort
+plant No Location;Label when no location is selected;No location;Kein Ort
+plant Calculating;Label when energy calculation is in progress;Calculating...;Berechnung...
+plant Recalculate;Button label to recalculate energy;Recalculate;Neu berechnen
+plant System Configuration;System configuration section title;System Configuration;Systemkonfiguration
+plant power;System configuration power label;Power (kWp);Leistung (kWp)
+plant tilt angle;System configuration tilt angle label;Tilt Angle (°);Neigungswinkel (°)
+plant degrees;System configuration degrees label;Degrees;Grad
+plant azimuth angle;System configuration azimuth angle label;Azimuth Angle (°);Ausrichtungswinkel (°)
+plant advanced settings;Advanced settings section title;Advanced Settings;Erweiterte Einstellungen
+plant albedo;Advanced settings albedo label;Albedo;Albedo
+plant sky view factor;Advanced settings sky view factor label;Sky View Factor;Himmelsansichts-Faktor
+plant factor;Advanced settings factor label;Factor;Faktor
+plant loss factor;Advanced settings loss factor label;Loss Factor (0..1);Verlustfaktor (0..1)
+plant linke TL;Linke Turbidity factor label;Linke Turbidity;Linke Trübung
+plant reset linke Tl defaults;Reset Linke Turbidity defaults button text (short);Recalculate defaults;Standardwerte neu berechnen
+plant clear sky;Clear sky factor label;Clear Sky;Klarer Himmel
+plant reset clear sky defaults;Roload Clear Sky defaults values from server button text (short);Reload defaults;Standardwerte neu laden
+plant using system defaults Linke TL;Warning if Linke TL falls back to generic defaults;Using default values (location not supported);Standardwerte werden verwendet (Standort nicht unterstützt)
+plant using system defaults PVGIS;Warning if PVGIS cannot deliver location-specific values;Using default values (location not supported by PVGIS);Standardwerte werden verwendet (Standort wird von PVGIS nicht unterstützt)
+plant edit plant;Edit solar plant sheet title;Edit Solar Plant;Solaranlage bearbeiten
+plant new plant;New solar plant sheet title;New Solar Plant;Neue Solaranlage
+search location;Search location placeholder text;Search location;Ort suchen
+search use current location;Use current location button text;Use current location;Aktuellen Standort verwenden
+search own name;Use own name button text;Use own name;Eigenen Namen verwenden
+search unavailable;Text when content is unavailable;Please input search term;Bitte Suchbegriff eingeben
+search no results;Text when no search results are found;No results found;Keine Ergebnisse gefunden
+search try different;Try different search term suggestion;Try a different search term;Versuchen Sie einen anderen Suchbegriff
+search section own name;Section title for entering own name for current location;Name for this location;Name für diesen Ort
+search own name textfield;Placeholder text for entering own name for current location;e.g. Home, Work, etc.;z.B. Zuhause, Arbeit, etc.
+search section coordinates;Section title for showing GPS coordinates;GPS Coordinates;GPS-Koordinaten
+recent no locations;Text when no recent locations are saved;No recent locations.;Keine kürzlich verwendeten Orte.
+recent section address;Section title for recent locations;Location;Adresse
+recent navigation name location;Navigation to give an location a name;Name Location;Ort benennen
+recent alert delete title;Title for delete recent location alert;Delete Location;Ort löschen
+recent alert delete message;Message for delete recent location alert;Are you sure you want to delete this location?;Möchten Sie diesen Ort wirklich löschen?
+recent alert will used;This location is used by solar plants warning;This location is used by solar plants. Are you sure you want to delete it?;Dieser Ort wird von Solaranlagen verwendet. Möchten Sie ihn wirklich löschen? 
+add location;Add location button text;Add Location;Ort hinzufügen
+alert location access denied title;Title for location access denied alert - location is off;Location is Off;Standort ist deaktiviert
+alert location access denied message;Message for location access denied alert to get service again;You can use the app without location access. If you want to use your current place, allow location in iOS Settings.;Sie können die App ohne Standortzugriff verwenden. Wenn Sie die Position für Ihren aktuellen Standort wünschen, erlauben Sie den Standort in den iOS-Einstellungen.
+alert location continue without location;Button text to continue without location access;Continue Without Location;Ohne Standort fortfahren
+systems settings button;Button text to open system settings;Open Settings;Einstellungen öffnen
+ungrouped Plants;Header for ungrouped plants in list;Ungrouped;Nicht gruppiert
+grouped View;Label for grouped view toggle;Grouped;Gruppiert
+flat View;Label for flat view toggle;Flat;Flach
+all Plants;Filter option to show all plants;All;Alle
+sort By Default;Sort option by default;Default;Standard
+sort By Name;Sort option by name;By Name;Nach Name
+sort By Location;Sort option by location;By Location;Nach Ort
+sort By Date;Sort option by date;By Date;Nach Datum
+"use location timezone settings";"Use location timezone toggle label";Location Time Zone;Ortszeit
+"use location timezone description";"Description for use location timezone setting";Display times using the time zone of the selected location, where applicable.;Zeiten in der Zeitzone des ausgewählten Standorts anzeigen, sofern sinnvoll.
+legal notice;Impressum section title (legal notice);About;Impressum
+app version;App version label;Version;Version
+copyright;Copyright text;© 2025 Michael Rieck, Number10;© 2025 Michael Rieck, Number10
+website;Website label and URL;www.number10.de;www.number10.de
+location not yet updated;Status text when GPS location was never updated;Not yet updated;Noch nicht aktualisiert
+location fresh;Status text when location was recently updated;Updated just now;Gerade aktualisiert
+location outdated;Status text when location is older than 10 minutes;Outdated;Veraltet
+location updated ago;Status text with time since last update;Updated {time} ago;Vor {time} aktualisiert
