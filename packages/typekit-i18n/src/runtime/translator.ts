@@ -1,4 +1,9 @@
-import { Placeholder, TranslationTable, TranslatorOptions } from './types.js'
+import {
+  MissingTranslationEvent,
+  Placeholder,
+  TranslationTable,
+  TranslatorOptions,
+} from './types.js'
 
 const applyPlaceholders = (template: string, placeholder?: Placeholder): string => {
   let output = template
@@ -7,6 +12,11 @@ const applyPlaceholders = (template: string, placeholder?: Placeholder): string 
   })
   return output
 }
+
+const toMissingTranslationMessage = <TKey extends string, TLanguage extends string>(
+  event: MissingTranslationEvent<TKey, TLanguage>
+): string =>
+  `Missing translation for key "${event.key}" in "${event.language}" (default "${event.defaultLanguage}", reason "${event.reason}").`
 
 /**
  * Creates a typed translator bound to a translation table.
@@ -23,13 +33,23 @@ export const createTranslator = <
   table: TTable,
   options: TranslatorOptions<TKey, TLanguage>
 ): ((key: TKey, language: TLanguage, placeholder?: Placeholder) => string) => {
+  const missingStrategy = options.missingStrategy ?? 'fallback'
+
+  const handleMissing = (event: MissingTranslationEvent<TKey, TLanguage>): void => {
+    options.onMissingTranslation?.(event)
+    if (missingStrategy === 'strict') {
+      throw new Error(toMissingTranslationMessage(event))
+    }
+  }
+
   return (key: TKey, language: TLanguage, placeholder?: Placeholder): string => {
     const translation = table[key]
     if (!translation) {
-      options.onMissingTranslation?.({
+      handleMissing({
         key,
         language,
         defaultLanguage: options.defaultLanguage,
+        reason: 'missing_key',
       })
       return key
     }
@@ -40,20 +60,17 @@ export const createTranslator = <
     }
 
     const fallbackText = translation[options.defaultLanguage]
-    if (fallbackText.length > 0) {
-      options.onMissingTranslation?.({
-        key,
-        language,
-        defaultLanguage: options.defaultLanguage,
-      })
-      return applyPlaceholders(fallbackText, placeholder)
-    }
-
-    options.onMissingTranslation?.({
+    handleMissing({
       key,
       language,
       defaultLanguage: options.defaultLanguage,
+      reason: fallbackText.length > 0 ? 'missing_language' : 'missing_fallback',
     })
+
+    if (fallbackText.length > 0) {
+      return applyPlaceholders(fallbackText, placeholder)
+    }
+
     return key
   }
 }

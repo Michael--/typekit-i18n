@@ -37,6 +37,12 @@ describe('createTranslator', () => {
 
     expect(translate('does-not-exist', 'de')).toBe('does-not-exist')
     expect(onMissingTranslation).toHaveBeenCalledTimes(1)
+    expect(onMissingTranslation).toHaveBeenLastCalledWith({
+      key: 'does-not-exist',
+      language: 'de',
+      defaultLanguage: 'en',
+      reason: 'missing_key',
+    })
   })
 
   test('falls back to default language when target language text is empty', () => {
@@ -48,6 +54,12 @@ describe('createTranslator', () => {
 
     expect(translate('fallbackOnly', 'de')).toBe('Only English')
     expect(onMissingTranslation).toHaveBeenCalledTimes(1)
+    expect(onMissingTranslation).toHaveBeenLastCalledWith({
+      key: 'fallbackOnly',
+      language: 'de',
+      defaultLanguage: 'en',
+      reason: 'missing_language',
+    })
   })
 
   test('replaces placeholders globally', () => {
@@ -70,6 +82,37 @@ describe('createTranslator', () => {
     })
 
     expect(translate('emptyEverywhere', 'de')).toBe('emptyEverywhere')
+    expect(onMissingTranslation).toHaveBeenCalledTimes(1)
+    expect(onMissingTranslation).toHaveBeenLastCalledWith({
+      key: 'emptyEverywhere',
+      language: 'de',
+      defaultLanguage: 'en',
+      reason: 'missing_fallback',
+    })
+  })
+
+  test('throws in strict mode for missing language text', () => {
+    const translate = createTranslator(table, {
+      defaultLanguage: 'en',
+      missingStrategy: 'strict',
+    })
+
+    expect(() => translate('fallbackOnly', 'de')).toThrow(
+      /Missing translation for key "fallbackOnly".*reason "missing_language"/
+    )
+  })
+
+  test('throws in strict mode for missing key', () => {
+    const onMissingTranslation = vi.fn()
+    const translate = createTranslator(table, {
+      defaultLanguage: 'en',
+      missingStrategy: 'strict',
+      onMissingTranslation,
+    })
+
+    expect(() => translate('does-not-exist', 'de')).toThrow(
+      /Missing translation for key "does-not-exist".*reason "missing_key"/
+    )
     expect(onMissingTranslation).toHaveBeenCalledTimes(1)
   })
 })

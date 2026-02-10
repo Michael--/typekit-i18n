@@ -56,7 +56,21 @@ export interface MissingTranslationEvent<TKey extends string, TLanguage extends 
    * Fallback language.
    */
   defaultLanguage: TLanguage
+  /**
+   * Missing translation reason.
+   */
+  reason: MissingTranslationReason
 }
+
+/**
+ * Missing translation reason categories.
+ */
+export type MissingTranslationReason = 'missing_key' | 'missing_language' | 'missing_fallback'
+
+/**
+ * Behavior strategy for missing translations.
+ */
+export type MissingTranslationStrategy = 'fallback' | 'strict'
 
 /**
  * Runtime configuration for translator creation.
@@ -66,6 +80,10 @@ export interface TranslatorOptions<TKey extends string, TLanguage extends string
    * Default fallback language.
    */
   defaultLanguage: TLanguage
+  /**
+   * Missing translation behavior strategy.
+   */
+  missingStrategy?: MissingTranslationStrategy
   /**
    * Optional callback for missing translation reporting.
    */
