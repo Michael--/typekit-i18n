@@ -2,10 +2,8 @@ import { glob } from 'glob'
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { mkdir, writeFile } from 'node:fs/promises'
 import pc from 'picocolors'
-import { readCsvFile } from './csv.js'
+import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { TranslationRecord, TypekitI18nConfig } from './types.js'
-
-const requiredHeaders = ['key', 'description'] as const
 
 const quote = (value: string): string => JSON.stringify(value)
 
@@ -30,44 +28,8 @@ const validateLanguageConfig = <TLanguage extends string>(
   }
 }
 
-const validateRow = <TLanguage extends string>(
-  row: Record<string, string>,
-  rowIndex: number,
-  filePath: string,
-  languages: ReadonlyArray<TLanguage>,
-  defaultLanguage: TLanguage
-): TranslationRecord<TLanguage> => {
-  requiredHeaders.forEach((header) => {
-    if (!row[header] || row[header].length === 0) {
-      throw new Error(`Missing "${header}" in ${filePath} at row ${rowIndex + 2}.`)
-    }
-  })
-
-  const key = row.key
-  const description = row.description
-  const values: Record<TLanguage, string> = {} as Record<TLanguage, string>
-
-  languages.forEach((language) => {
-    const languageValue = row[language]
-    if (typeof languageValue !== 'string') {
-      throw new Error(
-        `Missing language column "${language}" in ${filePath} at row ${rowIndex + 2}.`
-      )
-    }
-    if (language === defaultLanguage && languageValue.length === 0) {
-      throw new Error(
-        `Missing value for default language "${defaultLanguage}" in ${filePath} at row ${rowIndex + 2}.`
-      )
-    }
-    values[language] = languageValue
-  })
-
-  return {
-    key,
-    description,
-    values,
-  }
-}
+const normalizeCsvIrErrorMessage = (message: string): string =>
+  message.replace(/source language/g, 'default language')
 
 const toHeaderComment = (files: ReadonlyArray<string>): string => {
   const lines = files.map((file, index) => `[${index + 1}/${files.length}] "${file}"`)
@@ -166,16 +128,26 @@ export const generateTranslationTable = async <TLanguage extends string>(
   const records: TranslationRecord<TLanguage>[] = []
 
   for (const filePath of files) {
-    const rows = await readCsvFile(filePath)
-    rows.forEach((row, rowIndex) => {
-      const record = validateRow(row, rowIndex, filePath, config.languages, config.defaultLanguage)
-      if (keySet.has(record.key)) {
+    const project = await toIrProjectFromCsvFile(filePath, {
+      languages: config.languages,
+      sourceLanguage: config.defaultLanguage,
+    }).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error)
+      throw new Error(normalizeCsvIrErrorMessage(message))
+    })
+
+    project.entries.forEach((entry, entryIndex) => {
+      if (keySet.has(entry.key)) {
         throw new Error(
-          `Duplicate key "${record.key}" found in ${filePath} at row ${rowIndex + 2}.`
+          `Duplicate key "${entry.key}" found in ${filePath} at row ${entryIndex + 2}.`
         )
       }
-      keySet.add(record.key)
-      records.push(record)
+      keySet.add(entry.key)
+      records.push({
+        key: entry.key,
+        description: entry.description,
+        values: entry.values,
+      })
     })
   }
 
