@@ -22,6 +22,7 @@
     "dev:playground": "pnpm --filter @typekit-i18n/playground-ts dev",
     "dev:docs": "pnpm --filter @typekit-i18n/docs-site docs:dev",
     "generate": "pnpm run gen",
+    "check:codegen": "pnpm run gen && git diff --exit-code",
     "test:watch": "vitest",
     "check": "pnpm run gen && pnpm run typecheck && pnpm run test"
   },

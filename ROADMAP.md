@@ -40,7 +40,7 @@ Hinweis:
 
 ## Phase 2 - Datenmodell und Codegen haerten
 
-- [ ] `translation*.csv` Schema validieren (fehlende Keys, doppelte Keys, leere Pflichtwerte).
+- [x] `translation*.csv` Schema validieren (fehlende Keys, doppelte Keys, leere Pflichtwerte).
 - [ ] Generator robust machen (`packages/typekit-i18n/src/codegen/generate.ts`):
 - [x] deterministische Dateireihenfolge
 - [x] escaping/sicheres String-Handling
@@ -62,14 +62,14 @@ Hinweis:
 ## Phase 4 - Qualitaet und Tests
 
 - [ ] Testmatrix erweitern (nicht nur Happy Path):
-- [ ] fehlender Key / fehlende Sprache / leerer Text
-- [ ] Placeholder-Ersatz mehrfach im String
-- [ ] Fallback auf Default-Sprache
-- [ ] Generator-Tests fuer CSV-Parsing und Output-Snapshots.
+- [x] fehlender Key / fehlende Sprache / leerer Text
+- [x] Placeholder-Ersatz mehrfach im String
+- [x] Fallback auf Default-Sprache
+- [x] Generator-Tests fuer CSV-Parsing und Output-Snapshots.
 - [ ] CI-Checks definieren:
 - [x] `typecheck`
 - [x] `test`
-- [ ] `generate && git diff --exit-code` (Codegen drift verhindern)
+- [x] `generate && git diff --exit-code` (Codegen drift verhindern)
 
 ## Phase 5 - Packaging und DX
 
@@ -82,6 +82,7 @@ Hinweis:
 
 ## Phase 6 - Mehrsprachige Targets (TS + Swift)
 
+- [x] Sequenz festgelegt: Swift/IR erst nach Abschluss der Basis (Phase 2-4) als Wiedervorlage aufnehmen.
 - [ ] Zielbild fuer Multi-Target festlegen:
 - [ ] nur TypeScript in v1
 - [ ] Swift-Generator als v1.1/v2
@@ -114,8 +115,10 @@ Hinweis:
 - [ ] CSV bleibt Primarformat oder spaeter JSON/YAML optional?
 - [ ] Swift in Core-Roadmap oder als separates Plugin-Repo?
 - [ ] Cloud-Uebersetzung direkt im Toolkit oder bewusst externes Tooling?
+- [ ] ICU MessageFormat als optionale Erweiterung nach Basisstabilisierung aufnehmen?
 
 ## Naechster konkreter Schritt
 
 - [x] Phase 1 abschliessen: v1 Scope + Public API in einem kurzen `README`-Entwurf festhalten.
-- [ ] Phase 2 + 4 baseline abschliessen: leere Pflichtwerte validieren, Testmatrix erweitern, Codegen-drift Gate (`generate && git diff --exit-code`) ergaenzen.
+- [x] Phase 2 + 4 baseline abschliessen: leere Pflichtwerte validieren, Testmatrix erweitern, Codegen-drift Gate (`generate && git diff --exit-code`) ergaenzen.
+- [ ] Phase 3 starten: Runtime API stabilisieren (strict/fallback strategy, Diagnostics ohne festes `console.warn`).

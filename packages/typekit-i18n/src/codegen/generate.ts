@@ -12,6 +12,14 @@ const quote = (value: string): string => JSON.stringify(value)
 const validateLanguageConfig = <TLanguage extends string>(
   config: TypekitI18nConfig<TLanguage>
 ): void => {
+  if (config.languages.length === 0) {
+    throw new Error('Invalid configuration: "languages" must include at least one language.')
+  }
+
+  if (new Set(config.languages).size !== config.languages.length) {
+    throw new Error('Invalid configuration: "languages" must not contain duplicate entries.')
+  }
+
   if (!config.languages.includes(config.defaultLanguage)) {
     throw new Error(
       `Invalid configuration: default language "${config.defaultLanguage}" is not part of "languages".`
@@ -23,7 +31,8 @@ const validateRow = <TLanguage extends string>(
   row: Record<string, string>,
   rowIndex: number,
   filePath: string,
-  languages: ReadonlyArray<TLanguage>
+  languages: ReadonlyArray<TLanguage>,
+  defaultLanguage: TLanguage
 ): TranslationRecord<TLanguage> => {
   requiredHeaders.forEach((header) => {
     if (!row[header] || row[header].length === 0) {
@@ -40,6 +49,11 @@ const validateRow = <TLanguage extends string>(
     if (typeof languageValue !== 'string') {
       throw new Error(
         `Missing language column "${language}" in ${filePath} at row ${rowIndex + 2}.`
+      )
+    }
+    if (language === defaultLanguage && languageValue.length === 0) {
+      throw new Error(
+        `Missing value for default language "${defaultLanguage}" in ${filePath} at row ${rowIndex + 2}.`
       )
     }
     values[language] = languageValue
@@ -129,7 +143,7 @@ export const generateTranslationTable = async <TLanguage extends string>(
   for (const filePath of files) {
     const rows = await readCsvFile(filePath)
     rows.forEach((row, rowIndex) => {
-      const record = validateRow(row, rowIndex, filePath, config.languages)
+      const record = validateRow(row, rowIndex, filePath, config.languages, config.defaultLanguage)
       if (keySet.has(record.key)) {
         throw new Error(
           `Duplicate key "${record.key}" found in ${filePath} at row ${rowIndex + 2}.`
