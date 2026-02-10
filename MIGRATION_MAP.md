@@ -12,21 +12,21 @@ This document defines how legacy blueprint files map into the monorepo target st
 
 ## Path Mapping
 
-| Legacy path                                 | Target path                                                        | Notes                                   |
-| ------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------- |
-| `ts/translations/translation.ts`            | `packages/typekit-i18n/src/runtime/translation.ts`                 | Public runtime API (migrated)           |
-| `ts/translations/translationTypes.ts`       | `packages/typekit-i18n/src/runtime/types.ts`                       | Placeholder contracts                   |
-| `ts/translations/translationTable.ts`       | `packages/typekit-i18n/src/generated/translationTable.ts`          | Generated file output location          |
-| `ts/translations/translationTable*.csv`     | `packages/typekit-i18n/resources/translations/*.csv`               | Source translation resources (migrated) |
-| `ts/translations/tests/translation.test.ts` | `packages/typekit-i18n/tests/runtime/translation.test.ts`          | Runtime tests (migrated)                |
-| `scripts/translation-generator.ts`          | `packages/typekit-i18n/src/codegen/generate.ts`                    | Internal generator logic (migrated)     |
-| `scripts/translation-tools.ts`              | `packages/typekit-i18n/src/codegen/csv.ts`                         | CSV parsing and helpers (migrated)      |
-| `scripts/codegen/generate-swift-api.mjs`    | `packages/typekit-i18n/src/targets/swift/generate-swift-api.ts`    | Swift emitter                           |
-| `scripts/codegen/generate-api-manifest.mjs` | `packages/typekit-i18n/src/targets/swift/generate-api-manifest.ts` | Swift/API metadata                      |
-| `scripts/codegen/build-all.sh`              | `packages/typekit-i18n/src/targets/swift/build-all.sh`             | Transitional build helper               |
-| Root docs (`README.md`, `ROADMAP.md`)       | Keep in root                                                       | Workspace-level documentation           |
-| Playground app                              | `apps/playground-ts`                                               | Integration verification                |
-| Docs app                                    | `apps/docs-site`                                                   | VitePress site                          |
+| Legacy path                                 | Target path                                                        | Notes                                           |
+| ------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------- |
+| `ts/translations/translation.ts`            | `packages/typekit-i18n/src/runtime/translation.ts`                 | Public runtime API (migrated)                   |
+| `ts/translations/translationTypes.ts`       | `packages/typekit-i18n/src/runtime/types.ts`                       | Placeholder contracts                           |
+| `ts/translations/translationTable.ts`       | `packages/typekit-i18n/src/generated/translationTable.ts`          | Generated file output location                  |
+| `ts/translations/translationTable*.csv`     | `packages/typekit-i18n/resources/translations/*.csv`               | Source translation resources (migrated)         |
+| `ts/translations/tests/translation.test.ts` | `packages/typekit-i18n/tests/runtime/translation.test.ts`          | Runtime tests (migrated)                        |
+| `scripts/translation-generator.ts`          | `packages/typekit-i18n/src/codegen/generate.ts`                    | Internal generator logic (migrated)             |
+| `scripts/translation-tools.ts`              | `packages/typekit-i18n/src/codegen/csv.ts`                         | CSV parsing and helpers (migrated)              |
+| `scripts/codegen/generate-swift-api.mjs`    | `packages/typekit-i18n/src/targets/swift/generate-swift-api.ts`    | Swift emitter (target path planned)             |
+| `scripts/codegen/generate-api-manifest.mjs` | `packages/typekit-i18n/src/targets/swift/generate-api-manifest.ts` | Swift/API metadata (target path planned)        |
+| `scripts/codegen/build-all.sh`              | `packages/typekit-i18n/src/targets/swift/build-all.sh`             | Transitional build helper (target path planned) |
+| Root docs (`README.md`, `ROADMAP.md`)       | Keep in root                                                       | Workspace-level documentation                   |
+| Playground app                              | `apps/playground-ts`                                               | Integration verification                        |
+| Docs app                                    | `apps/docs-site`                                                   | VitePress site                                  |
 
 ## Migration Order
 

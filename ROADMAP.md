@@ -20,7 +20,7 @@ Hinweis:
 - [x] Playground als Consumer validiert (CSV -> generate -> typed usage via `typekit-i18n`).
 - [x] Legacy Translation-Ressourcen und Runtime/Generator-Kern nach `packages/typekit-i18n` verschoben.
 - [ ] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
-- [ ] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
+- [x] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
 
 ## Phase 0 - Ausgangslage sichern
 
@@ -36,15 +36,15 @@ Hinweis:
 - [x] `translate(key, language, placeholders?)`
 - [x] `supportedLanguages`
 - [x] Fallback-Verhalten (Default-Sprache, Warnungen, Fehler-Modus)
-- [ ] Datenvertrag fuer Translation-Ressourcen festlegen (CSV-Spalten, Pflichtfelder, Encoding).
+- [x] Datenvertrag fuer Translation-Ressourcen festlegen (CSV-Spalten, Pflichtfelder, Encoding).
 
 ## Phase 2 - Datenmodell und Codegen haerten
 
 - [ ] `translation*.csv` Schema validieren (fehlende Keys, doppelte Keys, leere Pflichtwerte).
 - [ ] Generator robust machen (`packages/typekit-i18n/src/codegen/generate.ts`):
-- [ ] deterministische Dateireihenfolge
-- [ ] escaping/sicheres String-Handling
-- [ ] klare Fehlerausgaben mit Datei/Zeile
+- [x] deterministische Dateireihenfolge
+- [x] escaping/sicheres String-Handling
+- [x] klare Fehlerausgaben mit Datei/Zeile
 - [ ] Generierten Output trennen in:
 - [ ] `translationTable.ts` (Daten)
 - [ ] `translationKeys.ts` oder Typ-Exports (API klar halten)
@@ -67,8 +67,8 @@ Hinweis:
 - [ ] Fallback auf Default-Sprache
 - [ ] Generator-Tests fuer CSV-Parsing und Output-Snapshots.
 - [ ] CI-Checks definieren:
-- [ ] `typecheck`
-- [ ] `test`
+- [x] `typecheck`
+- [x] `test`
 - [ ] `generate && git diff --exit-code` (Codegen drift verhindern)
 
 ## Phase 5 - Packaging und DX
@@ -102,7 +102,7 @@ Hinweis:
 
 ## Phase 8 - Dokumentation und Adoption
 
-- [ ] Kurzes "Getting Started" mit Minimalbeispiel.
+- [x] Kurzes "Getting Started" mit Minimalbeispiel.
 - [ ] "How it works" (CSV -> Codegen -> Runtime API) als Diagramm/Abschnitt.
 - [ ] Migrationsleitfaden fuer bestehende Projekte (z. B. Helio10 -> Toolkit).
 - [ ] Beitragspfad (`CONTRIBUTING.md`) fuer interne/externe Mitarbeit.
@@ -118,3 +118,4 @@ Hinweis:
 ## Naechster konkreter Schritt
 
 - [x] Phase 1 abschliessen: v1 Scope + Public API in einem kurzen `README`-Entwurf festhalten.
+- [ ] Phase 2 + 4 baseline abschliessen: leere Pflichtwerte validieren, Testmatrix erweitern, Codegen-drift Gate (`generate && git diff --exit-code`) ergaenzen.

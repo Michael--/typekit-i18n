@@ -67,6 +67,7 @@
     "tsconfig",
     "tsparser",
     "typecheck",
+    "typekit",
     "typeparam",
     "typesafe",
     "ungzip",
