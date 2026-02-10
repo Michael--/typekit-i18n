@@ -56,7 +56,7 @@ describe('toIrProjectFromCsvRows', () => {
         sourceLanguage: 'en',
         filePath: 'translations.csv',
       })
-    ).toThrow(/Duplicate key "same" in translations\.csv at row 3\./)
+    ).toThrow(/Duplicate key "same" at translations\.csv at row 3\./)
   })
 
   test('throws on invalid placeholder type', () => {
@@ -96,6 +96,28 @@ describe('toIrProjectFromCsvRows', () => {
         filePath: 'translations.csv',
       })
     ).toThrow(/Missing value for source language "en" in translations\.csv at row 2\./)
+  })
+
+  test('throws when placeholder tokens are inconsistent across languages', () => {
+    const rows: ReadonlyArray<TranslationCsvRow> = [
+      {
+        key: 'item_count',
+        description: 'Summary line with count placeholder',
+        placeholders: 'count:number',
+        en: 'You currently have {count} items.',
+        de: 'Du hast aktuell Elemente.',
+      },
+    ]
+
+    expect(() =>
+      toIrProjectFromCsvRows(rows, {
+        languages: ['en', 'de'],
+        sourceLanguage: 'en',
+        filePath: 'translations.csv',
+      })
+    ).toThrow(
+      /Missing placeholder\(s\) "\{count\}" in language "de" at translations\.csv at row 2\./
+    )
   })
 
   test('roundtrips IR through CSV content including metadata columns', async () => {

@@ -7,6 +7,7 @@ import {
   TranslationIrPlaceholderType,
   TranslationIrProject,
 } from './types.js'
+import { validateIrProject } from './validation.js'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -229,12 +230,15 @@ export const toIrProjectFromYamlContent = <TLanguage extends string = string>(
   const languages = toLanguages(root.languages, sourceLanguage, ['root', 'languages'])
   const entries = toEntries(root.entries, languages, sourceLanguage, ['root', 'entries'])
 
-  return {
+  const project: TranslationIrProject<TLanguage> = {
     version: '1',
     sourceLanguage: sourceLanguage as TLanguage,
     languages: languages as ReadonlyArray<TLanguage>,
     entries: entries as ReadonlyArray<TranslationIrEntry<TLanguage>>,
   }
+
+  validateIrProject(project)
+  return project
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   TranslationIrPlaceholderType,
   TranslationIrProject,
 } from './types.js'
+import { validateIrProject } from './validation.js'
 
 const STATUS_COLUMN = 'status'
 const TAGS_COLUMN = 'tags'
@@ -240,22 +241,18 @@ export const toIrProjectFromCsvRows = <TLanguage extends string>(
   validateOptions(options)
 
   const entries = rows.map((row, rowIndex) => toEntryFromRow(row, rowIndex, options))
-  const keys = new Set<string>()
-  entries.forEach((entry, entryIndex) => {
-    if (keys.has(entry.key)) {
-      throw new Error(
-        `Duplicate key "${entry.key}" in ${toLocation(entryIndex, options.filePath)}.`
-      )
-    }
-    keys.add(entry.key)
-  })
-
-  return {
+  const project: TranslationIrProject<TLanguage> = {
     version: '1',
     sourceLanguage: options.sourceLanguage,
     languages: options.languages,
     entries,
   }
+
+  validateIrProject(project, {
+    entryLocation: (entryIndex) => toLocation(entryIndex, options.filePath),
+  })
+
+  return project
 }
 
 /**

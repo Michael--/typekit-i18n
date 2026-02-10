@@ -97,6 +97,26 @@ entries:
     )
   })
 
+  test('throws when placeholder tokens are inconsistent across languages', () => {
+    const content = `version: "1"
+sourceLanguage: en
+languages: [en, de]
+entries:
+  - key: item_count
+    description: Summary line
+    placeholders:
+      - name: count
+        type: number
+    values:
+      en: "You currently have {count} items."
+      de: "Du hast aktuell Elemente."
+`
+
+    expect(() => toIrProjectFromYamlContent(content)).toThrow(
+      /Missing placeholder\(s\) "\{count\}" in language "de" at root.entries\[0\]\./
+    )
+  })
+
   test('roundtrips IR through YAML content', () => {
     const project: TranslationIrProject<'en' | 'de'> = {
       version: '1',
