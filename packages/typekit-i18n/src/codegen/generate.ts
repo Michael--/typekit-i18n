@@ -3,7 +3,9 @@ import { dirname, extname, join, relative, resolve } from 'node:path'
 import { mkdir, writeFile } from 'node:fs/promises'
 import pc from 'picocolors'
 import { toIrProjectFromCsvFile } from './ir/csv.js'
-import { TranslationRecord, TypekitI18nConfig } from './types.js'
+import { TranslationIrProject } from './ir/types.js'
+import { toIrProjectFromYamlFile } from './ir/yaml.js'
+import { TranslationInputFormat, TranslationRecord, TypekitI18nConfig } from './types.js'
 
 const quote = (value: string): string => JSON.stringify(value)
 
@@ -30,6 +32,65 @@ const validateLanguageConfig = <TLanguage extends string>(
 
 const normalizeCsvIrErrorMessage = (message: string): string =>
   message.replace(/source language/g, 'default language')
+
+const validateYamlProjectLanguageConfig = <TLanguage extends string>(
+  project: TranslationIrProject<string>,
+  config: TypekitI18nConfig<TLanguage>,
+  filePath: string
+): void => {
+  if (project.sourceLanguage !== config.defaultLanguage) {
+    throw new Error(
+      `Source language mismatch in ${filePath}: config default language "${config.defaultLanguage}" does not match YAML source language "${project.sourceLanguage}".`
+    )
+  }
+
+  const missingLanguages = config.languages.filter(
+    (language) => !project.languages.includes(language)
+  )
+  if (missingLanguages.length > 0) {
+    throw new Error(
+      `YAML file ${filePath} is missing configured language(s): ${missingLanguages.join(', ')}.`
+    )
+  }
+
+  const extraLanguages = project.languages.filter(
+    (language) => !config.languages.includes(language as TLanguage)
+  )
+  if (extraLanguages.length > 0) {
+    throw new Error(
+      `YAML file ${filePath} contains unconfigured language(s): ${extraLanguages.join(', ')}.`
+    )
+  }
+}
+
+const loadProjectFromFile = async <TLanguage extends string>(
+  filePath: string,
+  format: TranslationInputFormat,
+  config: TypekitI18nConfig<TLanguage>
+): Promise<TranslationIrProject<string>> => {
+  if (format === 'csv') {
+    return toIrProjectFromCsvFile(filePath, {
+      languages: config.languages,
+      sourceLanguage: config.defaultLanguage,
+    }).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error)
+      throw new Error(normalizeCsvIrErrorMessage(message))
+    })
+  }
+
+  const project = await toIrProjectFromYamlFile(filePath)
+  validateYamlProjectLanguageConfig(project, config, filePath)
+  return project
+}
+
+const toEntryLocation = (
+  format: TranslationInputFormat,
+  filePath: string,
+  entryIndex: number
+): string =>
+  format === 'csv'
+    ? `${filePath} at row ${entryIndex + 2}`
+    : `${filePath} at entry ${entryIndex + 1}`
 
 const toHeaderComment = (files: ReadonlyArray<string>): string => {
   const lines = files.map((file, index) => `[${index + 1}/${files.length}] "${file}"`)
@@ -107,7 +168,7 @@ const resolveInputFiles = async (
 }
 
 /**
- * Generates typed translation table output from CSV resources.
+ * Generates typed translation table output from configured resources.
  *
  * @param config Generation configuration.
  * @returns Absolute output path and number of generated keys.
@@ -117,6 +178,7 @@ export const generateTranslationTable = async <TLanguage extends string>(
 ): Promise<{ outputPath: string; outputKeysPath: string; keyCount: number }> => {
   validateLanguageConfig(config)
 
+  const format = config.format ?? 'csv'
   const inputPatterns = Array.isArray(config.input) ? config.input : [config.input]
   const files = await resolveInputFiles(inputPatterns)
 
@@ -128,25 +190,29 @@ export const generateTranslationTable = async <TLanguage extends string>(
   const records: TranslationRecord<TLanguage>[] = []
 
   for (const filePath of files) {
-    const project = await toIrProjectFromCsvFile(filePath, {
-      languages: config.languages,
-      sourceLanguage: config.defaultLanguage,
-    }).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error)
-      throw new Error(normalizeCsvIrErrorMessage(message))
-    })
+    const project = await loadProjectFromFile(filePath, format, config)
 
     project.entries.forEach((entry, entryIndex) => {
       if (keySet.has(entry.key)) {
         throw new Error(
-          `Duplicate key "${entry.key}" found in ${filePath} at row ${entryIndex + 2}.`
+          `Duplicate key "${entry.key}" found in ${toEntryLocation(format, filePath, entryIndex)}.`
         )
       }
       keySet.add(entry.key)
+      const values = {} as Record<TLanguage, string>
+      config.languages.forEach((language) => {
+        const translated = entry.values[language]
+        if (typeof translated !== 'string') {
+          throw new Error(
+            `Missing language "${language}" in ${toEntryLocation(format, filePath, entryIndex)}.`
+          )
+        }
+        values[language] = translated
+      })
       records.push({
         key: entry.key,
         description: entry.description,
-        values: entry.values,
+        values,
       })
     })
   }

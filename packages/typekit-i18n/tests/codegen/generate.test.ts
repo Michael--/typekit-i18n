@@ -183,4 +183,87 @@ one;Only row;One;Eins
       /"output" and "outputKeys" must not point to the same file/
     )
   })
+
+  test('generates deterministic output from YAML resources', async () => {
+    const directory = await createTempDirectory()
+    const yamlPath = join(directory, 'translations.yaml')
+    const outputTablePath = join(directory, 'translationTable.ts')
+    const outputKeysPath = join(directory, 'translationKeys.ts')
+
+    await writeFile(
+      yamlPath,
+      `version: "1"
+sourceLanguage: en
+languages:
+  - en
+  - de
+entries:
+  - key: title
+    description: Main title
+    values:
+      en: Welcome
+      de: Willkommen
+  - key: subtitle
+    description: Main subtitle
+    values:
+      en: Hello world
+      de: Hallo Welt
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [yamlPath],
+      format: 'yaml',
+      output: outputTablePath,
+      outputKeys: outputKeysPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await generateTranslationTable(config)
+    const tableSource = await readFile(outputTablePath, 'utf-8')
+    const keysSource = await readFile(outputKeysPath, 'utf-8')
+    const normalizedTableSource = normalizeTempPath(tableSource, directory)
+    const normalizedKeysSource = normalizeTempPath(keysSource, directory)
+
+    expect(normalizedTableSource).toMatchInlineSnapshot(`
+      "/*
+         This file is generated.
+         Source files:
+         [1/1] "<TEMP_DIR>/translations.yaml"
+      */
+      // cspell:disable
+
+      export const translationTable = {
+        "title": {
+          description: "Main title",
+          en: "Welcome",
+          de: "Willkommen",
+        },
+        "subtitle": {
+          description: "Main subtitle",
+          en: "Hello world",
+          de: "Hallo Welt",
+        },
+      } as const
+
+      export type { TranslateKey, TranslateKeys, TranslateLanguage } from "./translationKeys.js"
+      "
+    `)
+
+    expect(normalizedKeysSource).toMatchInlineSnapshot(`
+      "/*
+         This file is generated.
+         Source files:
+         [1/1] "<TEMP_DIR>/translations.yaml"
+      */
+      // cspell:disable
+
+      export type TranslateKey = "title" | "subtitle"
+      export type TranslateKeys = TranslateKey
+      export type TranslateLanguage = "en" | "de"
+      "
+    `)
+  })
 })

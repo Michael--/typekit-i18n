@@ -1,11 +1,20 @@
 /**
- * Generator configuration used to transform CSV translation files into a typed table module.
+ * Supported input resource formats for generation.
+ */
+export type TranslationInputFormat = 'csv' | 'yaml'
+
+/**
+ * Generator configuration used to transform translation resources into a typed table module.
  */
 export interface TypekitI18nConfig<TLanguage extends string = string> {
   /**
    * Input file pattern(s), resolved from current working directory.
    */
   input: string | ReadonlyArray<string>
+  /**
+   * Input file format. Defaults to `csv`.
+   */
+  format?: TranslationInputFormat
   /**
    * Output file path for generated TypeScript module.
    */
