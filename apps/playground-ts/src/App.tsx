@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import {
   Container,
   Title,
@@ -51,18 +51,28 @@ export const App = (): JSX.Element => {
     MissingTranslationEvent<TranslateKey, TranslateLanguage>[]
   >([])
 
+  // Use ref to collect missing translations without triggering re-renders during render
+  const missingEventsRef = useRef<MissingTranslationEvent<TranslateKey, TranslateLanguage>[]>([])
+
   const onMissingTranslation = useCallback(
     (event: MissingTranslationEvent<TranslateKey, TranslateLanguage>) => {
-      setMissingEvents((prev) => {
-        // Prevent duplicate entries
-        const exists = prev.some(
-          (e) => e.key === event.key && e.language === event.language && e.reason === event.reason
-        )
-        return exists ? prev : [...prev, event]
-      })
+      // Check if this event already exists
+      const exists = missingEventsRef.current.some(
+        (e) => e.key === event.key && e.language === event.language && e.reason === event.reason
+      )
+      if (!exists) {
+        missingEventsRef.current.push(event)
+      }
     },
     []
   )
+
+  // Sync ref to state after render
+  useEffect(() => {
+    if (missingEventsRef.current.length > 0) {
+      setMissingEvents([...missingEventsRef.current])
+    }
+  }, [language, mode])
 
   const translate = useMemo(
     () =>
@@ -76,6 +86,7 @@ export const App = (): JSX.Element => {
   )
 
   const clearDiagnostics = (): void => {
+    missingEventsRef.current = []
     setMissingEvents([])
   }
 
