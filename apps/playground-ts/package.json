@@ -14,6 +14,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@mantine/core": "^7.17.3",
+    "@mantine/hooks": "^7.17.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "typekit-i18n": "workspace:*"

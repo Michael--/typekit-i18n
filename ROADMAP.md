@@ -54,7 +54,7 @@ Hinweis:
 
 - [x] Runtime API von internem Datenlayout entkoppeln (`packages/typekit-i18n/src/runtime/translation.ts` als stabile Public API).
 - [x] Fallback-Strategie konfigurierbar machen (strict vs. fallback).
-- [ ] Entwicklerfreundliche Diagnostik:
+- [x] Entwicklerfreundliche Diagnostik:
 - [x] fehlende Uebersetzungen sammeln/reporten
 - [x] optionales Logging statt festem `console.warn`
 - [x] Optional: kleine Formatter-Schicht fuer Placeholder (z. B. Zahlen/Datum-Hooks).

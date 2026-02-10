@@ -1,4 +1,18 @@
 import { useState, useCallback } from 'react'
+import {
+  Container,
+  Title,
+  Text,
+  Select,
+  Group,
+  Stack,
+  Paper,
+  Badge,
+  Grid,
+  Alert,
+  Code,
+  Divider,
+} from '@mantine/core'
 import { createTranslator } from 'typekit-i18n'
 import { type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
 import { translationTable } from '@gen/translationTable'
@@ -58,154 +72,208 @@ export const App = (): JSX.Element => {
     setMissingEvents([])
   }
 
-  const handleLanguageChange = (newLanguage: TranslateLanguage): void => {
+  const handleLanguageChange = (newLanguage: string | null): void => {
+    if (!newLanguage) return
     clearDiagnostics()
-    setLanguage(newLanguage)
+    setLanguage(newLanguage as TranslateLanguage)
   }
 
-  const handleModeChange = (newMode: TranslationMode): void => {
+  const handleModeChange = (newMode: string | null): void => {
+    if (!newMode) return
     clearDiagnostics()
-    setMode(newMode)
+    setMode(newMode as TranslationMode)
   }
 
   const languages: TranslateLanguage[] = ['en', 'de', 'es', 'fr']
 
   return (
-    <div className="container">
-      <header className="header">
-        <h1>{translate('greeting_title', language)}</h1>
-        <p>
-          {translate('greeting_body', language, {
-            data: [{ key: 'name', value: 'Developer' }],
-          })}
-        </p>
-      </header>
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        {/* Header */}
+        <Stack gap="xs" align="center">
+          <Title
+            order={1}
+            size="3rem"
+            fw={700}
+            style={{
+              background: 'linear-gradient(135deg, #228be6 0%, #7950f2 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            {translate('greeting_title', language)}
+          </Title>
+          <Text size="lg" c="dimmed">
+            {translate('greeting_body', language, {
+              data: [{ key: 'name', value: 'Developer' }],
+            })}
+          </Text>
+        </Stack>
 
-      <div className="controls">
-        <div className="control-group">
-          <div className="control-item">
-            <label>{translate('language_label', language)}</label>
-            <select
+        {/* Controls */}
+        <Paper shadow="sm" p="lg" radius="md" withBorder>
+          <Group gap="xl" grow>
+            <Select
+              label={translate('language_label', language)}
               value={language}
-              onChange={(e) => handleLanguageChange(e.target.value as TranslateLanguage)}
-            >
-              {languages.map((lang) => (
-                <option key={lang} value={lang}>
-                  {lang.toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="control-item">
-            <label>{translate('mode_label', language)}</label>
-            <select
+              onChange={handleLanguageChange}
+              data={languages.map((lang) => ({
+                value: lang,
+                label: lang.toUpperCase(),
+              }))}
+            />
+            <Select
+              label={translate('mode_label', language)}
               value={mode}
-              onChange={(e) => handleModeChange(e.target.value as TranslationMode)}
-            >
-              <option value="fallback">{translate('mode_fallback', language)}</option>
-              <option value="strict">{translate('mode_strict', language)}</option>
-            </select>
-          </div>
-        </div>
-      </div>
+              onChange={handleModeChange}
+              data={[
+                { value: 'fallback', label: translate('mode_fallback', language) },
+                { value: 'strict', label: translate('mode_strict', language) },
+              ]}
+            />
+          </Group>
+        </Paper>
 
-      <div className="grid">
-        <div className="card">
-          <h2>{translate('features_title', language)}</h2>
+        {/* Feature Grid */}
+        <Grid>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Paper shadow="sm" p="lg" radius="md" withBorder h="100%">
+              <Stack gap="md">
+                <Title order={2} size="h3" c="blue">
+                  {translate('features_title', language)}
+                </Title>
 
-          <h3>Basic Translation</h3>
-          <div className="demo-item">
-            <div className="demo-label">greeting_title</div>
-            <div className="demo-value">{translate('greeting_title', language)}</div>
-          </div>
+                <Divider label="Basic Translation" labelPosition="left" />
+                <Paper p="md" bg="dark.6" radius="sm">
+                  <Text size="xs" c="dimmed" mb={4}>
+                    greeting_title
+                  </Text>
+                  <Text>{translate('greeting_title', language)}</Text>
+                </Paper>
 
-          <h3>Placeholder Replacement</h3>
-          <div className="demo-item">
-            <div className="demo-label">greeting_body with name=&quot;Mara&quot;</div>
-            <div className="demo-value">
-              {translate('greeting_body', language, {
-                data: [{ key: 'name', value: 'Mara' }],
-              })}
-            </div>
-          </div>
-          <div className="demo-item">
-            <div className="demo-label">item_count with count=42</div>
-            <div className="demo-value">
-              {translate('item_count', language, {
-                data: [{ key: 'count', value: 42 }],
-              })}
-            </div>
-          </div>
+                <Divider label="Placeholder Replacement" labelPosition="left" />
+                <Paper p="md" bg="dark.6" radius="sm">
+                  <Text size="xs" c="dimmed" mb={4}>
+                    greeting_body with name=&quot;Mara&quot;
+                  </Text>
+                  <Text>
+                    {translate('greeting_body', language, {
+                      data: [{ key: 'name', value: 'Mara' }],
+                    })}
+                  </Text>
+                </Paper>
 
-          <h3>Custom Formatters</h3>
-          <div className="demo-item">
-            <div className="demo-label">price_formatted with currency formatter</div>
-            <div className="demo-value">
-              {translate('price_formatted', language, {
-                data: [{ key: 'amount', value: 99.99 }],
-              })}
-            </div>
-          </div>
-          <div className="demo-item">
-            <div className="demo-label">date_formatted with dateShort formatter</div>
-            <div className="demo-value">
-              {translate('date_formatted', language, {
-                data: [{ key: 'date', value: new Date() }],
-              })}
-            </div>
-          </div>
-        </div>
+                <Paper p="md" bg="dark.6" radius="sm">
+                  <Text size="xs" c="dimmed" mb={4}>
+                    item_count with count=42
+                  </Text>
+                  <Text>
+                    {translate('item_count', language, {
+                      data: [{ key: 'count', value: 42 }],
+                    })}
+                  </Text>
+                </Paper>
 
-        <div className="card">
-          <h2>Fallback Behavior</h2>
+                <Divider label="Custom Formatters" labelPosition="left" />
+                <Paper p="md" bg="dark.6" radius="sm">
+                  <Text size="xs" c="dimmed" mb={4}>
+                    price_formatted with currency formatter
+                  </Text>
+                  <Text>
+                    {translate('price_formatted', language, {
+                      data: [{ key: 'amount', value: 99.99 }],
+                    })}
+                  </Text>
+                </Paper>
 
-          <h3>Complete Translation</h3>
-          <div className="demo-item">
-            <div className="demo-label">greeting_title (available in all languages)</div>
-            <div className="demo-value">{translate('greeting_title', language)}</div>
-          </div>
+                <Paper p="md" bg="dark.6" radius="sm">
+                  <Text size="xs" c="dimmed" mb={4}>
+                    date_formatted with dateShort formatter
+                  </Text>
+                  <Text>
+                    {translate('date_formatted', language, {
+                      data: [{ key: 'date', value: new Date() }],
+                    })}
+                  </Text>
+                </Paper>
+              </Stack>
+            </Paper>
+          </Grid.Col>
 
-          <h3>Partial Translation</h3>
-          <div className="demo-item">
-            <div className="demo-label">
-              fallback_demo (missing in ES, should fallback to EN in fallback mode)
-            </div>
-            <div className="demo-value">{translate('fallback_demo', language)}</div>
-          </div>
-        </div>
-      </div>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Paper shadow="sm" p="lg" radius="md" withBorder h="100%">
+              <Stack gap="md">
+                <Title order={2} size="h3" c="blue">
+                  Fallback Behavior
+                </Title>
 
-      <div className="diagnostics">
-        <h2>{translate('diagnostics_title', language)}</h2>
+                <Divider label="Complete Translation" labelPosition="left" />
+                <Paper p="md" bg="dark.6" radius="sm">
+                  <Text size="xs" c="dimmed" mb={4}>
+                    greeting_title (available in all languages)
+                  </Text>
+                  <Text>{translate('greeting_title', language)}</Text>
+                </Paper>
 
-        {missingEvents.length === 0 ? (
-          <div className="diagnostics-status success">
-            <span className="badge badge-success">✓</span>
-            <span>{translate('no_issues', language)}</span>
-          </div>
-        ) : (
-          <>
-            <div className="diagnostics-status warning">
-              <span className="badge badge-warning">!</span>
-              <span>
-                {translate('missing_count', language, {
-                  data: [{ key: 'count', value: missingEvents.length }],
-                })}
-              </span>
-            </div>
+                <Divider label="Partial Translation" labelPosition="left" />
+                <Paper p="md" bg="dark.6" radius="sm">
+                  <Text size="xs" c="dimmed" mb={4}>
+                    fallback_demo (missing in ES, should fallback to EN in fallback mode)
+                  </Text>
+                  <Text>{translate('fallback_demo', language)}</Text>
+                </Paper>
+              </Stack>
+            </Paper>
+          </Grid.Col>
+        </Grid>
 
-            <ul className="diagnostics-list">
-              {missingEvents.map((event, index) => (
-                <li key={index} className="diagnostics-item">
-                  Key: <code>{event.key}</code>, Language: <code>{event.language}</code>, Reason:{' '}
-                  <code>{event.reason}</code>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
-    </div>
+        {/* Diagnostics */}
+        <Paper shadow="sm" p="lg" radius="md" withBorder>
+          <Stack gap="md">
+            <Title order={2} size="h3" c="orange">
+              {translate('diagnostics_title', language)}
+            </Title>
+
+            {missingEvents.length === 0 ? (
+              <Alert variant="light" color="green" title={translate('no_issues', language)}>
+                <Group gap="xs">
+                  <Badge color="green" variant="filled">
+                    ✓
+                  </Badge>
+                  <Text size="sm">{translate('no_issues', language)}</Text>
+                </Group>
+              </Alert>
+            ) : (
+              <>
+                <Alert variant="light" color="orange">
+                  <Group gap="xs">
+                    <Badge color="orange" variant="filled">
+                      !
+                    </Badge>
+                    <Text size="sm">
+                      {translate('missing_count', language, {
+                        data: [{ key: 'count', value: missingEvents.length }],
+                      })}
+                    </Text>
+                  </Group>
+                </Alert>
+
+                <Stack gap="xs">
+                  {missingEvents.map((event, index) => (
+                    <Paper key={index} p="sm" bg="dark.6" radius="sm" withBorder>
+                      <Text size="sm" ff="monospace">
+                        Key: <Code>{event.key}</Code>, Language: <Code>{event.language}</Code>,
+                        Reason: <Code>{event.reason}</Code>
+                      </Text>
+                    </Paper>
+                  ))}
+                </Stack>
+              </>
+            )}
+          </Stack>
+        </Paper>
+      </Stack>
+    </Container>
   )
 }

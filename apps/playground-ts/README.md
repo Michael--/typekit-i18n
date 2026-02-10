@@ -2,6 +2,8 @@
 
 Interactive React-based playground demonstrating `typekit-i18n` features and capabilities.
 
+Built with **React 18**, **TypeScript**, **Vite**, and **Mantine UI**.
+
 ## Features
 
 - **Multi-language support**: Switch between EN, DE, ES, and FR translations in real-time
@@ -10,6 +12,7 @@ Interactive React-based playground demonstrating `typekit-i18n` features and cap
 - **Custom formatters**: Currency and date formatting with locale-aware output
 - **Live diagnostics**: Real-time detection and reporting of missing translations
 - **Fallback behavior**: Demonstrates graceful degradation when translations are incomplete
+- **Modern UI**: Built with Mantine component library for consistent design
 
 ## Local workflow
 
@@ -33,3 +36,11 @@ pnpm run build
 ## Translation Management
 
 Edit `translations/translationTablePlayground.csv` to add or modify translations, then run `pnpm run gen` to regenerate the TypeScript types and translation table.
+
+## Tech Stack
+
+- React 18
+- TypeScript (strict mode)
+- Vite 6
+- Mantine Core 7
+- typekit-i18n (workspace package)
