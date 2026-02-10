@@ -104,8 +104,18 @@ Format notes:
 
 ## Architecture Direction (next)
 
-- Extract this blueprint into reusable packages:
-- `@typekit-i18n/core` (runtime + types)
-- `@typekit-i18n/codegen` (resource validation + generation CLI)
-- Define plugin-style provider interface for optional cloud translation adapters
-- Keep Swift/other language targets behind a neutral intermediate model
+Monorepo target structure:
+
+- `packages/typekit-i18n`
+- single publishable npm package for v1
+- contains runtime API, CSV resource handling, codegen, Swift target tooling, and provider contract interfaces
+- split into smaller packages later only if complexity requires it
+- `apps/playground-ts`
+- integration playground for API/DX checks
+- `apps/docs-site`
+- documentation site based on VitePress
+
+Root direction:
+
+- keep root package minimal over time
+- focus on shared dev tooling and workspace orchestration

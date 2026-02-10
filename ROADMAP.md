@@ -9,8 +9,13 @@ Hinweis:
 
 ## Phase -1 - Strukturmigration vorbereiten
 
-- [ ] Zielstruktur festlegen (wohin `ts/translations`, `scripts`, spaetere Pakete wandern).
+- [x] Zielstruktur festlegen (wohin `ts/translations`, `scripts`, spaetere Pakete wandern).
+- [x] Monorepo-Benennung festgelegt:
+- [x] `packages/typekit-i18n` als konsolidiertes, spaeter publishbares npm-Paket
+- [x] `apps/playground-ts` als Integrations-App
+- [x] `apps/docs-site` als VitePress-Doku-App
 - [ ] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
+- [ ] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
 - [ ] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
 
 ## Phase 0 - Ausgangslage sichern
@@ -65,9 +70,8 @@ Hinweis:
 ## Phase 5 - Packaging und DX
 
 - [ ] Paketstruktur festlegen:
-- [ ] `@typekit-i18n/core`
-- [ ] `@typekit-i18n/codegen` (CLI)
-- [ ] Optional spaeter: `@typekit-i18n/translate-openai`, `@typekit-i18n/translate-deepl`
+- [x] `packages/typekit-i18n` als v1 Paket (konsolidiert statt frueher Aufsplittung)
+- [ ] Optional spaeteres Splitten nur bei realem Bedarf (z. B. separate Provider/Targets)
 - [ ] CLI fuer Codegen bereitstellen (`typekit-i18n generate`).
 - [ ] Konfigurationsdatei definieren (`typekit-i18n.config.ts/json`).
 - [ ] SemVer + Release-Prozess aufsetzen (changelog, tags, npm publishing).
