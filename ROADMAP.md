@@ -18,6 +18,7 @@ Hinweis:
 - [x] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
 - [x] Workspace-Skripte fuer `clean/gen/build/test/lint/typecheck` in den Zielprojekten vorbereitet.
 - [x] Playground als Consumer validiert (CSV -> generate -> typed usage via `typekit-i18n`).
+- [x] Legacy Translation-Ressourcen und Runtime/Generator-Kern nach `packages/typekit-i18n` verschoben.
 - [ ] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
 - [ ] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
 
@@ -40,18 +41,18 @@ Hinweis:
 ## Phase 2 - Datenmodell und Codegen haerten
 
 - [ ] `translation*.csv` Schema validieren (fehlende Keys, doppelte Keys, leere Pflichtwerte).
-- [ ] Generator robust machen (`scripts/translation-generator.ts`):
+- [ ] Generator robust machen (`packages/typekit-i18n/src/codegen/generate.ts`):
 - [ ] deterministische Dateireihenfolge
 - [ ] escaping/sicheres String-Handling
 - [ ] klare Fehlerausgaben mit Datei/Zeile
 - [ ] Generierten Output trennen in:
 - [ ] `translationTable.ts` (Daten)
 - [ ] `translationKeys.ts` oder Typ-Exports (API klar halten)
-- [ ] Placeholder-Typisierung ausbauen (`translationTypes.ts`), damit Werte nicht nur `string` sein muessen.
+- [ ] Placeholder-Typisierung ausbauen (`packages/typekit-i18n/src/runtime/types.ts`), damit Werte nicht nur `string` sein muessen.
 
 ## Phase 3 - Laufzeit-API stabilisieren
 
-- [ ] Runtime API von internem Datenlayout entkoppeln (`translation.ts` als stabile Public API).
+- [ ] Runtime API von internem Datenlayout entkoppeln (`packages/typekit-i18n/src/runtime/translation.ts` als stabile Public API).
 - [ ] Fallback-Strategie konfigurierbar machen (strict vs. fallback).
 - [ ] Entwicklerfreundliche Diagnostik:
 - [ ] fehlende Uebersetzungen sammeln/reporten

@@ -6,19 +6,19 @@ Type-safe i18n toolkit based on code generation from translation resource files.
 
 Provide a small, reliable workflow for multilingual UI text where translation keys are type-safe in application code.
 
-Current blueprint in this repository:
+Current implementation in this repository:
 
-- Translation resources in CSV (`ts/translations/translationTable*.csv`)
-- Generator pipeline (`scripts/translation-generator.ts`)
-- Typed runtime access (`ts/translations/translation.ts`)
-- Generated source of truth (`ts/translations/translationTable.ts`)
+- Translation resources in CSV (`packages/typekit-i18n/resources/translations/*.csv`)
+- Generator pipeline (`packages/typekit-i18n/src/codegen/*`)
+- Typed runtime access (`packages/typekit-i18n/src/runtime/*`)
+- Generated source of truth (`packages/typekit-i18n/src/generated/translationTable.ts`)
 
 ## Current Project Status
 
-This repository is currently a blueprint extraction stage.
+This repository is in active migration from blueprint to package-first monorepo.
 
-- Existing code fragments are reference implementations
-- Module locations and package boundaries are expected to change
+- Core runtime/codegen is now hosted in `packages/typekit-i18n`
+- Remaining legacy helper paths are being retired step by step
 - Root `typecheck`/`test` are now workspace-scoped quality gates for `packages/*` and `apps/*`
 - Legacy reference paths remain outside those gates until migration is complete
 
@@ -98,10 +98,10 @@ Format notes:
 
 ## Workflow
 
-1. Maintain translations in `ts/translations/translationTable*.csv`
-2. Run generator `scripts/translation-generator.ts`
-3. Use generated keys/API from `ts/translations/translation.ts`
-4. Verify behavior with tests in `ts/translations/tests/translation.test.ts`
+1. Maintain package resources in `packages/typekit-i18n/resources/translations/*.csv`
+2. Run package generation via `pnpm --filter typekit-i18n run gen`
+3. Use runtime API from `typekit-i18n` (`translate`, `createTranslator`, typed placeholders)
+4. Verify via package tests in `packages/typekit-i18n/tests`
 
 Current workspace-first workflow:
 

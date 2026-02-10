@@ -8,32 +8,31 @@ This document defines how legacy blueprint files map into the monorepo target st
 - New feature work should target `packages/typekit-i18n` first.
 - Existing legacy files are kept temporarily to preserve context during migration.
 - A consumer prototype already exists in `apps/playground-ts` and uses `typekit-i18n` via workspace mapping.
+- CSV resources, runtime translation API, and generator core are now migrated into `packages/typekit-i18n`.
 
 ## Path Mapping
 
-| Legacy path                                 | Target path                                                        | Notes                          |
-| ------------------------------------------- | ------------------------------------------------------------------ | ------------------------------ |
-| `ts/translations/translation.ts`            | `packages/typekit-i18n/src/runtime/translation.ts`                 | Public runtime API             |
-| `ts/translations/translationTypes.ts`       | `packages/typekit-i18n/src/runtime/placeholder-types.ts`           | Placeholder contracts          |
-| `ts/translations/translationTable.ts`       | `packages/typekit-i18n/src/generated/translation-table.ts`         | Generated file output location |
-| `ts/translations/translationTable*.csv`     | `packages/typekit-i18n/resources/translations/*.csv`               | Source translation resources   |
-| `ts/translations/tests/translation.test.ts` | `packages/typekit-i18n/tests/runtime/translation.test.ts`          | Runtime tests                  |
-| `scripts/translation-generator.ts`          | `packages/typekit-i18n/src/codegen/translation-generator.ts`       | Internal generator logic       |
-| `scripts/translation-tools.ts`              | `packages/typekit-i18n/src/codegen/csv-tools.ts`                   | CSV parsing and helpers        |
-| `scripts/codegen/generate-swift-api.mjs`    | `packages/typekit-i18n/src/targets/swift/generate-swift-api.ts`    | Swift emitter                  |
-| `scripts/codegen/generate-api-manifest.mjs` | `packages/typekit-i18n/src/targets/swift/generate-api-manifest.ts` | Swift/API metadata             |
-| `scripts/codegen/build-all.sh`              | `packages/typekit-i18n/src/targets/swift/build-all.sh`             | Transitional build helper      |
-| Root docs (`README.md`, `ROADMAP.md`)       | Keep in root                                                       | Workspace-level documentation  |
-| Playground app                              | `apps/playground-ts`                                               | Integration verification       |
-| Docs app                                    | `apps/docs-site`                                                   | VitePress site                 |
+| Legacy path                                 | Target path                                                        | Notes                                   |
+| ------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------- |
+| `ts/translations/translation.ts`            | `packages/typekit-i18n/src/runtime/translation.ts`                 | Public runtime API (migrated)           |
+| `ts/translations/translationTypes.ts`       | `packages/typekit-i18n/src/runtime/types.ts`                       | Placeholder contracts                   |
+| `ts/translations/translationTable.ts`       | `packages/typekit-i18n/src/generated/translationTable.ts`          | Generated file output location          |
+| `ts/translations/translationTable*.csv`     | `packages/typekit-i18n/resources/translations/*.csv`               | Source translation resources (migrated) |
+| `ts/translations/tests/translation.test.ts` | `packages/typekit-i18n/tests/runtime/translation.test.ts`          | Runtime tests (migrated)                |
+| `scripts/translation-generator.ts`          | `packages/typekit-i18n/src/codegen/generate.ts`                    | Internal generator logic (migrated)     |
+| `scripts/translation-tools.ts`              | `packages/typekit-i18n/src/codegen/csv.ts`                         | CSV parsing and helpers (migrated)      |
+| `scripts/codegen/generate-swift-api.mjs`    | `packages/typekit-i18n/src/targets/swift/generate-swift-api.ts`    | Swift emitter                           |
+| `scripts/codegen/generate-api-manifest.mjs` | `packages/typekit-i18n/src/targets/swift/generate-api-manifest.ts` | Swift/API metadata                      |
+| `scripts/codegen/build-all.sh`              | `packages/typekit-i18n/src/targets/swift/build-all.sh`             | Transitional build helper               |
+| Root docs (`README.md`, `ROADMAP.md`)       | Keep in root                                                       | Workspace-level documentation           |
+| Playground app                              | `apps/playground-ts`                                               | Integration verification                |
+| Docs app                                    | `apps/docs-site`                                                   | VitePress site                          |
 
 ## Migration Order
 
-1. Move CSV resource files and parser/generator internals.
-2. Move runtime API and runtime tests.
-3. Move generated table output path.
-4. Move optional Swift target tooling.
-5. Remove legacy path usage from root scripts.
+1. Move optional Swift target tooling.
+2. Remove remaining legacy path usage from root scripts and docs.
+3. Remove legacy directories after parity verification.
 
 ## Exit Criteria
 
