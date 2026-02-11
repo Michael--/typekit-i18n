@@ -19,7 +19,7 @@ Hinweis:
 - [x] Workspace-Skripte fuer `clean/gen/build/test/lint/typecheck` in den Zielprojekten vorbereitet.
 - [x] Playground als Consumer validiert (CSV -> generate -> typed usage via `typekit-i18n`).
 - [x] Legacy Translation-Ressourcen und Runtime/Generator-Kern nach `packages/typekit-i18n` verschoben.
-- [ ] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
+- [x] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
 - [x] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
 
 ## Phase 0 - Ausgangslage sichern
@@ -61,31 +61,31 @@ Hinweis:
 
 ## Phase 4 - Qualitaet und Tests
 
-- [ ] Testmatrix erweitern (nicht nur Happy Path):
+- [x] Testmatrix erweitern (nicht nur Happy Path):
 - [x] fehlender Key / fehlende Sprache / leerer Text
 - [x] Placeholder-Ersatz mehrfach im String
 - [x] Fallback auf Default-Sprache
 - [x] Generator-Tests fuer CSV-Parsing und Output-Snapshots.
-- [ ] CI-Checks definieren:
+- [x] CI-Checks definieren:
 - [x] `typecheck`
 - [x] `test`
 - [x] `generate && git diff --exit-code` (Codegen drift verhindern)
 
 ## Phase 5 - Packaging und DX
 
-- [ ] Paketstruktur festlegen:
+- [x] Paketstruktur festlegen:
 - [x] `packages/typekit-i18n` als v1 Paket (konsolidiert statt frueher Aufsplittung)
-- [ ] Optional spaeteres Splitten nur bei realem Bedarf (z. B. separate Provider/Targets)
-- [ ] CLI fuer Codegen bereitstellen (`typekit-i18n generate`).
+- [x] Optional spaeteres Splitten nur bei realem Bedarf (z. B. separate Provider/Targets)
+- [x] CLI fuer Codegen bereitstellen (`typekit-i18n generate`).
 - [x] Konfigurationsdatei definieren (`typekit-i18n.config.ts/json`).
-- [ ] SemVer + Release-Prozess aufsetzen (changelog, tags, npm publishing).
+- [x] SemVer + Release-Prozess aufsetzen (changelog, tags, npm publishing).
 
 ## Phase 6 - Mehrsprachige Targets (TS + Swift)
 
 - [x] Sequenz festgelegt: Swift/IR erst nach Abschluss der Basis (Phase 2-4) als Wiedervorlage aufnehmen.
 - [x] IR + Multi-Format Entwurf (CSV/YAML, Konvertierung, CLI, VSCode-Ansatz) dokumentiert in `FORMAT_IR_PLAN.md`.
 - [ ] Zielbild fuer Multi-Target festlegen:
-- [ ] nur TypeScript in v1
+- [x] nur TypeScript in v1
 - [ ] Swift-Generator als v1.1/v2
 - [ ] Swift-Output-Konzept aus bestehendem Codegen ableiten (`scripts/codegen/generate-swift-api.mjs`).
 - [ ] Gemeinsames neutrales Zwischenmodell definieren (IR), aus dem TS/Swift generiert werden kann.
@@ -105,18 +105,17 @@ Hinweis:
 ## Phase 8 - Dokumentation und Adoption
 
 - [x] Kurzes "Getting Started" mit Minimalbeispiel.
-- [ ] "How it works" (CSV -> Codegen -> Runtime API) als Diagramm/Abschnitt.
+- [x] "How it works" (CSV -> Codegen -> Runtime API) als Diagramm/Abschnitt.
 - [ ] Migrationsleitfaden fuer bestehende Projekte (z. B. Helio10 -> Toolkit).
 - [ ] Beitragspfad (`CONTRIBUTING.md`) fuer interne/externe Mitarbeit.
 
 ## Offene Entscheidungen
 
 - [ ] Name/Fokus final: nur i18n oder allgemein "typed text resources"?
-- [ ] Default-Sprache fix (`en`) oder pro Projekt konfigurierbar?
-- [ ] CSV bleibt Primarformat oder spaeter JSON/YAML optional?
+- [x] Default-Sprache fix (`en`) oder pro Projekt konfigurierbar?
 - [ ] Swift in Core-Roadmap oder als separates Plugin-Repo?
 - [ ] Cloud-Uebersetzung direkt im Toolkit oder bewusst externes Tooling?
-- [ ] ICU MessageFormat als optionale Erweiterung nach Basisstabilisierung aufnehmen?
+- [x] ICU MessageFormat als optionale Erweiterung nach Basisstabilisierung aufnehmen?
 
 ## Naechster konkreter Schritt
 
