@@ -9,6 +9,10 @@ export default withMermaid(
     title: 'typekit-i18n',
     description: 'Type-safe i18n toolkit for TypeScript',
     base: normalizedBase,
+    vite: {
+      ssr: { noExternal: ['mermaid'] },
+      optimizeDeps: { include: ['mermaid'] },
+    },
     markdown: {
       // @ts-expect-error VitePress supports this, but TS picks wrong types
       mermaid: true,
