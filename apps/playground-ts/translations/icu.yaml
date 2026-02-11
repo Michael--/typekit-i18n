@@ -46,3 +46,13 @@ entries:
       de: '{count, plural, offset:1 =0 {Du bist beigetreten.} one {Du und # weitere Person sind beigetreten.} other {Du und # weitere Personen sind beigetreten.}}'
       es: '{count, plural, offset:1 =0 {Te uniste.} one {Tu y # persona mas se unieron.} other {Tu y # personas mas se unieron.}}'
       fr: '{count, plural, offset:1 =0 {Tu as rejoint.} one {Toi et # autre personne avez rejoint.} other {Toi et # autres personnes avez rejoint.}}'
+
+  - key: icu_escape_demo
+    description: ICU apostrophe escaping demo
+    status: approved
+    tags: [demo, icu, escape]
+    values:
+      en: "Hello {name}, it''s easy: use '{braces}' to show literal braces."
+      de: "Hallo {name}, es ist einfach: nutze '{geschweifte Klammern}' fuer literale Klammern."
+      es: "Hola {name}, es facil: usa '{llaves}' para llaves literales."
+      fr: "Bonjour {name}, c''est facile: utilise '{accolades}' pour des accolades litterales."

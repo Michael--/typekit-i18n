@@ -6,6 +6,7 @@ import {
   PlaceholderValue,
   TranslationTable,
 } from './types.js'
+import { isQuotedPosition, unescapeIcuText } from './icuEscape.js'
 
 const placeholderPattern = /\{([A-Za-z0-9_]+)(?:\|([A-Za-z0-9_-]+))?\}/g
 
@@ -41,7 +42,6 @@ interface ParsedIcuOptions {
  *
  * TODO(icu):
  * - Add `zero`, `two`, `few`, `many` category tests per locale.
- * - Add escaping and apostrophe handling compatible with ICU message syntax.
  * - Add strict syntax errors (line/column) instead of graceful fallback on parse failures.
  * - Add compile/cache layer for parsed templates to avoid reparsing on every translate call.
  */
@@ -62,6 +62,9 @@ const toPlaceholderValueMap = (placeholder?: Placeholder): PlaceholderValueMap =
 const findMatchingBrace = (value: string, startIndex: number): number => {
   let depth = 0
   for (let index = startIndex; index < value.length; index += 1) {
+    if (isQuotedPosition(value, index)) {
+      continue
+    }
     const char = value[index]
     if (char === '{') {
       depth += 1
@@ -78,6 +81,9 @@ const findMatchingBrace = (value: string, startIndex: number): number => {
 const findTopLevelComma = (value: string, startIndex: number): number => {
   let depth = 0
   for (let index = startIndex; index < value.length; index += 1) {
+    if (isQuotedPosition(value, index)) {
+      continue
+    }
     const char = value[index]
     if (char === '{') {
       depth += 1
@@ -173,7 +179,6 @@ const parseIcuOptions = (optionsSource: string, allowOffset: boolean): ParsedIcu
       return null
     }
 
-    // TODO(icu): Add proper ICU escaping handling for apostrophes and literal braces.
     const message = optionsSource.slice(blockStart + 1, blockEnd)
     options.set(selector, message)
     index = blockEnd + 1
@@ -322,7 +327,20 @@ const resolveIcuBranch = <TKey extends string, TLanguage extends string>(
   }
 
   const numberFormatter = toNumberFormatter(locale, context.numberFormatCache)
-  return rawBranch.replace(/#/g, numberFormatter.format(adjustedValue))
+  const formattedNumber = numberFormatter.format(adjustedValue)
+  let output = ''
+  let index = 0
+
+  while (index < rawBranch.length) {
+    if (rawBranch[index] === '#' && !isQuotedPosition(rawBranch, index)) {
+      output += formattedNumber
+    } else {
+      output += rawBranch[index]
+    }
+    index += 1
+  }
+
+  return output
 }
 
 const formatIcuTemplate = <TKey extends string, TLanguage extends string>(
@@ -335,7 +353,7 @@ const formatIcuTemplate = <TKey extends string, TLanguage extends string>(
 
   while (index < template.length) {
     const char = template[index]
-    if (char !== '{') {
+    if (char !== '{' || isQuotedPosition(template, index)) {
       output += char
       index += 1
       continue
@@ -399,7 +417,8 @@ const renderMessage = <TKey extends string, TLanguage extends string>(
   }
 
   const withResolvedIcu = formatIcuTemplate(template, context)
-  return applySimplePlaceholders(withResolvedIcu, context)
+  const withPlaceholders = applySimplePlaceholders(withResolvedIcu, context)
+  return unescapeIcuText(withPlaceholders)
 }
 
 /**

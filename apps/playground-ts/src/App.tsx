@@ -25,7 +25,11 @@ type DemoCase =
   | 'basic'
   | 'placeholders'
   | 'formatters'
-  | 'icu'
+  | 'icu-select'
+  | 'icu-plural'
+  | 'icu-selectordinal'
+  | 'icu-offset'
+  | 'icu-escape'
   | 'fallback'
   | 'diagnostics'
 
@@ -57,9 +61,29 @@ const demoCases: ReadonlyArray<DemoCaseDefinition> = [
     description: 'Named format hooks in templates',
   },
   {
-    id: 'icu',
-    title: 'ICU Translator',
-    description: 'Select and plural message formatting',
+    id: 'icu-select',
+    title: 'ICU Select',
+    description: 'Gender and value-based selection',
+  },
+  {
+    id: 'icu-plural',
+    title: 'ICU Plural',
+    description: 'Zero, one, other plural categories',
+  },
+  {
+    id: 'icu-selectordinal',
+    title: 'ICU Selectordinal',
+    description: 'Ordinal number formatting (1st, 2nd)',
+  },
+  {
+    id: 'icu-offset',
+    title: 'ICU Plural Offset',
+    description: 'Offset for plurals (you and N others)',
+  },
+  {
+    id: 'icu-escape',
+    title: 'ICU Escaping',
+    description: 'Apostrophe and literal text handling',
   },
   {
     id: 'fallback',
@@ -87,7 +111,12 @@ const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR'> = {
   fr: 'EUR',
 }
 
-type IcuDemoKey = 'inbox_summary' | 'invoice_total' | 'ranking_place' | 'group_invite'
+type IcuDemoKey =
+  | 'inbox_summary'
+  | 'invoice_total'
+  | 'ranking_place'
+  | 'group_invite'
+  | 'icu_escape_demo'
 
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
@@ -300,23 +329,26 @@ export const App = (): JSX.Element => {
       )
     }
 
-    if (activeCase === 'icu') {
+    if (activeCase === 'icu-select') {
       return (
         <Stack gap="sm">
           <Title order={2} size="h4" c="blue">
-            ICU Translator
+            ICU Select
           </Title>
+          <Text size="sm" c="dimmed">
+            Select expressions choose text based on a variable value.
+          </Text>
           {renderDemoCard(
-            'inbox_summary with gender="female" and count=0',
+            'inbox_summary with gender="female"',
             icuTranslate('inbox_summary', language, {
               data: [
                 { key: 'gender', value: 'female' },
-                { key: 'count', value: 0 },
+                { key: 'count', value: 1 },
               ],
             })
           )}
           {renderDemoCard(
-            'inbox_summary with gender="male" and count=1',
+            'inbox_summary with gender="male"',
             icuTranslate('inbox_summary', language, {
               data: [
                 { key: 'gender', value: 'male' },
@@ -325,7 +357,7 @@ export const App = (): JSX.Element => {
             })
           )}
           {renderDemoCard(
-            'inbox_summary with gender="other" and count=5',
+            'inbox_summary with gender="other"',
             icuTranslate('inbox_summary', language, {
               data: [
                 { key: 'gender', value: 'other' },
@@ -333,16 +365,69 @@ export const App = (): JSX.Element => {
               ],
             })
           )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'icu-plural') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            ICU Plural
+          </Title>
+          <Text size="sm" c="dimmed">
+            Plural expressions handle language-specific plural categories.
+          </Text>
           {renderDemoCard(
-            'invoice_total with amount=99.99',
-            icuTranslate('invoice_total', language, {
-              data: [{ key: 'amount', value: 99.99 }],
+            'inbox_summary with count=0',
+            icuTranslate('inbox_summary', language, {
+              data: [
+                { key: 'gender', value: 'other' },
+                { key: 'count', value: 0 },
+              ],
             })
           )}
+          {renderDemoCard(
+            'inbox_summary with count=1',
+            icuTranslate('inbox_summary', language, {
+              data: [
+                { key: 'gender', value: 'other' },
+                { key: 'count', value: 1 },
+              ],
+            })
+          )}
+          {renderDemoCard(
+            'inbox_summary with count=5',
+            icuTranslate('inbox_summary', language, {
+              data: [
+                { key: 'gender', value: 'other' },
+                { key: 'count', value: 5 },
+              ],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'icu-selectordinal') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            ICU Selectordinal
+          </Title>
+          <Text size="sm" c="dimmed">
+            Ordinal numbers with locale-aware suffixes (1st, 2nd, 3rd).
+          </Text>
           {renderDemoCard(
             'ranking_place with place=1',
             icuTranslate('ranking_place', language, {
               data: [{ key: 'place', value: 1 }],
+            })
+          )}
+          {renderDemoCard(
+            'ranking_place with place=2',
+            icuTranslate('ranking_place', language, {
+              data: [{ key: 'place', value: 2 }],
             })
           )}
           {renderDemoCard(
@@ -352,9 +437,65 @@ export const App = (): JSX.Element => {
             })
           )}
           {renderDemoCard(
+            'ranking_place with place=11',
+            icuTranslate('ranking_place', language, {
+              data: [{ key: 'place', value: 11 }],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'icu-offset') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            ICU Plural Offset
+          </Title>
+          <Text size="sm" c="dimmed">
+            Offset subtracts from the count for "you and N others" patterns.
+          </Text>
+          {renderDemoCard(
+            'group_invite with count=0',
+            icuTranslate('group_invite', language, {
+              data: [{ key: 'count', value: 0 }],
+            })
+          )}
+          {renderDemoCard(
+            'group_invite with count=1',
+            icuTranslate('group_invite', language, {
+              data: [{ key: 'count', value: 1 }],
+            })
+          )}
+          {renderDemoCard(
+            'group_invite with count=2',
+            icuTranslate('group_invite', language, {
+              data: [{ key: 'count', value: 2 }],
+            })
+          )}
+          {renderDemoCard(
             'group_invite with count=5',
             icuTranslate('group_invite', language, {
               data: [{ key: 'count', value: 5 }],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'icu-escape') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            ICU Escaping
+          </Title>
+          <Text size="sm" c="dimmed">
+            Apostrophes escape special characters and literal braces.
+          </Text>
+          {renderDemoCard(
+            'icu_escape_demo',
+            icuTranslate('icu_escape_demo', language, {
+              data: [{ key: 'name', value: 'Alice' }],
             })
           )}
         </Stack>

@@ -1,4 +1,5 @@
 export * from './types.js'
 export * from './translator.js'
 export * from './icuTranslator.js'
+export * from './icuEscape.js'
 export * from './translation.js'

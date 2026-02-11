@@ -3,7 +3,13 @@ import { createIcuTranslator } from '../../src/runtime/icuTranslator.js'
 import { TranslationTable } from '../../src/runtime/types.js'
 
 type TestLanguage = 'en' | 'de'
-type TestKey = 'inboxSummary' | 'invoiceTotal' | 'fallbackOnly' | 'ordinalPlace' | 'offsetInvite'
+type TestKey =
+  | 'inboxSummary'
+  | 'invoiceTotal'
+  | 'fallbackOnly'
+  | 'ordinalPlace'
+  | 'offsetInvite'
+  | 'escapeDemo'
 
 const table: TranslationTable<TestKey, TestLanguage> = {
   inboxSummary: {
@@ -30,6 +36,11 @@ const table: TranslationTable<TestKey, TestLanguage> = {
     description: 'Plural offset demo',
     en: '{count, plural, offset:1 =0 {You joined.} one {You and # other joined.} other {You and # others joined.}}',
     de: '{count, plural, offset:1 =0 {Du bist beigetreten.} one {Du und # weitere Person sind beigetreten.} other {Du und # weitere Personen sind beigetreten.}}',
+  },
+  escapeDemo: {
+    description: 'Apostrophe escaping demo',
+    en: "Hello {name}, it''s easy: use '{braces}' to show literal braces.",
+    de: "Hallo {name}, es ist einfach: nutze '{geschweifte Klammern}' fuer literale Klammern.",
   },
 }
 
@@ -113,6 +124,30 @@ describe('createIcuTranslator', () => {
         data: [{ key: 'count', value: 5 }],
       })
     ).toBe('You and 4 others joined.')
+  })
+
+  test('handles apostrophe escaping correctly', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(
+      translate('escapeDemo', 'en', {
+        data: [{ key: 'name', value: 'Alice' }],
+      })
+    ).toBe("Hello Alice, it's easy: use {braces} to show literal braces.")
+  })
+
+  test('escapes special chars inside quoted sections', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(
+      translate('escapeDemo', 'de', {
+        data: [{ key: 'name', value: 'Bob' }],
+      })
+    ).toBe('Hallo Bob, es ist einfach: nutze {geschweifte Klammern} fuer literale Klammern.')
   })
 
   test('falls back to default language and reports missing language', () => {
