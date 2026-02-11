@@ -1,124 +1,113 @@
-# Typekit i18n - Projektplan
+# Typekit i18n - Roadmap
 
-Status: Arbeitsplan zum gemeinsamen Abarbeiten und Abhaken.
+Last sync: 2026-02-11
 
-Hinweis:
+## Status Summary
 
-- Aktueller Stand ist eine Blaupause mit bewusst vorlaeufigen Dateiorten.
-- Root-`typecheck`/`test` laufen auf den Workspace-Zielen (`packages/*`, `apps/*`), Legacy-Referenzpfade sind bewusst ausgeklammert.
+- Completed baseline: Monorepo setup, TS runtime, CSV/YAML codegen, IR validation, CLI (`generate|validate|convert`), test baseline, docs-site + GitHub Pages workflow.
+- New complexity driver: ICU runtime is now a core subsystem (parser + renderer + formatters + locale behavior).
+- Primary gap: no consolidated single source of truth for language + locale + target metadata across TS runtime, CLI/codegen, and future non-TS targets.
 
-## Phase -1 - Strukturmigration vorbereiten
+## Completed (verified against current repository)
 
-- [x] Zielstruktur festlegen (wohin `ts/translations`, `scripts`, spaetere Pakete wandern).
-- [x] Monorepo-Benennung festgelegt:
-- [x] `packages/typekit-i18n` als konsolidiertes, spaeter publishbares npm-Paket
-- [x] `apps/playground-ts` als Integrations-App
-- [x] `apps/docs-site` als VitePress-Doku-App
-- [x] Monorepo-Skeleton angelegt (`packages/typekit-i18n`, `apps/playground-ts`, `apps/docs-site`).
-- [x] Bestehende Fragmente als "reference only" markieren und Mapping Alt->Neu dokumentieren.
-- [x] Workspace-Skripte fuer `clean/gen/build/test/lint/typecheck` in den Zielprojekten vorbereitet.
-- [x] Playground als Consumer validiert (CSV -> generate -> typed usage via `typekit-i18n`).
-- [x] Legacy Translation-Ressourcen und Runtime/Generator-Kern nach `packages/typekit-i18n` verschoben.
-- [x] Root-Package schrittweise reduzieren, so dass dort vor allem Dev-Dependencies/Workspace-Tooling verbleiben.
-- [x] Erst nach Umzug: `typecheck`/`test` als harte Gates aktivieren.
+### Foundation and Package Layout
 
-## Phase 0 - Ausgangslage sichern
+- [x] Workspace split into `packages/typekit-i18n`, `apps/playground-ts`, `apps/docs-site`.
+- [x] Root scripts for `gen/build/lint/typecheck/test/check` are in place.
+- [x] `packages/typekit-i18n` is the consolidated publishable package target.
 
-- [x] Blaupause aus Helio10 in separates Projekt uebernommen (`sessionX.jsonl`, `ts/translations`, `scripts/`).
-- [x] Aktuellen Stand kurz dokumentieren (`README.md`: Ziel, aktueller Umfang, bekannte Luecken).
-- [x] Mindestanforderungen definieren (Node/TS-Version, Build-/Test-Setup).
+### Runtime and API
 
-## Phase 1 - Produkt-Schnitt festlegen
+- [x] Stable translator API via `createTranslator(...)`.
+- [x] Missing translation strategy (`fallback` / `strict`) with reporting hooks.
+- [x] Runtime configuration and missing-event collection API.
+- [x] ICU translator implemented (`createIcuTranslator(...)`) with:
+  - `select`, `plural`, `selectordinal`
+  - `number`, `date`, `time` argument formatting
+  - plural `offset`
+  - apostrophe escaping and detailed syntax errors
 
-- [x] Scope fuer v1 festlegen: "Type-safe i18n Toolkit fuer TS-Projekte".
-- [x] Non-Goals dokumentieren (z. B. kein Full-CMS, kein Runtime-Editor in v1).
-- [x] API-Form festlegen:
-- [x] `translate(key, language, placeholders?)`
-- [x] `supportedLanguages`
-- [x] Fallback-Verhalten (Default-Sprache, Warnungen, Fehler-Modus)
-- [x] Datenvertrag fuer Translation-Ressourcen festlegen (CSV-Spalten, Pflichtfelder, Encoding).
+### Codegen, IR, Validation, CLI
 
-## Phase 2 - Datenmodell und Codegen haerten
+- [x] Typed config helper + config auto-discovery.
+- [x] Deterministic multi-file generation.
+- [x] CSV and YAML IR parsing + validation.
+- [x] Placeholder consistency validation across locales.
+- [x] CLI commands implemented: `generate`, `validate`, `convert`.
 
-- [x] `translation*.csv` Schema validieren (fehlende Keys, doppelte Keys, leere Pflichtwerte).
-- [x] Generator robust machen (`packages/typekit-i18n/src/codegen/generate.ts`):
-- [x] deterministische Dateireihenfolge
-- [x] escaping/sicheres String-Handling
-- [x] klare Fehlerausgaben mit Datei/Zeile
-- [x] Generierten Output trennen in:
-- [x] `translationTable.ts` (Daten)
-- [x] `translationKeys.ts` oder Typ-Exports (API klar halten)
-- [x] Placeholder-Typisierung ausbauen (`packages/typekit-i18n/src/runtime/types.ts`), damit Werte nicht nur `string` sein muessen.
+### Quality and Documentation
 
-## Phase 3 - Laufzeit-API stabilisieren
+- [x] Runtime and codegen test suites present and expanded.
+- [x] Docs site structure and content updated to current API.
+- [x] Root README and package README updated as baseline docs.
+- [x] GitHub Pages workflow for docs deployment is present (`.github/workflows/pages.yml`).
 
-- [x] Runtime API von internem Datenlayout entkoppeln (`packages/typekit-i18n/src/runtime/translation.ts` als stabile Public API).
-- [x] Fallback-Strategie konfigurierbar machen (strict vs. fallback).
-- [x] Entwicklerfreundliche Diagnostik:
-- [x] fehlende Uebersetzungen sammeln/reporten
-- [x] optionales Logging statt festem `console.warn`
-- [x] Optional: kleine Formatter-Schicht fuer Placeholder (z. B. Zahlen/Datum-Hooks).
+## Corrected / Obsolete Items from Previous Plan
 
-## Phase 4 - Qualitaet und Tests
+- [obsolete] Former references to `FORMAT_IR_PLAN.md` and `MIGRATION_MAP.md` were intentionally removed.
+- [obsolete] Assumption that IR and multi-format are only in planning stage; these are already implemented.
+- [corrected] "SemVer + release process set up" was marked done earlier but is not yet complete as an operational release pipeline.
 
-- [x] Testmatrix erweitern (nicht nur Happy Path):
-- [x] fehlender Key / fehlende Sprache / leerer Text
-- [x] Placeholder-Ersatz mehrfach im String
-- [x] Fallback auf Default-Sprache
-- [x] Generator-Tests fuer CSV-Parsing und Output-Snapshots.
-- [x] CI-Checks definieren:
-- [x] `typecheck`
-- [x] `test`
-- [x] `generate && git diff --exit-code` (Codegen drift verhindern)
+## Open Priorities (re-ranked)
 
-## Phase 5 - Packaging und DX
+### P0 - Single Source of Truth for Language and Target Contracts
 
-- [x] Paketstruktur festlegen:
-- [x] `packages/typekit-i18n` als v1 Paket (konsolidiert statt frueher Aufsplittung)
-- [x] Optional spaeteres Splitten nur bei realem Bedarf (z. B. separate Provider/Targets)
-- [x] CLI fuer Codegen bereitstellen (`typekit-i18n generate`).
-- [x] Konfigurationsdatei definieren (`typekit-i18n.config.ts/json`).
-- [x] SemVer + Release-Prozess aufsetzen (changelog, tags, npm publishing).
+Problem:
 
-## Phase 6 - Mehrsprachige Targets (TS + Swift)
+- Language + locale definitions are currently distributed across runtime defaults, config files, generated artifacts, and app-level setup.
+- This becomes high-risk with ICU behavior and future Swift/multi-target output.
 
-- [x] Sequenz festgelegt: Swift/IR erst nach Abschluss der Basis (Phase 2-4) als Wiedervorlage aufnehmen.
-- [x] IR + Multi-Format Entwurf (CSV/YAML, Konvertierung, CLI, VSCode-Ansatz) dokumentiert in `FORMAT_IR_PLAN.md`.
-- [ ] Zielbild fuer Multi-Target festlegen:
-- [x] nur TypeScript in v1
-- [ ] Swift-Generator als v1.1/v2
-- [ ] Swift-Output-Konzept aus bestehendem Codegen ableiten (`scripts/codegen/generate-swift-api.mjs`).
-- [ ] Gemeinsames neutrales Zwischenmodell definieren (IR), aus dem TS/Swift generiert werden kann.
-- [ ] Entscheidung dokumentieren: Library-only vs. Service/Interface-Ansatz fuer andere Sprachen.
+Planned actions:
 
-## Phase 7 - Uebersetzungs-Workflow (manuell + Cloud)
+- [ ] Define one canonical contract artifact from IR/codegen (languages, sourceLanguage, locale mapping, keys, placeholder metadata).
+- [ ] Generate TS runtime-facing metadata from that artifact (no hardcoded language arrays in runtime defaults).
+- [ ] Define target-neutral manifest schema versioning for non-TS generators.
+- [ ] Decide where locale mapping lives (config vs generated artifact) and keep it deterministic.
 
-- [ ] Manueller Workflow sauber machen:
-- [ ] neue Keys anlegen
-- [ ] Missing-Entries reporten
-- [ ] Review-Prozess fuer Uebersetzungen
-- [ ] Provider-Interface definieren (abstrakt), noch ohne harte Bindung:
-- [ ] `translateBatch(sourceLang, targetLang, entries)`
-- [ ] Kosten-/Rate-Limits/Retry-Konzept
-- [ ] OpenAI/DeepL als optionale Adapter einplanen (nicht im Core erzwingen).
+### P0 - ICU Runtime Hardening and Scope Guardrails
 
-## Phase 8 - Dokumentation und Adoption
+Problem:
 
-- [x] Kurzes "Getting Started" mit Minimalbeispiel.
-- [x] "How it works" (CSV -> Codegen -> Runtime API) als Diagramm/Abschnitt.
-- [ ] Migrationsleitfaden fuer bestehende Projekte (z. B. Helio10 -> Toolkit).
-- [ ] Beitragspfad (`CONTRIBUTING.md`) fuer interne/externe Mitarbeit.
+- ICU support adds substantial parser/runtime complexity and cross-locale behavior variance.
 
-## Offene Entscheidungen
+Planned actions:
 
-- [ ] Name/Fokus final: nur i18n oder allgemein "typed text resources"?
-- [x] Default-Sprache fix (`en`) oder pro Projekt konfigurierbar?
-- [ ] Swift in Core-Roadmap oder als separates Plugin-Repo?
-- [ ] Cloud-Uebersetzung direkt im Toolkit oder bewusst externes Tooling?
-- [x] ICU MessageFormat als optionale Erweiterung nach Basisstabilisierung aufnehmen?
+- [ ] Formalize "supported ICU subset" as a versioned compatibility contract.
+- [ ] Add negative/edge-case regression matrix per locale category behavior.
+- [ ] Add performance guardrails for parser/renderer cache behavior.
+- [ ] Document explicit non-goals (unsupported ICU constructs) to prevent uncontrolled scope growth.
 
-## Naechster konkreter Schritt
+### P1 - Release and Distribution Maturity
 
-- [x] Phase 1 abschliessen: v1 Scope + Public API in einem kurzen `README`-Entwurf festhalten.
-- [x] Phase 2 + 4 baseline abschliessen: leere Pflichtwerte validieren, Testmatrix erweitern, Codegen-drift Gate (`generate && git diff --exit-code`) ergaenzen.
-- [x] Phase 3 abschliessen: Runtime API final entkoppeln und Formatter-Hooks vorbereiten.
+- [ ] Add release workflow (versioning + changelog + publish gates).
+- [ ] Ensure npm publish artifact contract is explicit (`dist`, exports, CLI entry checks).
+- [ ] Add pre-publish validation target that includes codegen drift and docs build.
+
+### P1 - Migration and Adoption Assets
+
+- [ ] Add `CONTRIBUTING.md` with contributor workflow and quality gates.
+- [ ] Add architecture page for runtime/codegen/IR boundaries.
+
+### P2 - Translation Workflow Integrations
+
+- [ ] Define provider interface for external translation services (kept out of core runtime).
+- [ ] Define review workflow metadata policy (`status`, `tags`, ownership).
+- [ ] Evaluate optional automation around missing key extraction and review reports.
+
+### Multi-Target (Swift and others)
+
+Current reality:
+
+- `scripts/codegen/generate-swift-api.mjs` exists but is legacy-coupled to old paths (`ts/translations/...`) and not aligned with current IR/codegen contracts.
+
+Decision checkpoint:
+
+- [ ] Keep Swift support as post-v1 track (v1.1/v2) and base it on the canonical IR manifest.
+- [ ] Do not evolve legacy Swift script further before contract alignment.
+
+## Next Concrete Steps
+
+1. Implement the canonical contract artifact (P0) and wire TS runtime defaults to it.
+2. Freeze and document ICU subset contract (P0) with explicit supported/unsupported syntax table.
+3. Add release workflow and publish gates (P1).
+4. Add contributing guide and architecture documentation (P1).
