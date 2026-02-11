@@ -117,6 +117,7 @@ type IcuDemoKey =
   | 'ranking_place'
   | 'group_invite'
   | 'icu_escape_demo'
+  | 'plural_categories_demo'
 
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
@@ -378,6 +379,7 @@ export const App = (): JSX.Element => {
           <Text size="sm" c="dimmed">
             Plural expressions handle language-specific plural categories.
           </Text>
+          <Divider label="Basic Plural" labelPosition="left" />
           {renderDemoCard(
             'inbox_summary with count=0',
             icuTranslate('inbox_summary', language, {
@@ -403,6 +405,40 @@ export const App = (): JSX.Element => {
                 { key: 'gender', value: 'other' },
                 { key: 'count', value: 5 },
               ],
+            })
+          )}
+          <Divider label="Category Coverage (zero/two/few/many)" labelPosition="left" />
+          <Text size="xs" c="dimmed">
+            Category resolution follows the currently selected language.
+          </Text>
+          {renderDemoCard(
+            'plural_categories_demo with count=0',
+            icuTranslate('plural_categories_demo', language, {
+              data: [{ key: 'count', value: 0 }],
+            })
+          )}
+          {renderDemoCard(
+            'plural_categories_demo with count=2',
+            icuTranslate('plural_categories_demo', language, {
+              data: [{ key: 'count', value: 2 }],
+            })
+          )}
+          {renderDemoCard(
+            'plural_categories_demo with count=3',
+            icuTranslate('plural_categories_demo', language, {
+              data: [{ key: 'count', value: 3 }],
+            })
+          )}
+          {renderDemoCard(
+            'plural_categories_demo with count=11',
+            icuTranslate('plural_categories_demo', language, {
+              data: [{ key: 'count', value: 11 }],
+            })
+          )}
+          {renderDemoCard(
+            'plural_categories_demo with count=100',
+            icuTranslate('plural_categories_demo', language, {
+              data: [{ key: 'count', value: 100 }],
             })
           )}
         </Stack>

@@ -56,3 +56,13 @@ entries:
       de: "Hallo {name}, es ist einfach: nutze '{geschweifte Klammern}' fuer literale Klammern."
       es: "Hola {name}, es facil: usa '{llaves}' para llaves literales."
       fr: "Bonjour {name}, c''est facile: utilise '{accolades}' pour des accolades litterales."
+
+  - key: plural_categories_demo
+    description: ICU plural category coverage demo
+    status: approved
+    tags: [demo, icu, plural, categories]
+    values:
+      en: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
+      de: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
+      es: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
+      fr: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
