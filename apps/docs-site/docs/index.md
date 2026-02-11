@@ -21,6 +21,7 @@ Type-safe internationalization workflow for TypeScript applications.
 ## Quick Links
 
 - [Getting Started](./getting-started)
+- [Translation Strategy](./translation-strategy)
 - [Runtime API](./runtime-api)
 - [Codegen + CLI](./codegen-cli)
 - [Resource Formats](./resource-formats)

@@ -29,6 +29,7 @@ export default withMermaid(
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/getting-started' },
+        { text: 'Translation Strategy', link: '/translation-strategy' },
         { text: 'Runtime API', link: '/runtime-api' },
         { text: 'Codegen + CLI', link: '/codegen-cli' },
         { text: 'Resource Formats', link: '/resource-formats' },
@@ -39,6 +40,7 @@ export default withMermaid(
           items: [
             { text: 'Overview', link: '/' },
             { text: 'Getting Started', link: '/getting-started' },
+            { text: 'Translation Strategy', link: '/translation-strategy' },
           ],
         },
         {
