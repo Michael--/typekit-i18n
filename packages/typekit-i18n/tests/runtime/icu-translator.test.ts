@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest'
+import * as icuParser from '../../src/runtime/icuParser.js'
 import { createIcuTranslator } from '../../src/runtime/icuTranslator.js'
 import { TranslationTable } from '../../src/runtime/types.js'
 
@@ -10,6 +11,11 @@ type TestKey =
   | 'ordinalPlace'
   | 'offsetInvite'
   | 'escapeDemo'
+  | 'invalidTypeDemo'
+  | 'invalidOptionsDemo'
+  | 'unterminatedDemo'
+  | 'missingOtherDemo'
+  | 'cacheProbe'
 
 const table: TranslationTable<TestKey, TestLanguage> = {
   inboxSummary: {
@@ -41,6 +47,31 @@ const table: TranslationTable<TestKey, TestLanguage> = {
     description: 'Apostrophe escaping demo',
     en: "Hello {name}, it''s easy: use '{braces}' to show literal braces.",
     de: "Hallo {name}, es ist einfach: nutze '{geschweifte Klammern}' fuer literale Klammern.",
+  },
+  invalidTypeDemo: {
+    description: 'Unsupported ICU expression type',
+    en: '{count, choice, one {# item} other {# items}}',
+    de: '',
+  },
+  invalidOptionsDemo: {
+    description: 'Invalid ICU options syntax',
+    en: '{count, plural, one # item other {# items}}',
+    de: '',
+  },
+  unterminatedDemo: {
+    description: 'Unterminated ICU block',
+    en: '{count, plural, one {# item} other {# items}',
+    de: '',
+  },
+  missingOtherDemo: {
+    description: 'Missing required fallback branch',
+    en: '{gender, select, male {He}}',
+    de: '',
+  },
+  cacheProbe: {
+    description: 'Compile cache probe',
+    en: '{count, plural, one {# item} other {# items}}',
+    de: '',
   },
 }
 
@@ -203,5 +234,78 @@ describe('createIcuTranslator', () => {
     expect(translate('pluralCategories', 'ar', { data: [{ key: 'count', value: 100 }] })).toBe(
       'OTHER'
     )
+  })
+
+  test('throws detailed syntax errors for unsupported expression types', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('invalidTypeDemo', 'en', { data: [{ key: 'count', value: 2 }] })
+    ).toThrow(
+      /ICU syntax error for key "invalidTypeDemo" in "en" at line 1, column 1: Invalid ICU expression/
+    )
+  })
+
+  test('throws detailed syntax errors for invalid options blocks', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('invalidOptionsDemo', 'en', {
+        data: [{ key: 'count', value: 2 }],
+      })
+    ).toThrow(
+      /ICU syntax error for key "invalidOptionsDemo" in "en" at line 1, column 1: Invalid ICU options/
+    )
+  })
+
+  test('throws detailed syntax errors for unterminated ICU expressions', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('unterminatedDemo', 'en', { data: [{ key: 'count', value: 2 }] })
+    ).toThrow(
+      /ICU syntax error for key "unterminatedDemo" in "en" at line 1, column 1: Unterminated "\{" expression/
+    )
+  })
+
+  test('throws when no ICU branch matches and no other branch exists', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('missingOtherDemo', 'en', {
+        data: [{ key: 'gender', value: 'female' }],
+      })
+    ).toThrow(
+      /ICU syntax error for key "missingOtherDemo" in "en" at line 1, column 1: No matching branch/
+    )
+  })
+
+  test('reuses compiled ICU templates across translate calls', () => {
+    const parseSpy = vi.spyOn(icuParser, 'parseIcuExpression')
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    translate('cacheProbe', 'en', {
+      data: [{ key: 'count', value: 2 }],
+    })
+    const afterFirstRender = parseSpy.mock.calls.length
+
+    translate('cacheProbe', 'en', {
+      data: [{ key: 'count', value: 5 }],
+    })
+    const afterSecondRender = parseSpy.mock.calls.length
+
+    expect(afterFirstRender).toBeGreaterThan(0)
+    expect(afterSecondRender).toBe(afterFirstRender)
+    parseSpy.mockRestore()
   })
 })

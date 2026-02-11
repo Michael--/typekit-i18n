@@ -2,6 +2,7 @@ import { PlaceholderFormatterMap, PlaceholderValue } from './types.js'
 import { isQuotedPosition, unescapeIcuText } from './icuEscape.js'
 import {
   findMatchingBrace,
+  findTopLevelComma,
   parseIcuExpression,
   parseIcuOptions,
   ParsedIcuExpression,
@@ -25,6 +26,56 @@ export interface IcuRenderContext<TKey extends string, TLanguage extends string>
   localeByLanguage?: Partial<Record<TLanguage, string>>
   pluralRulesCache: Map<string, Intl.PluralRules>
   numberFormatCache: Map<string, Intl.NumberFormat>
+  compiledTemplateCache: Map<string, CompiledIcuTemplate>
+}
+
+interface IcuTextToken {
+  kind: 'text'
+  value: string
+}
+
+interface IcuExpressionToken {
+  kind: 'expression'
+  parsed: ParsedIcuExpression
+  parsedOptions: ParsedIcuOptions
+  sourceIndex: number
+  rawExpression: string
+}
+
+type IcuTemplateToken = IcuTextToken | IcuExpressionToken
+
+export type CompiledIcuTemplate = ReadonlyArray<IcuTemplateToken>
+
+const toLineAndColumn = (template: string, index: number): { line: number; column: number } => {
+  let line = 1
+  let column = 1
+  let cursor = 0
+  const boundedIndex = Math.max(0, Math.min(index, template.length))
+
+  while (cursor < boundedIndex) {
+    const char = template[cursor]
+    if (char === '\n') {
+      line += 1
+      column = 1
+    } else {
+      column += 1
+    }
+    cursor += 1
+  }
+
+  return { line, column }
+}
+
+const toIcuSyntaxError = <TKey extends string, TLanguage extends string>(
+  template: string,
+  sourceIndex: number,
+  reason: string,
+  context: IcuRenderContext<TKey, TLanguage>
+): Error => {
+  const { line, column } = toLineAndColumn(template, sourceIndex)
+  return new Error(
+    `ICU syntax error for key "${context.key}" in "${context.language}" at line ${line}, column ${column}: ${reason}`
+  )
 }
 
 /**
@@ -130,50 +181,115 @@ export const resolveIcuBranch = <TKey extends string, TLanguage extends string>(
 export const formatIcuTemplate = <TKey extends string, TLanguage extends string>(
   template: string,
   context: IcuRenderContext<TKey, TLanguage>
-): string => {
-  let output = ''
+): CompiledIcuTemplate => {
+  const cached = context.compiledTemplateCache.get(template)
+  if (cached) {
+    return cached
+  }
+
+  const tokens: IcuTemplateToken[] = []
+  let textStart = 0
   let index = 0
 
   while (index < template.length) {
     const char = template[index]
     if (char !== '{' || isQuotedPosition(template, index)) {
-      output += char
       index += 1
       continue
     }
 
     const blockEnd = findMatchingBrace(template, index)
     if (blockEnd < 0) {
-      output += char
-      index += 1
-      continue
+      throw toIcuSyntaxError(
+        template,
+        index,
+        'Unterminated "{" expression. Missing matching "}".',
+        context
+      )
     }
 
     const rawExpression = template.slice(index + 1, blockEnd)
     const parsed = parseIcuExpression(rawExpression)
     if (!parsed) {
-      output += template.slice(index, blockEnd + 1)
+      if (findTopLevelComma(rawExpression, 0) >= 0) {
+        throw toIcuSyntaxError(
+          template,
+          index,
+          `Invalid ICU expression "${rawExpression}". Supported types are "select", "plural", and "selectordinal".`,
+          context
+        )
+      }
       index = blockEnd + 1
       continue
     }
 
-    const options = parseIcuOptions(parsed.optionsSource, parsed.expressionType !== 'select')
-    if (!options) {
-      output += template.slice(index, blockEnd + 1)
-      index = blockEnd + 1
-      continue
+    const parsedOptions = parseIcuOptions(parsed.optionsSource, parsed.expressionType !== 'select')
+    if (!parsedOptions) {
+      throw toIcuSyntaxError(
+        template,
+        index,
+        `Invalid ICU options for expression "${rawExpression}".`,
+        context
+      )
     }
 
-    const selectedBranch = resolveIcuBranch(parsed, options, context)
-    if (selectedBranch === null) {
-      output += template.slice(index, blockEnd + 1)
-      index = blockEnd + 1
-      continue
+    if (index > textStart) {
+      tokens.push({
+        kind: 'text',
+        value: template.slice(textStart, index),
+      })
     }
 
-    output += formatIcuTemplate(selectedBranch, context)
+    tokens.push({
+      kind: 'expression',
+      parsed,
+      parsedOptions,
+      sourceIndex: index,
+      rawExpression,
+    })
+
     index = blockEnd + 1
+    textStart = index
   }
+
+  if (textStart < template.length) {
+    tokens.push({
+      kind: 'text',
+      value: template.slice(textStart),
+    })
+  }
+
+  const compiled = tokens as CompiledIcuTemplate
+  context.compiledTemplateCache.set(template, compiled)
+  return compiled
+}
+
+const renderCompiledTemplate = <TKey extends string, TLanguage extends string>(
+  compiled: CompiledIcuTemplate,
+  template: string,
+  context: IcuRenderContext<TKey, TLanguage>
+): string => {
+  let output = ''
+
+  compiled.forEach((token) => {
+    if (token.kind === 'text') {
+      output += token.value
+      return
+    }
+
+    const selectedBranch = resolveIcuBranch(token.parsed, token.parsedOptions, context)
+    if (selectedBranch === null) {
+      throw toIcuSyntaxError(
+        template,
+        token.sourceIndex,
+        `No matching branch for expression "${token.rawExpression}". Add an "other" branch.`,
+        context
+      )
+    }
+
+    const compiledBranch = formatIcuTemplate(selectedBranch, context)
+    output += renderCompiledTemplate(compiledBranch, selectedBranch, context)
+  })
 
   return output
 }
@@ -189,7 +305,8 @@ export const renderIcuMessage = <TKey extends string, TLanguage extends string>(
   template: string,
   context: IcuRenderContext<TKey, TLanguage>
 ): string => {
-  const withResolvedIcu = formatIcuTemplate(template, context)
+  const compiled = formatIcuTemplate(template, context)
+  const withResolvedIcu = renderCompiledTemplate(compiled, template, context)
   const withPlaceholders = applySimplePlaceholders(withResolvedIcu, context)
   return unescapeIcuText(withPlaceholders)
 }

@@ -4,7 +4,7 @@ import {
   Placeholder,
   TranslationTable,
 } from './types.js'
-import { IcuRenderContext, renderIcuMessage } from './icuRenderer.js'
+import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRenderer.js'
 
 /**
  * Supported ICU subset:
@@ -14,10 +14,6 @@ import { IcuRenderContext, renderIcuMessage } from './icuRenderer.js'
  * - `{var, selectordinal, one {...} two {...} few {...} other {...}}`
  * - `#` replacement inside plural branches
  * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
- *
- * TODO(icu):
- * - Add strict syntax errors (line/column) instead of graceful fallback on parse failures.
- * - Add compile/cache layer for parsed templates to avoid reparsing on every translate call.
  */
 
 const toMissingTranslationMessage = <TKey extends string, TLanguage extends string>(
@@ -60,6 +56,7 @@ export const createIcuTranslator = <
   const missingStrategy = options.missingStrategy ?? 'fallback'
   const pluralRulesCache = new Map<string, Intl.PluralRules>()
   const numberFormatCache = new Map<string, Intl.NumberFormat>()
+  const compiledTemplateCache = new Map<string, CompiledIcuTemplate>()
 
   const handleMissing = (event: MissingTranslationEvent<TKey, TLanguage>): void => {
     options.onMissingTranslation?.(event)
@@ -91,6 +88,7 @@ export const createIcuTranslator = <
         localeByLanguage: options.localeByLanguage,
         pluralRulesCache,
         numberFormatCache,
+        compiledTemplateCache,
       }
       return renderIcuMessage(requestedText, context)
     }
@@ -113,6 +111,7 @@ export const createIcuTranslator = <
         localeByLanguage: options.localeByLanguage,
         pluralRulesCache,
         numberFormatCache,
+        compiledTemplateCache,
       }
       return renderIcuMessage(fallbackText, context)
     }
