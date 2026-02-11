@@ -117,6 +117,26 @@ entries:
     )
   })
 
+  test('ignores ICU-quoted literal braces in placeholder token checks', () => {
+    const content = `version: "1"
+sourceLanguage: en
+languages: [en, de]
+entries:
+  - key: escaped_braces
+    description: ICU escaped braces demo
+    placeholders:
+      - name: name
+        type: string
+    values:
+      en: "Hello {name}, use '{braces}' for literals."
+      de: "Hallo {name}, nutze '{geschweifte Klammern}' fuer literale Klammern."
+`
+
+    const project = toIrProjectFromYamlContent(content)
+    expect(project.entries[0].values.en).toContain("'{braces}'")
+    expect(project.entries[0].values.de).toContain("'{geschweifte Klammern}'")
+  })
+
   test('roundtrips IR through YAML content', () => {
     const project: TranslationIrProject<'en' | 'de'> = {
       version: '1',

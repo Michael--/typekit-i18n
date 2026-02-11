@@ -2,6 +2,27 @@ import { TranslationIrEntry, TranslationIrProject } from './types.js'
 
 const placeholderTokenPattern = /\{([A-Za-z0-9_]+)\}/g
 
+const isQuotedPosition = (text: string, position: number): boolean => {
+  let inQuoted = false
+
+  for (let index = 0; index <= position && index < text.length; index += 1) {
+    const char = text[index]
+    if (char === "'") {
+      const nextChar = text[index + 1]
+      if (nextChar === "'") {
+        index += 1
+        continue
+      }
+      if (index === position) {
+        return false
+      }
+      inQuoted = !inQuoted
+    }
+  }
+
+  return inQuoted
+}
+
 const toEntryLocation = (
   entryIndex: number,
   locationResolver?: (entryIndex: number) => string
@@ -26,8 +47,11 @@ const collectPlaceholderTokens = (value: string): ReadonlySet<string> => {
   let match = pattern.exec(value)
 
   while (match) {
-    const token = match[1]
-    result.add(token)
+    const matchIndex = match.index ?? 0
+    if (!isQuotedPosition(value, matchIndex)) {
+      const token = match[1]
+      result.add(token)
+    }
     match = pattern.exec(value)
   }
 
