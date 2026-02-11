@@ -12,6 +12,14 @@ const quote = (value: string): string => JSON.stringify(value)
 const toTypeUnion = (values: ReadonlyArray<string>): string =>
   values.length === 0 ? 'never' : values.map((value) => quote(value)).join(' | ')
 
+const toCombinedErrorMessage = (errors: ReadonlyArray<string>): string => {
+  if (errors.length === 1) {
+    return errors[0]
+  }
+  const lines = errors.map((error) => `- ${error.split('\n').join('\n  ')}`)
+  return `Generation failed with ${errors.length} error(s):\n${lines.join('\n')}`
+}
+
 const validateLanguageConfig = <TLanguage extends string>(
   config: TypekitI18nConfig<TLanguage>
 ): void => {
@@ -196,34 +204,52 @@ export const generateTranslationTable = async <TLanguage extends string>(
 
   const keySet = new Set<string>()
   const records: TranslationRecord<TLanguage>[] = []
+  const errors: string[] = []
 
   for (const filePath of files) {
     const format = configuredFormat ?? inferInputFormatFromPath(filePath)
-    const project = await loadProjectFromFile(filePath, format, config)
+    let project: TranslationIrProject<string>
+    try {
+      project = await loadProjectFromFile(filePath, format, config)
+    } catch (error: unknown) {
+      errors.push(error instanceof Error ? error.message : String(error))
+      continue
+    }
 
     project.entries.forEach((entry, entryIndex) => {
       if (keySet.has(entry.key)) {
-        throw new Error(
+        errors.push(
           `Duplicate key "${entry.key}" found in ${toEntryLocation(format, filePath, entryIndex)}.`
         )
+        return
       }
       keySet.add(entry.key)
       const values = {} as Record<TLanguage, string>
+      let hasLanguageError = false
       config.languages.forEach((language) => {
         const translated = entry.values[language]
         if (typeof translated !== 'string') {
-          throw new Error(
+          errors.push(
             `Missing language "${language}" in ${toEntryLocation(format, filePath, entryIndex)}.`
           )
+          hasLanguageError = true
+          return
         }
         values[language] = translated
       })
+      if (hasLanguageError) {
+        return
+      }
       records.push({
         key: entry.key,
         description: entry.description,
         values,
       })
     })
+  }
+
+  if (errors.length > 0) {
+    throw new Error(toCombinedErrorMessage(errors))
   }
 
   const outputPath = resolve(config.output)

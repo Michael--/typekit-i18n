@@ -271,6 +271,54 @@ one;Only row;One;Eins
     )
   })
 
+  test('aggregates validation errors across multiple input files', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'diagnostics.csv')
+    const yamlPath = join(directory, 'features.yaml')
+    const outputTablePath = join(directory, 'translationTable.ts')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+one;CSV entry one;One;Eins
+two;CSV entry two;Two;Zwei
+`,
+      'utf-8'
+    )
+
+    await writeFile(
+      yamlPath,
+      `version: "1"
+sourceLanguage: en
+languages: [en, de, dk]
+entries:
+  - key: title
+    description: YAML entry
+    values:
+      en: Welcome
+      de: Willkommen
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de' | 'dk'> = {
+      input: [csvPath, yamlPath],
+      output: outputTablePath,
+      languages: ['en', 'de', 'dk'],
+      defaultLanguage: 'en',
+    }
+
+    await expect(generateTranslationTable(config)).rejects.toThrow(
+      /Generation failed with \d+ error\(s\):/
+    )
+    await expect(generateTranslationTable(config)).rejects.toThrow(
+      /Missing language column "dk" in .*diagnostics\.csv at row 2\./
+    )
+    await expect(generateTranslationTable(config)).rejects.toThrow(
+      /YAML validation failed in ".*features\.yaml":/
+    )
+  })
+
   test('generates deterministic output from YAML resources', async () => {
     const directory = await createTempDirectory()
     const yamlPath = join(directory, 'translations.yaml')
