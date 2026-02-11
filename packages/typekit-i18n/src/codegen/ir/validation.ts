@@ -12,6 +12,14 @@ const toEntryLocation = (
   return `root.entries[${entryIndex}]`
 }
 
+const toCombinedErrorMessage = (errors: ReadonlyArray<string>): string => {
+  if (errors.length === 1) {
+    return errors[0]
+  }
+  const lines = errors.map((error, index) => `${index + 1}. ${error}`)
+  return `Validation failed with ${errors.length} error(s):\n${lines.join('\n')}`
+}
+
 const collectPlaceholderTokens = (value: string): ReadonlySet<string> => {
   const result = new Set<string>()
   const pattern = new RegExp(placeholderTokenPattern)
@@ -55,15 +63,21 @@ const validateEntryValues = <TLanguage extends string>(
   locationResolver?: (entryIndex: number) => string
 ): void => {
   const location = toEntryLocation(entryIndex, locationResolver)
+  const errors: string[] = []
   project.languages.forEach((language) => {
     const translated = entry.values[language]
     if (typeof translated !== 'string') {
-      throw new Error(`Missing language "${language}" at ${location}.`)
+      errors.push(`Missing language "${language}" at ${location}.`)
+      return
     }
     if (language === project.sourceLanguage && translated.length === 0) {
-      throw new Error(`Missing source language value for "${language}" at ${location}.`)
+      errors.push(`Missing source language value for "${language}" at ${location}.`)
     }
   })
+
+  if (errors.length > 0) {
+    throw new Error(toCombinedErrorMessage(errors))
+  }
 }
 
 const validatePlaceholderDeclarations = <TLanguage extends string>(
@@ -171,21 +185,41 @@ export const validateIrProject = <TLanguage extends string>(
   validateLanguageShape(project)
 
   const keys = new Set<string>()
+  const errors: string[] = []
   project.entries.forEach((entry, entryIndex) => {
     const location = toEntryLocation(entryIndex, options.entryLocation)
     if (entry.key.length === 0) {
-      throw new Error(`Missing key at ${location}.`)
+      errors.push(`Missing key at ${location}.`)
+      return
     }
     if (entry.description.length === 0) {
-      throw new Error(`Missing description at ${location}.`)
+      errors.push(`Missing description at ${location}.`)
+      return
     }
     if (keys.has(entry.key)) {
-      throw new Error(`Duplicate key "${entry.key}" at ${location}.`)
+      errors.push(`Duplicate key "${entry.key}" at ${location}.`)
+      return
     }
     keys.add(entry.key)
 
-    validateEntryValues(project, entry, entryIndex, options.entryLocation)
-    validatePlaceholderDeclarations(entry, entryIndex, options.entryLocation)
-    validatePlaceholderTokenConsistency(project, entry, entryIndex, options.entryLocation)
+    try {
+      validateEntryValues(project, entry, entryIndex, options.entryLocation)
+    } catch (error: unknown) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
+    try {
+      validatePlaceholderDeclarations(entry, entryIndex, options.entryLocation)
+    } catch (error: unknown) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
+    try {
+      validatePlaceholderTokenConsistency(project, entry, entryIndex, options.entryLocation)
+    } catch (error: unknown) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
   })
+
+  if (errors.length > 0) {
+    throw new Error(toCombinedErrorMessage(errors))
+  }
 }

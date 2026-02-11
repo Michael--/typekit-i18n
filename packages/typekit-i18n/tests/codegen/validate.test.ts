@@ -54,6 +54,40 @@ entries:
       /Missing placeholder\(s\) "\{count\}" in language "de"/
     )
   })
+
+  test('reports multiple YAML value errors with file context', async () => {
+    const directory = await createTempDirectory()
+    const yamlPath = join(directory, 'missing-languages.yaml')
+    await writeFile(
+      yamlPath,
+      `version: "1"
+sourceLanguage: en
+languages: [en, de, dk]
+entries:
+  - key: title
+    description: Title
+    values:
+      en: Welcome
+      de: Willkommen
+  - key: subtitle
+    description: Subtitle
+    values:
+      en: Hello world
+      de: Hallo Welt
+`,
+      'utf-8'
+    )
+
+    await expect(validateYamlTranslationFile(yamlPath)).rejects.toThrow(
+      /YAML validation failed in ".*missing-languages\.yaml":/
+    )
+    await expect(validateYamlTranslationFile(yamlPath)).rejects.toThrow(
+      /Missing language "dk" at "root.entries\[0\]\.values" for entry "title"\./
+    )
+    await expect(validateYamlTranslationFile(yamlPath)).rejects.toThrow(
+      /Missing language "dk" at "root.entries\[1\]\.values" for entry "subtitle"\./
+    )
+  })
 })
 
 describe('validateTranslationFile', () => {

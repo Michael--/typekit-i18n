@@ -66,6 +66,14 @@ export interface CsvToIrOptions<TLanguage extends string = string> {
 const toLocation = (rowIndex: number, filePath?: string): string =>
   filePath ? `${filePath} at row ${rowIndex + 2}` : `row ${rowIndex + 2}`
 
+const toCombinedErrorMessage = (scope: string, errors: ReadonlyArray<string>): string => {
+  if (errors.length === 1) {
+    return errors[0]
+  }
+  const lines = errors.map((error, index) => `${index + 1}. ${error}`)
+  return `${scope} failed with ${errors.length} error(s):\n${lines.join('\n')}`
+}
+
 const parseStatus = (
   row: TranslationCsvRow,
   rowIndex: number,
@@ -240,7 +248,20 @@ export const toIrProjectFromCsvRows = <TLanguage extends string>(
 ): TranslationIrProject<TLanguage> => {
   validateOptions(options)
 
-  const entries = rows.map((row, rowIndex) => toEntryFromRow(row, rowIndex, options))
+  const entries: TranslationIrEntry<TLanguage>[] = []
+  const errors: string[] = []
+  rows.forEach((row, rowIndex) => {
+    try {
+      entries.push(toEntryFromRow(row, rowIndex, options))
+    } catch (error: unknown) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
+  })
+
+  if (errors.length > 0) {
+    throw new Error(toCombinedErrorMessage('CSV row validation', errors))
+  }
+
   const project: TranslationIrProject<TLanguage> = {
     version: '1',
     sourceLanguage: options.sourceLanguage,

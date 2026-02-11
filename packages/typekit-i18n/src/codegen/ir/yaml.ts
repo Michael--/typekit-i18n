@@ -18,6 +18,14 @@ const toPath = (path: ReadonlyArray<string | number>): string =>
     .join('.')
     .replace('.[', '[')
 
+const toCombinedErrorMessage = (scope: string, errors: ReadonlyArray<string>): string => {
+  if (errors.length === 1) {
+    return errors[0]
+  }
+  const lines = errors.map((error, index) => `${index + 1}. ${error}`)
+  return `${scope} failed with ${errors.length} error(s):\n${lines.join('\n')}`
+}
+
 const requireString = (value: unknown, path: ReadonlyArray<string | number>): string => {
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error(`Expected non-empty string at "${toPath(path)}".`)
@@ -154,24 +162,35 @@ const toValues = (
   value: unknown,
   languages: ReadonlyArray<string>,
   sourceLanguage: string,
-  path: ReadonlyArray<string | number>
+  path: ReadonlyArray<string | number>,
+  entryKey: string
 ): Record<string, string> => {
   const parsed = requireObject(value, path)
   const values: Record<string, string> = {}
+  const errors: string[] = []
 
   languages.forEach((language) => {
     if (!(language in parsed)) {
-      throw new Error(`Missing language "${language}" at "${toPath(path)}".`)
+      errors.push(`Missing language "${language}" at "${toPath(path)}" for entry "${entryKey}".`)
+      return
     }
     const translated = parsed[language]
     if (typeof translated !== 'string') {
-      throw new Error(`Expected string at "${toPath([...path, language])}".`)
+      errors.push(`Expected string at "${toPath([...path, language])}" for entry "${entryKey}".`)
+      return
     }
     if (language === sourceLanguage && translated.length === 0) {
-      throw new Error(`Missing source language value at "${toPath([...path, language])}".`)
+      errors.push(
+        `Missing source language value at "${toPath([...path, language])}" for entry "${entryKey}".`
+      )
+      return
     }
     values[language] = translated
   })
+
+  if (errors.length > 0) {
+    throw new Error(toCombinedErrorMessage('YAML value validation', errors))
+  }
 
   return values
 }
@@ -183,26 +202,38 @@ const toEntries = (
   path: ReadonlyArray<string | number>
 ): ReadonlyArray<TranslationIrEntry<string>> => {
   const entries = requireArray(value, path)
+  const parsedEntries: TranslationIrEntry<string>[] = []
   const keys = new Set<string>()
+  const errors: string[] = []
 
-  return entries.map((entry, index) => {
+  entries.forEach((entry, index) => {
     const basePath = [...path, index]
-    const parsed = requireObject(entry, basePath)
-    const key = requireString(parsed.key, [...basePath, 'key'])
-    if (keys.has(key)) {
-      throw new Error(`Duplicate key "${key}" at "${toPath(basePath)}".`)
-    }
-    keys.add(key)
+    try {
+      const parsed = requireObject(entry, basePath)
+      const key = requireString(parsed.key, [...basePath, 'key'])
+      if (keys.has(key)) {
+        throw new Error(`Duplicate key "${key}" at "${toPath(basePath)}".`)
+      }
+      keys.add(key)
 
-    return {
-      key,
-      description: requireString(parsed.description, [...basePath, 'description']),
-      status: toStatus(parsed.status, [...basePath, 'status']),
-      tags: toTags(parsed.tags, [...basePath, 'tags']),
-      placeholders: toPlaceholders(parsed.placeholders, [...basePath, 'placeholders']),
-      values: toValues(parsed.values, languages, sourceLanguage, [...basePath, 'values']),
+      parsedEntries.push({
+        key,
+        description: requireString(parsed.description, [...basePath, 'description']),
+        status: toStatus(parsed.status, [...basePath, 'status']),
+        tags: toTags(parsed.tags, [...basePath, 'tags']),
+        placeholders: toPlaceholders(parsed.placeholders, [...basePath, 'placeholders']),
+        values: toValues(parsed.values, languages, sourceLanguage, [...basePath, 'values'], key),
+      })
+    } catch (error: unknown) {
+      errors.push(error instanceof Error ? error.message : String(error))
     }
   })
+
+  if (errors.length > 0) {
+    throw new Error(toCombinedErrorMessage('YAML entry validation', errors))
+  }
+
+  return parsedEntries
 }
 
 /**
@@ -217,7 +248,8 @@ export const toIrProjectFromYamlContent = <TLanguage extends string = string>(
 ): TranslationIrProject<TLanguage> => {
   const document = parseDocument(content)
   if (document.errors.length > 0) {
-    throw new Error(`Invalid YAML: ${document.errors[0].message}`)
+    const parseErrors = document.errors.map((error) => error.message)
+    throw new Error(toCombinedErrorMessage('Invalid YAML', parseErrors))
   }
 
   const root = requireObject(document.toJS(), ['root'])
@@ -252,7 +284,12 @@ export const toIrProjectFromYamlFile = async <TLanguage extends string = string>
   filePath: string
 ): Promise<TranslationIrProject<TLanguage>> => {
   const content = await readFile(filePath, 'utf-8')
-  return toIrProjectFromYamlContent(content)
+  try {
+    return toIrProjectFromYamlContent(content)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`YAML validation failed in "${filePath}":\n${message}`)
+  }
 }
 
 /**

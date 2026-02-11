@@ -79,6 +79,45 @@ describe('toIrProjectFromCsvRows', () => {
     ).toThrow(/Invalid placeholder type "invalid_type" in translations\.csv at row 2\./)
   })
 
+  test('reports multiple row validation errors in one run', () => {
+    const rows: ReadonlyArray<TranslationCsvRow> = [
+      {
+        key: 'missing_description',
+        description: '',
+        en: 'A',
+        de: 'B',
+      },
+      {
+        key: 'missing_source',
+        description: 'Missing source value',
+        en: '',
+        de: 'B',
+      },
+    ]
+
+    expect(() =>
+      toIrProjectFromCsvRows(rows, {
+        languages: ['en', 'de'],
+        sourceLanguage: 'en',
+        filePath: 'translations.csv',
+      })
+    ).toThrow(/CSV row validation failed with 2 error\(s\):/)
+    expect(() =>
+      toIrProjectFromCsvRows(rows, {
+        languages: ['en', 'de'],
+        sourceLanguage: 'en',
+        filePath: 'translations.csv',
+      })
+    ).toThrow(/Missing "description" in translations\.csv at row 2\./)
+    expect(() =>
+      toIrProjectFromCsvRows(rows, {
+        languages: ['en', 'de'],
+        sourceLanguage: 'en',
+        filePath: 'translations.csv',
+      })
+    ).toThrow(/Missing value for source language "en" in translations\.csv at row 3\./)
+  })
+
   test('throws when source language value is empty', () => {
     const rows: ReadonlyArray<TranslationCsvRow> = [
       {
