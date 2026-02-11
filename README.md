@@ -106,8 +106,8 @@ Format notes:
 Current workspace-first workflow:
 
 1. Maintain consumer CSV files, for example `apps/playground-ts/translations/*.csv`
-2. Define per-consumer config in `typekit-i18n.config.ts`
-3. Run consumer generation via `pnpm --filter @typekit-i18n/playground-ts run gen`
+2. Define per-consumer config in `typekit.config.ts` (or `typekit.config.json|yaml`)
+3. Run consumer generation via `pnpm run gen:typekit-i18n` (or `pnpm --filter @typekit-i18n/playground-ts run gen`)
 4. Consume generated table in app code with runtime imports from `typekit-i18n`
 
 ## Architecture Direction (next)

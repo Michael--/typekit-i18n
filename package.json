@@ -20,6 +20,7 @@
     "spell": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky",
     "dev:playground": "pnpm --filter @typekit-i18n/playground-ts dev",
+    "gen:typekit-i18n": "pnpm --filter @typekit-i18n/playground-ts run gen:typekit-i18n",
     "dev:docs": "pnpm --filter @typekit-i18n/docs-site docs:dev",
     "generate": "pnpm run gen",
     "check:codegen": "pnpm run gen && git diff --exit-code",

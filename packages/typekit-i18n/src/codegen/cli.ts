@@ -124,7 +124,8 @@ const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> 
   const loaded = await loadTypekitI18nConfig(configArg)
 
   if (!loaded) {
-    const resolvedPath = configArg ?? 'typekit-i18n.config.ts'
+    const resolvedPath =
+      configArg ?? 'typekit.config.ts|json|yaml|yml or typekit-i18n.config.ts|json|yaml|yml'
     console.warn(pc.yellow(`No config file found at "${resolvedPath}". Skipping generation.`))
     return 0
   }
