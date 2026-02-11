@@ -64,6 +64,22 @@ Translation source can come from:
 
 As long as output follows the CSV/YAML contract, the generation and runtime path stays unchanged.
 
+## File Hierarchy Strategy
+
+Do not keep all content in a single translation table file.
+
+Use multiple files with a user-defined hierarchy, for example by:
+
+- Feature (`auth`, `checkout`, `settings`)
+- Product area (`dashboard`, `reports`, `admin`)
+- Domain ownership (`billing`, `support`, `legal`)
+
+Benefits:
+
+- Better readability and ownership boundaries
+- Lower review complexity per change
+- Reduced risk of losing overview in one monolithic table
+
 ## Policy Suggestion
 
 Document the translation policy in your repository:
@@ -72,3 +88,11 @@ Document the translation policy in your repository:
 - Which content requires human review
 - Who approves locale releases
 - What quality checks block a release
+- How translation files are grouped and owned
+- Which commit rules apply per file or folder
+
+For enterprise workflows, file-based commit governance is often useful, for example:
+
+- Require specific reviewers for `translations/legal/*`
+- Enforce stricter checks for `translations/compliance/*`
+- Allow faster merge paths for low-risk UI copy in `translations/ui/*`

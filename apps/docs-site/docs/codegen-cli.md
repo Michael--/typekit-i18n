@@ -27,6 +27,8 @@ Config fields:
 - `languages`: supported language list
 - `defaultLanguage`: fallback language (must be part of `languages`)
 
+`input` is intentionally multi-file capable so teams can keep translation resources split by feature/domain instead of one monolithic table.
+
 ## Config File Discovery
 
 When no explicit `--config` is passed, the CLI checks:
