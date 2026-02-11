@@ -35,4 +35,15 @@ welcome,Welcome message, Hello , Hallo
       },
     ])
   })
+
+  test('throws when one row has fewer columns than header', async () => {
+    const content = `key,description,en,de
+welcome,Welcome message,Hello,Hallo
+bye,Bye message,Goodbye
+`
+
+    await expect(parseCsvContent(content)).rejects.toThrow(
+      /Invalid column count at row 3: expected 4, got 3\./
+    )
+  })
 })

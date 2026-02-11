@@ -1,6 +1,6 @@
-import type { TypekitI18nConfig } from 'typekit-i18n/codegen'
+import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
 
-const config: TypekitI18nConfig<'en' | 'de' | 'es' | 'fr' | 'dk'> = {
+const config = defineTypekitI18nConfig({
   input: [
     './translations/ui.csv',
     './translations/features.yaml',
@@ -8,8 +8,8 @@ const config: TypekitI18nConfig<'en' | 'de' | 'es' | 'fr' | 'dk'> = {
   ],
   output: './generated/translationTable.ts',
   outputKeys: './generated/translationKeys.ts',
-  languages: ['en', 'de', 'es', 'fr', 'dk'],
+  languages: ['en', 'de', 'es', 'fr'] as const,
   defaultLanguage: 'en',
-}
+})
 
 export default config

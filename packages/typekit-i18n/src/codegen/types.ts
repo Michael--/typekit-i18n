@@ -36,6 +36,33 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
 }
 
 /**
+ * Helper input type for strongly typed config inference from language tuples.
+ */
+export type TypekitI18nConfigDefinition<TLanguages extends readonly [string, ...string[]]> = Omit<
+  TypekitI18nConfig<TLanguages[number]>,
+  'languages' | 'defaultLanguage'
+> & {
+  /**
+   * Supported language columns in the input resources.
+   */
+  languages: TLanguages
+  /**
+   * Default fallback language.
+   */
+  defaultLanguage: TLanguages[number]
+}
+
+/**
+ * Defines Typekit i18n config with language union inferred from `languages`.
+ *
+ * @param config Config object with non-empty language tuple.
+ * @returns Unchanged config object with inferred language union typing.
+ */
+export const defineTypekitI18nConfig = <const TLanguages extends readonly [string, ...string[]]>(
+  config: TypekitI18nConfigDefinition<TLanguages>
+): TypekitI18nConfig<TLanguages[number]> => config
+
+/**
  * Internal CSV row representation.
  */
 export type TranslationCsvRow = Record<string, string>
