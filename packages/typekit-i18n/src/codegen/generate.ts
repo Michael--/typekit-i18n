@@ -63,6 +63,14 @@ const validateYamlProjectLanguageConfig = <TLanguage extends string>(
   }
 }
 
+const inferInputFormatFromPath = (filePath: string): TranslationInputFormat => {
+  const extension = extname(filePath).toLowerCase()
+  if (extension === '.yaml' || extension === '.yml') {
+    return 'yaml'
+  }
+  return 'csv'
+}
+
 const loadProjectFromFile = async <TLanguage extends string>(
   filePath: string,
   format: TranslationInputFormat,
@@ -178,7 +186,7 @@ export const generateTranslationTable = async <TLanguage extends string>(
 ): Promise<{ outputPath: string; outputKeysPath: string; keyCount: number }> => {
   validateLanguageConfig(config)
 
-  const format = config.format ?? 'csv'
+  const configuredFormat = config.format
   const inputPatterns = Array.isArray(config.input) ? config.input : [config.input]
   const files = await resolveInputFiles(inputPatterns)
 
@@ -190,6 +198,7 @@ export const generateTranslationTable = async <TLanguage extends string>(
   const records: TranslationRecord<TLanguage>[] = []
 
   for (const filePath of files) {
+    const format = configuredFormat ?? inferInputFormatFromPath(filePath)
     const project = await loadProjectFromFile(filePath, format, config)
 
     project.entries.forEach((entry, entryIndex) => {

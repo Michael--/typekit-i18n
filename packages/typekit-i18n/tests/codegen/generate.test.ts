@@ -133,6 +133,93 @@ same_key;Second row;Second EN;Second DE
     )
   })
 
+  test('infers mixed input formats per file when no format override is configured', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'base.csv')
+    const yamlPath = join(directory, 'extra.yaml')
+    const outputTablePath = join(directory, 'translationTable.ts')
+    const outputKeysPath = join(directory, 'translationKeys.ts')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+      'utf-8'
+    )
+    await writeFile(
+      yamlPath,
+      `version: "1"
+sourceLanguage: en
+languages:
+  - en
+  - de
+entries:
+  - key: subtitle
+    description: Main subtitle
+    values:
+      en: Hello world
+      de: Hallo Welt
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [yamlPath, csvPath],
+      output: outputTablePath,
+      outputKeys: outputKeysPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await generateTranslationTable(config)
+    const tableSource = await readFile(outputTablePath, 'utf-8')
+    const keysSource = await readFile(outputKeysPath, 'utf-8')
+    const normalizedTableSource = normalizeTempPath(tableSource, directory)
+    const normalizedKeysSource = normalizeTempPath(keysSource, directory)
+
+    expect(normalizedTableSource).toMatchInlineSnapshot(`
+      "/*
+         This file is generated.
+         Source files:
+         [1/2] "<TEMP_DIR>/base.csv"
+         [2/2] "<TEMP_DIR>/extra.yaml"
+      */
+      // cspell:disable
+
+      export const translationTable = {
+        "title": {
+          description: "Main title",
+          en: "Welcome",
+          de: "Willkommen",
+        },
+        "subtitle": {
+          description: "Main subtitle",
+          en: "Hello world",
+          de: "Hallo Welt",
+        },
+      } as const
+
+      export type { TranslateKey, TranslateKeys, TranslateLanguage } from "./translationKeys.js"
+      "
+    `)
+
+    expect(normalizedKeysSource).toMatchInlineSnapshot(`
+      "/*
+         This file is generated.
+         Source files:
+         [1/2] "<TEMP_DIR>/base.csv"
+         [2/2] "<TEMP_DIR>/extra.yaml"
+      */
+      // cspell:disable
+
+      export type TranslateKey = "title" | "subtitle"
+      export type TranslateKeys = TranslateKey
+      export type TranslateLanguage = "en" | "de"
+      "
+    `)
+  })
+
   test('throws when default language value is empty', async () => {
     const directory = await createTempDirectory()
     const csvPath = join(directory, 'translations.csv')

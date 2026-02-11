@@ -12,7 +12,8 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    */
   input: string | ReadonlyArray<string>
   /**
-   * Input file format. Defaults to `csv`.
+   * Optional input file format override for all configured files.
+   * When omitted, each file format is inferred from extension (`.yaml`/`.yml` => `yaml`, otherwise `csv`).
    */
   format?: TranslationInputFormat
   /**
