@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "rm -rf dist generated",
+    "clean": "rimraf dist generated",
     "dev": "vite",
     "pregen": "pnpm --filter typekit-i18n run build:cli",
     "gen": "typekit-i18n",

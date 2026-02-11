@@ -24,7 +24,7 @@
     }
   },
   "scripts": {
-    "clean": "rm -rf dist generated",
+    "clean": "rimraf dist generated",
     "build:cli": "vite build --config vite.cli.config.ts",
     "gen": "node --import tsx src/codegen/cli.ts generate",
     "validate:yaml-example": "node --import tsx src/codegen/cli.ts validate --input resources/translations/translationTableExample.yaml --format yaml",

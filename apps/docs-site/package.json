@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "rm -rf docs/.vitepress/dist",
+    "clean": "rimraf docs/.vitepress/dist",
     "docs:dev": "vitepress dev docs --port 4174",
     "gen": "echo \"No code generation defined for docs-site\"",
     "build": "pnpm run docs:build",
