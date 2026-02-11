@@ -61,14 +61,28 @@ const demoCases: ReadonlyArray<DemoCaseDefinition> = [
   },
 ]
 
+const numberLocaleByLanguage: Record<TranslateLanguage, string> = {
+  en: 'en-US',
+  de: 'de-DE',
+  es: 'es-ES',
+  fr: 'fr-FR',
+}
+
+const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR'> = {
+  en: 'USD',
+  de: 'EUR',
+  es: 'EUR',
+  fr: 'EUR',
+}
+
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
  */
 const formatters: PlaceholderFormatterMap<TranslateKey, TranslateLanguage> = {
   currency: (value, context) => {
     const num = typeof value === 'number' ? value : parseFloat(String(value))
-    const locale = context.language === 'de' ? 'de-DE' : 'en-US'
-    const currency = context.language === 'de' ? 'EUR' : 'USD'
+    const locale = numberLocaleByLanguage[context.language]
+    const currency = currencyByLanguage[context.language]
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
@@ -76,7 +90,7 @@ const formatters: PlaceholderFormatterMap<TranslateKey, TranslateLanguage> = {
   },
   dateShort: (value, context) => {
     const date = value instanceof Date ? value : new Date(String(value))
-    const locale = context.language === 'de' ? 'de-DE' : 'en-US'
+    const locale = numberLocaleByLanguage[context.language]
     return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: 'short',
