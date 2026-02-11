@@ -16,7 +16,6 @@ import { IcuRenderContext, renderIcuMessage } from './icuRenderer.js'
  * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
  *
  * TODO(icu):
- * - Add `zero`, `two`, `few`, `many` category tests per locale.
  * - Add strict syntax errors (line/column) instead of graceful fallback on parse failures.
  * - Add compile/cache layer for parsed templates to avoid reparsing on every translate call.
  */

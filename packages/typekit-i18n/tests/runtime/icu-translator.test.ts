@@ -177,4 +177,31 @@ describe('createIcuTranslator', () => {
       /Missing translation for key "unknown".*reason "missingKey"/
     )
   })
+
+  test('supports locale categories zero/two/few/many/other', () => {
+    type CategoryLanguage = 'ar'
+    type CategoryKey = 'pluralCategories'
+
+    const categoryTable: TranslationTable<CategoryKey, CategoryLanguage> = {
+      pluralCategories: {
+        description: 'Arabic plural category coverage',
+        ar: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}',
+      },
+    }
+
+    const translate = createIcuTranslator(categoryTable, {
+      defaultLanguage: 'ar',
+    })
+
+    expect(translate('pluralCategories', 'ar', { data: [{ key: 'count', value: 0 }] })).toBe('ZERO')
+    expect(translate('pluralCategories', 'ar', { data: [{ key: 'count', value: 1 }] })).toBe('ONE')
+    expect(translate('pluralCategories', 'ar', { data: [{ key: 'count', value: 2 }] })).toBe('TWO')
+    expect(translate('pluralCategories', 'ar', { data: [{ key: 'count', value: 3 }] })).toBe('FEW')
+    expect(translate('pluralCategories', 'ar', { data: [{ key: 'count', value: 11 }] })).toBe(
+      'MANY'
+    )
+    expect(translate('pluralCategories', 'ar', { data: [{ key: 'count', value: 100 }] })).toBe(
+      'OTHER'
+    )
+  })
 })
