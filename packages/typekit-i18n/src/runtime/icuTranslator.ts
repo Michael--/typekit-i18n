@@ -28,6 +28,21 @@ interface ParsedIcuExpression {
   optionsSource: string
 }
 
+/**
+ * Supported ICU subset in this proof-of-concept:
+ * - `{var, select, key {...} other {...}}`
+ * - `{var, plural, =0 {...} one {...} other {...}}`
+ * - `#` replacement inside plural branches
+ *
+ * TODO(icu):
+ * - Add `zero`, `two`, `few`, `many` category tests per locale.
+ * - Add `selectordinal` support.
+ * - Add `offset:n` support for plural expressions.
+ * - Add escaping and apostrophe handling compatible with ICU message syntax.
+ * - Add strict syntax errors (line/column) instead of graceful fallback on parse failures.
+ * - Add compile/cache layer for parsed templates to avoid reparsing on every translate call.
+ */
+
 const toMissingTranslationMessage = <TKey extends string, TLanguage extends string>(
   event: MissingTranslationEvent<TKey, TLanguage>
 ): string =>
@@ -89,6 +104,7 @@ const parseIcuExpression = (rawExpression: string): ParsedIcuExpression | null =
   if (variableName.length === 0 || optionsSource.length === 0) {
     return null
   }
+  // TODO(icu): Extend parser to recognize `selectordinal` and plural `offset:n`.
   if (expressionTypeRaw !== 'plural' && expressionTypeRaw !== 'select') {
     return null
   }
@@ -134,6 +150,7 @@ const parseIcuOptions = (optionsSource: string): ReadonlyMap<string, string> | n
       return null
     }
 
+    // TODO(icu): Add proper ICU escaping handling for apostrophes and literal braces.
     const message = optionsSource.slice(blockStart + 1, blockEnd)
     options.set(selector, message)
     index = blockEnd + 1
@@ -275,6 +292,7 @@ const formatIcuTemplate = <TKey extends string, TLanguage extends string>(
   template: string,
   context: IcuRenderContext<TKey, TLanguage>
 ): string => {
+  // TODO(icu): Move parsing to a compiled AST cache to avoid repeated scanning on hot paths.
   let output = ''
   let index = 0
 
