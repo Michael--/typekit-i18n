@@ -62,7 +62,7 @@ entries:
     status: approved
     tags: [demo, icu, plural, categories]
     values:
-      en: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
-      de: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
-      es: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
-      fr: '{count, plural, zero {ZERO} one {ONE} two {TWO} few {FEW} many {MANY} other {OTHER}}'
+      en: '{count, plural, zero {zero items} one {one item} two {two items} few {few items} many {many items} other {# items}}'
+      de: '{count, plural, zero {null Elemente} one {ein Element} two {zwei Elemente} few {wenige Elemente} many {viele Elemente} other {# Elemente}}'
+      es: '{count, plural, zero {cero elementos} one {un elemento} two {dos elementos} few {pocos elementos} many {muchos elementos} other {# elementos}}'
+      fr: "{count, plural, zero {zero element} one {un element} two {deux elements} few {quelques elements} many {beaucoup d''elements} other {# elements}}"
