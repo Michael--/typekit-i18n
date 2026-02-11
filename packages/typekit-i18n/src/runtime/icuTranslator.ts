@@ -2,43 +2,18 @@ import {
   IcuTranslatorOptions,
   MissingTranslationEvent,
   Placeholder,
-  PlaceholderFormatterMap,
-  PlaceholderValue,
   TranslationTable,
 } from './types.js'
-import { isQuotedPosition, unescapeIcuText } from './icuEscape.js'
-
-const placeholderPattern = /\{([A-Za-z0-9_]+)(?:\|([A-Za-z0-9_-]+))?\}/g
-
-type PlaceholderValueMap = Record<string, PlaceholderValue>
-
-interface IcuRenderContext<TKey extends string, TLanguage extends string> {
-  key: TKey
-  language: TLanguage
-  defaultLanguage: TLanguage
-  values: PlaceholderValueMap
-  formatters?: PlaceholderFormatterMap<TKey, TLanguage>
-  localeByLanguage?: Partial<Record<TLanguage, string>>
-  pluralRulesCache: Map<string, Intl.PluralRules>
-  numberFormatCache: Map<string, Intl.NumberFormat>
-}
-
-interface ParsedIcuExpression {
-  variableName: string
-  expressionType: 'plural' | 'select' | 'selectordinal'
-  optionsSource: string
-}
-
-interface ParsedIcuOptions {
-  options: ReadonlyMap<string, string>
-  offset: number
-}
+import { IcuRenderContext, renderIcuMessage } from './icuRenderer.js'
 
 /**
- * Supported ICU subset in this proof-of-concept:
+ * Supported ICU subset:
  * - `{var, select, key {...} other {...}}`
  * - `{var, plural, =0 {...} one {...} other {...}}`
+ * - `{var, plural, offset:1 one {...} other {...}}`
+ * - `{var, selectordinal, one {...} two {...} few {...} other {...}}`
  * - `#` replacement inside plural branches
+ * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
  *
  * TODO(icu):
  * - Add `zero`, `two`, `few`, `many` category tests per locale.
@@ -51,374 +26,14 @@ const toMissingTranslationMessage = <TKey extends string, TLanguage extends stri
 ): string =>
   `Missing translation for key "${event.key}" in "${event.language}" (default "${event.defaultLanguage}", reason "${event.reason}").`
 
-const toPlaceholderValueMap = (placeholder?: Placeholder): PlaceholderValueMap => {
-  const values: PlaceholderValueMap = {}
+const toPlaceholderValueMap = (
+  placeholder?: Placeholder
+): Record<string, import('./types.js').PlaceholderValue> => {
+  const values: Record<string, import('./types.js').PlaceholderValue> = {}
   placeholder?.data.forEach((entry) => {
     values[entry.key] = entry.value
   })
   return values
-}
-
-const findMatchingBrace = (value: string, startIndex: number): number => {
-  let depth = 0
-  for (let index = startIndex; index < value.length; index += 1) {
-    if (isQuotedPosition(value, index)) {
-      continue
-    }
-    const char = value[index]
-    if (char === '{') {
-      depth += 1
-    } else if (char === '}') {
-      depth -= 1
-      if (depth === 0) {
-        return index
-      }
-    }
-  }
-  return -1
-}
-
-const findTopLevelComma = (value: string, startIndex: number): number => {
-  let depth = 0
-  for (let index = startIndex; index < value.length; index += 1) {
-    if (isQuotedPosition(value, index)) {
-      continue
-    }
-    const char = value[index]
-    if (char === '{') {
-      depth += 1
-    } else if (char === '}') {
-      depth = Math.max(0, depth - 1)
-    } else if (char === ',' && depth === 0) {
-      return index
-    }
-  }
-  return -1
-}
-
-const parseIcuExpression = (rawExpression: string): ParsedIcuExpression | null => {
-  const firstCommaIndex = findTopLevelComma(rawExpression, 0)
-  if (firstCommaIndex < 0) {
-    return null
-  }
-  const secondCommaIndex = findTopLevelComma(rawExpression, firstCommaIndex + 1)
-  if (secondCommaIndex < 0) {
-    return null
-  }
-
-  const variableName = rawExpression.slice(0, firstCommaIndex).trim()
-  const expressionTypeRaw = rawExpression.slice(firstCommaIndex + 1, secondCommaIndex).trim()
-  const optionsSource = rawExpression.slice(secondCommaIndex + 1).trim()
-
-  if (variableName.length === 0 || optionsSource.length === 0) {
-    return null
-  }
-  if (
-    expressionTypeRaw !== 'plural' &&
-    expressionTypeRaw !== 'select' &&
-    expressionTypeRaw !== 'selectordinal'
-  ) {
-    return null
-  }
-
-  return {
-    variableName,
-    expressionType: expressionTypeRaw,
-    optionsSource,
-  }
-}
-
-const parseIcuOffset = (optionsSource: string): { offset: number; startIndex: number } | null => {
-  const offsetMatch = /^\s*offset\s*:\s*(-?\d+(?:\.\d+)?)\s*/u.exec(optionsSource)
-  if (!offsetMatch) {
-    return { offset: 0, startIndex: 0 }
-  }
-  const offsetValue = Number.parseFloat(offsetMatch[1])
-  if (!Number.isFinite(offsetValue)) {
-    return null
-  }
-  return { offset: offsetValue, startIndex: offsetMatch[0].length }
-}
-
-const parseIcuOptions = (optionsSource: string, allowOffset: boolean): ParsedIcuOptions | null => {
-  const options = new Map<string, string>()
-  const offsetResult = allowOffset ? parseIcuOffset(optionsSource) : { offset: 0, startIndex: 0 }
-  if (!offsetResult) {
-    return null
-  }
-
-  let index = offsetResult.startIndex
-
-  while (index < optionsSource.length) {
-    while (index < optionsSource.length && /\s/u.test(optionsSource[index])) {
-      index += 1
-    }
-    if (index >= optionsSource.length) {
-      break
-    }
-
-    const selectorStart = index
-    while (index < optionsSource.length && !/\s|\{/u.test(optionsSource[index])) {
-      index += 1
-    }
-    const selector = optionsSource.slice(selectorStart, index).trim()
-    if (selector.length === 0) {
-      return null
-    }
-
-    while (index < optionsSource.length && /\s/u.test(optionsSource[index])) {
-      index += 1
-    }
-    if (optionsSource[index] !== '{') {
-      return null
-    }
-
-    const blockStart = index
-    const blockEnd = findMatchingBrace(optionsSource, blockStart)
-    if (blockEnd < 0) {
-      return null
-    }
-
-    const message = optionsSource.slice(blockStart + 1, blockEnd)
-    options.set(selector, message)
-    index = blockEnd + 1
-  }
-
-  return options.size > 0 ? { options, offset: offsetResult.offset } : null
-}
-
-const toLocale = <TLanguage extends string>(
-  language: TLanguage,
-  defaultLanguage: TLanguage,
-  localeByLanguage?: Partial<Record<TLanguage, string>>
-): string => localeByLanguage?.[language] ?? localeByLanguage?.[defaultLanguage] ?? language
-
-const toPluralRules = (
-  locale: string,
-  cache: Map<string, Intl.PluralRules>,
-  type: Intl.PluralRulesOptions['type'] = 'cardinal'
-): Intl.PluralRules => {
-  const cacheKey = `${locale}|${type}`
-  const cached = cache.get(cacheKey)
-  if (cached) {
-    return cached
-  }
-
-  try {
-    const created = new Intl.PluralRules(locale, { type })
-    cache.set(cacheKey, created)
-    return created
-  } catch {
-    const fallbackLocale = 'en'
-    const fallbackKey = `${fallbackLocale}|${type}`
-    const fallbackCached = cache.get(fallbackKey)
-    if (fallbackCached) {
-      return fallbackCached
-    }
-    const fallback = new Intl.PluralRules(fallbackLocale, { type })
-    cache.set(fallbackKey, fallback)
-    return fallback
-  }
-}
-
-const toNumberFormatter = (
-  locale: string,
-  cache: Map<string, Intl.NumberFormat>
-): Intl.NumberFormat => {
-  const cached = cache.get(locale)
-  if (cached) {
-    return cached
-  }
-
-  try {
-    const created = new Intl.NumberFormat(locale)
-    cache.set(locale, created)
-    return created
-  } catch {
-    const fallbackLocale = 'en'
-    const fallbackCached = cache.get(fallbackLocale)
-    if (fallbackCached) {
-      return fallbackCached
-    }
-    const fallback = new Intl.NumberFormat(fallbackLocale)
-    cache.set(fallbackLocale, fallback)
-    return fallback
-  }
-}
-
-const toNumericValue = (value: PlaceholderValue | undefined): number => {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : 0
-  }
-  if (typeof value === 'bigint') {
-    const numericValue = Number(value)
-    return Number.isFinite(numericValue) ? numericValue : 0
-  }
-  if (typeof value === 'boolean') {
-    return value ? 1 : 0
-  }
-  if (value instanceof Date) {
-    return Number.isFinite(value.getTime()) ? value.getTime() : 0
-  }
-
-  const numericValue = Number(value)
-  return Number.isFinite(numericValue) ? numericValue : 0
-}
-
-const applySimplePlaceholders = <TKey extends string, TLanguage extends string>(
-  template: string,
-  context: IcuRenderContext<TKey, TLanguage>
-): string =>
-  template.replace(
-    placeholderPattern,
-    (match: string, placeholderKey: string, formatterName?: string): string => {
-      if (!(placeholderKey in context.values)) {
-        return match
-      }
-
-      const rawValue = context.values[placeholderKey]
-      const fallbackValue = String(rawValue)
-      if (!formatterName) {
-        return fallbackValue
-      }
-
-      const formatter = context.formatters?.[formatterName]
-      if (!formatter) {
-        return fallbackValue
-      }
-
-      return formatter(rawValue, {
-        key: context.key,
-        language: context.language,
-        defaultLanguage: context.defaultLanguage,
-        placeholderKey,
-        formatter: formatterName,
-      })
-    }
-  )
-
-const resolveIcuBranch = <TKey extends string, TLanguage extends string>(
-  parsed: ParsedIcuExpression,
-  parsedOptions: ParsedIcuOptions,
-  context: IcuRenderContext<TKey, TLanguage>
-): string | null => {
-  if (parsed.expressionType === 'select') {
-    const selectedKey = String(context.values[parsed.variableName] ?? 'other')
-    return parsedOptions.options.get(selectedKey) ?? parsedOptions.options.get('other') ?? null
-  }
-
-  const numericValue = toNumericValue(context.values[parsed.variableName])
-  const adjustedValue = numericValue - parsedOptions.offset
-  const exactMatchKey = `=${adjustedValue}`
-  const locale = toLocale(context.language, context.defaultLanguage, context.localeByLanguage)
-  const pluralRules = toPluralRules(
-    locale,
-    context.pluralRulesCache,
-    parsed.expressionType === 'selectordinal' ? 'ordinal' : 'cardinal'
-  )
-  const category = pluralRules.select(adjustedValue)
-  const rawBranch =
-    parsedOptions.options.get(exactMatchKey) ??
-    parsedOptions.options.get(category) ??
-    parsedOptions.options.get('other') ??
-    null
-  if (rawBranch === null) {
-    return null
-  }
-
-  const numberFormatter = toNumberFormatter(locale, context.numberFormatCache)
-  const formattedNumber = numberFormatter.format(adjustedValue)
-  let output = ''
-  let index = 0
-
-  while (index < rawBranch.length) {
-    if (rawBranch[index] === '#' && !isQuotedPosition(rawBranch, index)) {
-      output += formattedNumber
-    } else {
-      output += rawBranch[index]
-    }
-    index += 1
-  }
-
-  return output
-}
-
-const formatIcuTemplate = <TKey extends string, TLanguage extends string>(
-  template: string,
-  context: IcuRenderContext<TKey, TLanguage>
-): string => {
-  // TODO(icu): Move parsing to a compiled AST cache to avoid repeated scanning on hot paths.
-  let output = ''
-  let index = 0
-
-  while (index < template.length) {
-    const char = template[index]
-    if (char !== '{' || isQuotedPosition(template, index)) {
-      output += char
-      index += 1
-      continue
-    }
-
-    const blockEnd = findMatchingBrace(template, index)
-    if (blockEnd < 0) {
-      output += char
-      index += 1
-      continue
-    }
-
-    const rawExpression = template.slice(index + 1, blockEnd)
-    const parsed = parseIcuExpression(rawExpression)
-    if (!parsed) {
-      output += template.slice(index, blockEnd + 1)
-      index = blockEnd + 1
-      continue
-    }
-
-    const options = parseIcuOptions(parsed.optionsSource, parsed.expressionType !== 'select')
-    if (!options) {
-      output += template.slice(index, blockEnd + 1)
-      index = blockEnd + 1
-      continue
-    }
-
-    const selectedBranch = resolveIcuBranch(parsed, options, context)
-    if (selectedBranch === null) {
-      output += template.slice(index, blockEnd + 1)
-      index = blockEnd + 1
-      continue
-    }
-
-    output += formatIcuTemplate(selectedBranch, context)
-    index = blockEnd + 1
-  }
-
-  return output
-}
-
-const renderMessage = <TKey extends string, TLanguage extends string>(
-  template: string,
-  key: TKey,
-  language: TLanguage,
-  defaultLanguage: TLanguage,
-  placeholder: Placeholder | undefined,
-  options: IcuTranslatorOptions<TKey, TLanguage>,
-  pluralRulesCache: Map<string, Intl.PluralRules>,
-  numberFormatCache: Map<string, Intl.NumberFormat>
-): string => {
-  const context: IcuRenderContext<TKey, TLanguage> = {
-    key,
-    language,
-    defaultLanguage,
-    values: toPlaceholderValueMap(placeholder),
-    formatters: options.formatters,
-    localeByLanguage: options.localeByLanguage,
-    pluralRulesCache,
-    numberFormatCache,
-  }
-
-  const withResolvedIcu = formatIcuTemplate(template, context)
-  const withPlaceholders = applySimplePlaceholders(withResolvedIcu, context)
-  return unescapeIcuText(withPlaceholders)
 }
 
 /**
@@ -468,16 +83,17 @@ export const createIcuTranslator = <
 
     const requestedText = translation[language]
     if (requestedText.length > 0) {
-      return renderMessage(
-        requestedText,
+      const context: IcuRenderContext<TKey, TLanguage> = {
         key,
         language,
-        options.defaultLanguage,
-        placeholder,
-        options,
+        defaultLanguage: options.defaultLanguage,
+        values: toPlaceholderValueMap(placeholder),
+        formatters: options.formatters,
+        localeByLanguage: options.localeByLanguage,
         pluralRulesCache,
-        numberFormatCache
-      )
+        numberFormatCache,
+      }
+      return renderIcuMessage(requestedText, context)
     }
 
     const fallbackText = translation[options.defaultLanguage]
@@ -489,16 +105,17 @@ export const createIcuTranslator = <
     })
 
     if (fallbackText.length > 0) {
-      return renderMessage(
-        fallbackText,
+      const context: IcuRenderContext<TKey, TLanguage> = {
         key,
         language,
-        options.defaultLanguage,
-        placeholder,
-        options,
+        defaultLanguage: options.defaultLanguage,
+        values: toPlaceholderValueMap(placeholder),
+        formatters: options.formatters,
+        localeByLanguage: options.localeByLanguage,
         pluralRulesCache,
-        numberFormatCache
-      )
+        numberFormatCache,
+      }
+      return renderIcuMessage(fallbackText, context)
     }
 
     return key
