@@ -6,6 +6,7 @@
   "scripts": {
     "clean": "rm -rf dist generated",
     "dev": "vite",
+    "pregen": "pnpm --filter typekit-i18n run build:cli",
     "gen": "typekit-i18n",
     "build": "pnpm run gen && vite build",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",

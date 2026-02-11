@@ -25,9 +25,10 @@
   },
   "scripts": {
     "clean": "rm -rf dist generated",
+    "build:cli": "vite build --config vite.cli.config.ts",
     "gen": "node --import tsx src/codegen/cli.ts generate",
     "validate:yaml-example": "node --import tsx src/codegen/cli.ts validate --input resources/translations/translationTableExample.yaml --format yaml",
-    "build": "vite build && vite build --config vite.cli.config.ts && tsc -p tsconfig.build.json",
+    "build": "vite build && pnpm run build:cli && tsc -p tsconfig.build.json",
     "dev": "vite build --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run --passWithNoTests",
