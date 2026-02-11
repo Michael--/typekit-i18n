@@ -1,3 +1,4 @@
+import { builtinModules } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
@@ -14,12 +15,27 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: false,
+    target: 'es2022',
     lib: {
-      entry: resolve(thisDirPath, 'src/index.ts'),
-      name: 'TypekitI18n',
+      entry: {
+        index: resolve(thisDirPath, 'src/index.ts'),
+        runtime: resolve(thisDirPath, 'src/runtime/index.ts'),
+        codegen: resolve(thisDirPath, 'src/codegen/index.ts'),
+      },
       formats: ['es'],
-      fileName: 'index',
+      fileName: (_, entryName) => `${entryName}.js`,
+    },
+    rollupOptions: {
+      external: [
+        ...builtinModules,
+        /^node:/,
+        /^fast-csv$/,
+        /^glob$/,
+        /^picocolors$/,
+        /^tsx(\/.*)?$/,
+        /^yaml$/,
+      ],
     },
   },
 })

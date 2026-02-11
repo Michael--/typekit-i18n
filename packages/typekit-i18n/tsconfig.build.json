@@ -3,8 +3,10 @@
   "compilerOptions": {
     "noEmit": false,
     "emitDeclarationOnly": true,
+    "composite": false,
+    "incremental": false,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": false
   },
   "include": ["src/**/*.ts", "generated/**/*.ts"]
 }

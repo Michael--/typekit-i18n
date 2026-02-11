@@ -6,7 +6,7 @@ export default defineConfig({
     target: 'node20',
     outDir: 'dist',
     emptyOutDir: false,
-    sourcemap: true,
+    sourcemap: false,
     lib: {
       entry: 'src/codegen/cli.ts',
       formats: ['es'],
