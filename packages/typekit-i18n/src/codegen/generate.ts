@@ -238,12 +238,13 @@ const toKeysModuleSource = <TLanguage extends string>(
   languages: ReadonlyArray<TLanguage>
 ): string => {
   const keyUnion = toTypeUnion(records.map((record) => record.key))
-  const languageUnion = toTypeUnion(languages)
+  const languageTuple = `[${languages.map((language) => quote(language)).join(', ')}]`
 
   return `${toHeaderComment(files)}
 export type TranslateKey = ${keyUnion}
 export type TranslateKeys = TranslateKey
-export type TranslateLanguage = ${languageUnion}
+export const LanguageCodes = ${languageTuple} as const
+export type TranslateLanguage = (typeof LanguageCodes)[number]
 `
 }
 

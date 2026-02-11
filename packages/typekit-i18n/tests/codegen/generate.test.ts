@@ -95,7 +95,8 @@ a_key;Text A;A english;A deutsch
 
       export type TranslateKey = "a_key" | "b_key"
       export type TranslateKeys = TranslateKey
-      export type TranslateLanguage = "en" | "de"
+      export const LanguageCodes = ["en", "de"] as const
+      export type TranslateLanguage = (typeof LanguageCodes)[number]
       "
     `)
   })
@@ -215,7 +216,8 @@ entries:
 
       export type TranslateKey = "title" | "subtitle"
       export type TranslateKeys = TranslateKey
-      export type TranslateLanguage = "en" | "de"
+      export const LanguageCodes = ["en", "de"] as const
+      export type TranslateLanguage = (typeof LanguageCodes)[number]
       "
     `)
   })
@@ -430,7 +432,8 @@ entries:
 
       export type TranslateKey = "title" | "subtitle"
       export type TranslateKeys = TranslateKey
-      export type TranslateLanguage = "en" | "de"
+      export const LanguageCodes = ["en", "de"] as const
+      export type TranslateLanguage = (typeof LanguageCodes)[number]
       "
     `)
   })
