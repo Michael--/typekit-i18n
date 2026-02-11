@@ -39,7 +39,7 @@ describe('translate', () => {
         key: missingKey,
         language: 'de',
         defaultLanguage: 'en',
-        reason: 'missing_key',
+        reason: 'missingKey',
       },
     ])
   })
@@ -50,7 +50,7 @@ describe('translate', () => {
     })
 
     expect(() => translate(missingKey, 'de')).toThrow(
-      /Missing translation for key "__missing_translation_key__".*reason "missing_key"/
+      /Missing translation for key "__missing_translation_key__".*reason "missingKey"/
     )
   })
 

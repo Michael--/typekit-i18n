@@ -14,13 +14,24 @@ import {
   Divider,
   NavLink,
 } from '@mantine/core'
-import { createTranslator } from 'typekit-i18n'
+import { createIcuTranslator, createTranslator } from 'typekit-i18n'
 import { type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
 import { translationTable } from '@gen/translationTable'
-import type { MissingTranslationEvent, PlaceholderFormatterMap } from 'typekit-i18n'
+import type {
+  MissingTranslationEvent,
+  PlaceholderFormatterMap,
+  TranslationTable,
+} from 'typekit-i18n'
 
 type TranslationMode = 'fallback' | 'strict'
-type DemoCase = 'overview' | 'basic' | 'placeholders' | 'formatters' | 'fallback' | 'diagnostics'
+type DemoCase =
+  | 'overview'
+  | 'basic'
+  | 'placeholders'
+  | 'formatters'
+  | 'icu'
+  | 'fallback'
+  | 'diagnostics'
 
 interface DemoCaseDefinition {
   id: DemoCase
@@ -50,6 +61,11 @@ const demoCases: ReadonlyArray<DemoCaseDefinition> = [
     description: 'Named format hooks in templates',
   },
   {
+    id: 'icu',
+    title: 'ICU Translator',
+    description: 'Select and plural message formatting',
+  },
+  {
     id: 'fallback',
     title: 'Fallback Behavior',
     description: 'Missing language and strict mode',
@@ -75,10 +91,29 @@ const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR'> = {
   fr: 'EUR',
 }
 
+type IcuDemoKey = 'inbox_summary' | 'invoice_total'
+
+const icuDemoTable: TranslationTable<IcuDemoKey, TranslateLanguage> = {
+  inbox_summary: {
+    description: 'ICU plural and select demo',
+    en: '{gender, select, male {He} female {She} other {They}} has {count, plural, =0 {no messages} one {# message} other {# messages}}.',
+    de: '{gender, select, male {Er} female {Sie} other {Sie}} hat {count, plural, =0 {keine Nachrichten} one {# Nachricht} other {# Nachrichten}}.',
+    es: '{gender, select, male {El} female {Ella} other {Elle}} tiene {count, plural, =0 {ningun mensaje} one {# mensaje} other {# mensajes}}.',
+    fr: '{gender, select, male {Il} female {Elle} other {Iel}} a {count, plural, =0 {aucun message} one {# message} other {# messages}}.',
+  },
+  invoice_total: {
+    description: 'Formatter inside ICU translator',
+    en: 'Invoice total: {amount|currency}',
+    de: 'Rechnungsbetrag: {amount|currency}',
+    es: 'Total de la factura: {amount|currency}',
+    fr: 'Total de la facture: {amount|currency}',
+  },
+}
+
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
  */
-const formatters: PlaceholderFormatterMap<TranslateKey, TranslateLanguage> = {
+const formatters: PlaceholderFormatterMap<string, TranslateLanguage> = {
   currency: (value, context) => {
     const num = typeof value === 'number' ? value : parseFloat(String(value))
     const locale = numberLocaleByLanguage[context.language]
@@ -104,14 +139,14 @@ export const App = (): JSX.Element => {
   const [mode, setMode] = useState<TranslationMode>('fallback')
   const [activeCase, setActiveCase] = useState<DemoCase>('overview')
   const [missingEvents, setMissingEvents] = useState<
-    MissingTranslationEvent<TranslateKey, TranslateLanguage>[]
+    MissingTranslationEvent<string, TranslateLanguage>[]
   >([])
 
   // Use ref to collect missing translations without triggering re-renders during render
-  const missingEventsRef = useRef<MissingTranslationEvent<TranslateKey, TranslateLanguage>[]>([])
+  const missingEventsRef = useRef<MissingTranslationEvent<string, TranslateLanguage>[]>([])
 
   const onMissingTranslation = useCallback(
-    (event: MissingTranslationEvent<TranslateKey, TranslateLanguage>) => {
+    (event: MissingTranslationEvent<string, TranslateLanguage>) => {
       // Check if this event already exists
       const exists = missingEventsRef.current.some(
         (e) => e.key === event.key && e.language === event.language && e.reason === event.reason
@@ -133,6 +168,17 @@ export const App = (): JSX.Element => {
   const translate = useMemo(
     () =>
       createTranslator<TranslateLanguage, TranslateKey, typeof translationTable>(translationTable, {
+        defaultLanguage: 'en',
+        missingStrategy: mode,
+        formatters,
+        onMissingTranslation,
+      }),
+    [mode, onMissingTranslation]
+  )
+
+  const icuTranslate = useMemo(
+    () =>
+      createIcuTranslator<TranslateLanguage, IcuDemoKey, typeof icuDemoTable>(icuDemoTable, {
         defaultLanguage: 'en',
         missingStrategy: mode,
         formatters,
@@ -266,6 +312,49 @@ export const App = (): JSX.Element => {
             'date_formatted with date=now',
             translate('date_formatted', language, {
               data: [{ key: 'date', value: new Date() }],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'icu') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            ICU Translator
+          </Title>
+          {renderDemoCard(
+            'inbox_summary with gender="female" and count=0',
+            icuTranslate('inbox_summary', language, {
+              data: [
+                { key: 'gender', value: 'female' },
+                { key: 'count', value: 0 },
+              ],
+            })
+          )}
+          {renderDemoCard(
+            'inbox_summary with gender="male" and count=1',
+            icuTranslate('inbox_summary', language, {
+              data: [
+                { key: 'gender', value: 'male' },
+                { key: 'count', value: 1 },
+              ],
+            })
+          )}
+          {renderDemoCard(
+            'inbox_summary with gender="other" and count=5',
+            icuTranslate('inbox_summary', language, {
+              data: [
+                { key: 'gender', value: 'other' },
+                { key: 'count', value: 5 },
+              ],
+            })
+          )}
+          {renderDemoCard(
+            'invoice_total with amount=99.99',
+            icuTranslate('invoice_total', language, {
+              data: [{ key: 'amount', value: 99.99 }],
             })
           )}
         </Stack>

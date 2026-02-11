@@ -56,7 +56,7 @@ describe('createTranslator', () => {
       key: 'does-not-exist',
       language: 'de',
       defaultLanguage: 'en',
-      reason: 'missing_key',
+      reason: 'missingKey',
     })
   })
 
@@ -73,7 +73,7 @@ describe('createTranslator', () => {
       key: 'fallbackOnly',
       language: 'de',
       defaultLanguage: 'en',
-      reason: 'missing_language',
+      reason: 'missingLanguage',
     })
   })
 
@@ -144,7 +144,7 @@ describe('createTranslator', () => {
       key: 'emptyEverywhere',
       language: 'de',
       defaultLanguage: 'en',
-      reason: 'missing_fallback',
+      reason: 'missingFallback',
     })
   })
 
@@ -155,7 +155,7 @@ describe('createTranslator', () => {
     })
 
     expect(() => translate('fallbackOnly', 'de')).toThrow(
-      /Missing translation for key "fallbackOnly".*reason "missing_language"/
+      /Missing translation for key "fallbackOnly".*reason "missingLanguage"/
     )
   })
 
@@ -168,7 +168,7 @@ describe('createTranslator', () => {
     })
 
     expect(() => translate('does-not-exist', 'de')).toThrow(
-      /Missing translation for key "does-not-exist".*reason "missing_key"/
+      /Missing translation for key "does-not-exist".*reason "missingKey"/
     )
     expect(onMissingTranslation).toHaveBeenCalledTimes(1)
   })

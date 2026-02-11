@@ -140,3 +140,16 @@ export interface TranslatorOptions<TKey extends string, TLanguage extends string
    */
   onMissingTranslation?: (event: MissingTranslationEvent<TKey, TLanguage>) => void
 }
+
+/**
+ * Runtime configuration for ICU-capable translator creation.
+ */
+export interface IcuTranslatorOptions<
+  TKey extends string,
+  TLanguage extends string,
+> extends TranslatorOptions<TKey, TLanguage> {
+  /**
+   * Optional locale overrides per language code used for ICU plural selection.
+   */
+  localeByLanguage?: Partial<Record<TLanguage, string>>
+}
