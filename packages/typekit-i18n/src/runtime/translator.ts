@@ -82,7 +82,7 @@ export const createTranslator = <
         key,
         language,
         defaultLanguage: options.defaultLanguage,
-        reason: 'missing_key',
+        reason: 'missingKey',
       })
       return key
     }
@@ -104,7 +104,7 @@ export const createTranslator = <
       key,
       language,
       defaultLanguage: options.defaultLanguage,
-      reason: fallbackText.length > 0 ? 'missing_language' : 'missing_fallback',
+      reason: fallbackText.length > 0 ? 'missingLanguage' : 'missingFallback',
     })
 
     if (fallbackText.length > 0) {

@@ -70,7 +70,7 @@ export interface MissingTranslationEvent<TKey extends string, TLanguage extends 
 /**
  * Missing translation reason categories.
  */
-export type MissingTranslationReason = 'missing_key' | 'missing_language' | 'missing_fallback'
+export type MissingTranslationReason = 'missingKey' | 'missingLanguage' | 'missingFallback'
 
 /**
  * Behavior strategy for missing translations.
