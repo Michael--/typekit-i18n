@@ -12,6 +12,7 @@ import {
   Alert,
   Code,
   Divider,
+  NavLink,
 } from '@mantine/core'
 import { createTranslator } from 'typekit-i18n'
 import { type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
@@ -19,6 +20,46 @@ import { translationTable } from '@gen/translationTable'
 import type { MissingTranslationEvent, PlaceholderFormatterMap } from 'typekit-i18n'
 
 type TranslationMode = 'fallback' | 'strict'
+type DemoCase = 'overview' | 'basic' | 'placeholders' | 'formatters' | 'fallback' | 'diagnostics'
+
+interface DemoCaseDefinition {
+  id: DemoCase
+  title: string
+  description: string
+}
+
+const demoCases: ReadonlyArray<DemoCaseDefinition> = [
+  {
+    id: 'overview',
+    title: 'Overview',
+    description: 'Runtime state, language and mode',
+  },
+  {
+    id: 'basic',
+    title: 'Basic Translation',
+    description: 'Simple key lookup',
+  },
+  {
+    id: 'placeholders',
+    title: 'Placeholders',
+    description: 'Inject values into text',
+  },
+  {
+    id: 'formatters',
+    title: 'Custom Formatters',
+    description: 'Named format hooks in templates',
+  },
+  {
+    id: 'fallback',
+    title: 'Fallback Behavior',
+    description: 'Missing language and strict mode',
+  },
+  {
+    id: 'diagnostics',
+    title: 'Diagnostics',
+    description: 'Collected missing translation events',
+  },
+]
 
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
@@ -47,6 +88,7 @@ const formatters: PlaceholderFormatterMap<TranslateKey, TranslateLanguage> = {
 export const App = (): JSX.Element => {
   const [language, setLanguage] = useState<TranslateLanguage>('en')
   const [mode, setMode] = useState<TranslationMode>('fallback')
+  const [activeCase, setActiveCase] = useState<DemoCase>('overview')
   const [missingEvents, setMissingEvents] = useState<
     MissingTranslationEvent<TranslateKey, TranslateLanguage>[]
   >([])
@@ -72,7 +114,7 @@ export const App = (): JSX.Element => {
     if (missingEventsRef.current.length > 0) {
       setMissingEvents([...missingEventsRef.current])
     }
-  }, [language, mode])
+  }, [activeCase, language, mode])
 
   const translate = useMemo(
     () =>
@@ -102,7 +144,185 @@ export const App = (): JSX.Element => {
     setMode(newMode as TranslationMode)
   }
 
-  const languages: TranslateLanguage[] = ['en', 'de', 'es', 'fr']
+  const languages: ReadonlyArray<TranslateLanguage> = ['en', 'de', 'es', 'fr']
+  const activeCaseDefinition = demoCases.find((item) => item.id === activeCase) ?? demoCases[0]
+
+  const renderDemoCard = (label: string, value: string): JSX.Element => (
+    <Paper p="md" bg="dark.6" radius="sm">
+      <Text size="xs" c="dimmed" mb={4}>
+        {label}
+      </Text>
+      <Text>{value}</Text>
+    </Paper>
+  )
+
+  const renderFallbackCaseResult = (): JSX.Element => {
+    try {
+      return <Text>{translate('fallback_demo', language)}</Text>
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return (
+        <Alert variant="light" color="red" title="Strict mode error">
+          <Text size="sm" ff="monospace">
+            {message}
+          </Text>
+        </Alert>
+      )
+    }
+  }
+
+  const renderCaseContent = (): JSX.Element => {
+    if (activeCase === 'overview') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            Overview
+          </Title>
+          <Group gap="xs">
+            <Badge color="blue" variant="light">
+              Language: {language.toUpperCase()}
+            </Badge>
+            <Badge color={mode === 'strict' ? 'red' : 'green'} variant="light">
+              Mode: {mode}
+            </Badge>
+            <Badge color="orange" variant="light">
+              Missing events: {missingEvents.length}
+            </Badge>
+          </Group>
+          <Text size="sm" c="dimmed">
+            Use the left sidebar to isolate one runtime behavior at a time.
+          </Text>
+          {renderDemoCard('greeting_title', translate('greeting_title', language))}
+          {renderDemoCard(
+            'greeting_body with name="Developer"',
+            translate('greeting_body', language, {
+              data: [{ key: 'name', value: 'Developer' }],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'basic') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            Basic Translation
+          </Title>
+          {renderDemoCard('greeting_title', translate('greeting_title', language))}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'placeholders') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            Placeholder Replacement
+          </Title>
+          {renderDemoCard(
+            'greeting_body with name="Mara"',
+            translate('greeting_body', language, {
+              data: [{ key: 'name', value: 'Mara' }],
+            })
+          )}
+          {renderDemoCard(
+            'item_count with count=42',
+            translate('item_count', language, {
+              data: [{ key: 'count', value: 42 }],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'formatters') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            Custom Formatters
+          </Title>
+          {renderDemoCard(
+            'price_formatted with amount=99.99',
+            translate('price_formatted', language, {
+              data: [{ key: 'amount', value: 99.99 }],
+            })
+          )}
+          {renderDemoCard(
+            'date_formatted with date=now',
+            translate('date_formatted', language, {
+              data: [{ key: 'date', value: new Date() }],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'fallback') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            Fallback Behavior
+          </Title>
+          <Divider label="Complete Translation" labelPosition="left" />
+          {renderDemoCard(
+            'greeting_title (available in all languages)',
+            translate('greeting_title', language)
+          )}
+          <Divider label="Partial Translation" labelPosition="left" />
+          <Paper p="md" bg="dark.6" radius="sm">
+            <Text size="xs" c="dimmed" mb={4}>
+              fallback_demo (missing in ES)
+            </Text>
+            {renderFallbackCaseResult()}
+          </Paper>
+        </Stack>
+      )
+    }
+
+    return (
+      <Stack gap="sm">
+        <Title order={2} size="h4" c="orange">
+          {translate('diagnostics_title', language)}
+        </Title>
+
+        {missingEvents.length === 0 ? (
+          <Alert variant="light" color="green" title={translate('no_issues', language)}>
+            <Group gap="xs">
+              <Badge color="green" variant="filled">
+                ✓
+              </Badge>
+              <Text size="sm">{translate('no_issues', language)}</Text>
+            </Group>
+          </Alert>
+        ) : (
+          <>
+            <Alert variant="light" color="orange">
+              <Group gap="xs">
+                <Badge color="orange" variant="filled">
+                  !
+                </Badge>
+                <Text size="sm">
+                  {translate('missing_count', language, {
+                    data: [{ key: 'count', value: missingEvents.length }],
+                  })}
+                </Text>
+              </Group>
+            </Alert>
+
+            <Paper p="sm" bg="dark.6" radius="sm" withBorder>
+              {missingEvents.map((event, index) => (
+                <Text key={index} size="sm" ff="monospace">
+                  Key: <Code>{event.key}</Code>, Language: <Code>{event.language}</Code>, Reason:{' '}
+                  <Code>{event.reason}</Code>
+                </Text>
+              ))}
+            </Paper>
+          </>
+        )}
+      </Stack>
+    )
+  }
 
   return (
     <Container size="lg" py="md">
@@ -153,144 +373,45 @@ export const App = (): JSX.Element => {
           </Group>
         </Paper>
 
-        {/* Feature Grid */}
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Paper shadow="sm" p="md" radius="md" withBorder h="100%">
-              <Stack gap="sm">
-                <Title order={2} size="h4" c="blue">
-                  {translate('features_title', language)}
+        <Grid align="flex-start">
+          <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
+            <Paper shadow="sm" p="sm" radius="md" withBorder>
+              <Stack gap="xs">
+                <Title order={3} size="h5">
+                  Cases
                 </Title>
-
-                <Divider label="Basic Translation" labelPosition="left" />
-                <Paper p="md" bg="dark.6" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    greeting_title
-                  </Text>
-                  <Text>{translate('greeting_title', language)}</Text>
-                </Paper>
-
-                <Divider label="Placeholder Replacement" labelPosition="left" />
-                <Paper p="md" bg="dark.6" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    greeting_body with name=&quot;Mara&quot;
-                  </Text>
-                  <Text>
-                    {translate('greeting_body', language, {
-                      data: [{ key: 'name', value: 'Mara' }],
-                    })}
-                  </Text>
-                </Paper>
-
-                <Paper p="md" bg="dark.6" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    item_count with count=42
-                  </Text>
-                  <Text>
-                    {translate('item_count', language, {
-                      data: [{ key: 'count', value: 42 }],
-                    })}
-                  </Text>
-                </Paper>
-
-                <Divider label="Custom Formatters" labelPosition="left" />
-                <Paper p="md" bg="dark.6" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    price_formatted with currency formatter
-                  </Text>
-                  <Text>
-                    {translate('price_formatted', language, {
-                      data: [{ key: 'amount', value: 99.99 }],
-                    })}
-                  </Text>
-                </Paper>
-
-                <Paper p="md" bg="dark.6" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    date_formatted with dateShort formatter
-                  </Text>
-                  <Text>
-                    {translate('date_formatted', language, {
-                      data: [{ key: 'date', value: new Date() }],
-                    })}
-                  </Text>
-                </Paper>
+                {demoCases.map((item) => (
+                  <NavLink
+                    key={item.id}
+                    label={item.title}
+                    description={item.description}
+                    active={activeCase === item.id}
+                    onClick={() => setActiveCase(item.id)}
+                    variant="filled"
+                  />
+                ))}
               </Stack>
             </Paper>
           </Grid.Col>
 
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Paper shadow="sm" p="md" radius="md" withBorder h="100%">
+          <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+            <Paper shadow="sm" p="md" radius="md" withBorder>
               <Stack gap="sm">
-                <Title order={2} size="h4" c="blue">
-                  Fallback Behavior
-                </Title>
-
-                <Divider label="Complete Translation" labelPosition="left" />
-                <Paper p="md" bg="dark.6" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    greeting_title (available in all languages)
-                  </Text>
-                  <Text>{translate('greeting_title', language)}</Text>
-                </Paper>
-
-                <Divider label="Partial Translation" labelPosition="left" />
-                <Paper p="md" bg="dark.6" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    fallback_demo (missing in ES, should fallback to EN in fallback mode)
-                  </Text>
-                  <Text>{translate('fallback_demo', language)}</Text>
-                </Paper>
+                <Group justify="space-between" align="center">
+                  <Title order={2} size="h4">
+                    {activeCaseDefinition.title}
+                  </Title>
+                  <Badge variant="light">{activeCaseDefinition.id}</Badge>
+                </Group>
+                <Text size="sm" c="dimmed">
+                  {activeCaseDefinition.description}
+                </Text>
+                <Divider />
+                {renderCaseContent()}
               </Stack>
             </Paper>
           </Grid.Col>
         </Grid>
-
-        {/* Diagnostics */}
-        <Paper shadow="sm" p="md" radius="md" withBorder>
-          <Stack gap="sm">
-            <Title order={2} size="h4" c="orange">
-              {translate('diagnostics_title', language)}
-            </Title>
-
-            {missingEvents.length === 0 ? (
-              <Alert variant="light" color="green" title={translate('no_issues', language)}>
-                <Group gap="xs">
-                  <Badge color="green" variant="filled">
-                    ✓
-                  </Badge>
-                  <Text size="sm">{translate('no_issues', language)}</Text>
-                </Group>
-              </Alert>
-            ) : (
-              <>
-                <Alert variant="light" color="orange">
-                  <Group gap="xs">
-                    <Badge color="orange" variant="filled">
-                      !
-                    </Badge>
-                    <Text size="sm">
-                      {translate('missing_count', language, {
-                        data: [{ key: 'count', value: missingEvents.length }],
-                      })}
-                    </Text>
-                  </Group>
-                </Alert>
-
-                <Stack gap="xs">
-                  <Paper p="sm" bg="dark.6" radius="sm" withBorder>
-                    {missingEvents.map((event, index) => (
-                      <Text key={index} size="sm" ff="monospace">
-                        Key: <Code>{event.key}</Code>, Language: <Code>{event.language}</Code>,
-                        Reason: <Code>{event.reason}</Code>
-                      </Text>
-                    ))}
-                  </Paper>
-                </Stack>
-              </>
-            )}
-          </Stack>
-        </Paper>
       </Stack>
     </Container>
   )
