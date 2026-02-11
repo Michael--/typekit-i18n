@@ -87,7 +87,7 @@ const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR'> = {
   fr: 'EUR',
 }
 
-type IcuDemoKey = 'inbox_summary' | 'invoice_total'
+type IcuDemoKey = 'inbox_summary' | 'invoice_total' | 'ranking_place' | 'group_invite'
 
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
@@ -337,6 +337,24 @@ export const App = (): JSX.Element => {
             'invoice_total with amount=99.99',
             icuTranslate('invoice_total', language, {
               data: [{ key: 'amount', value: 99.99 }],
+            })
+          )}
+          {renderDemoCard(
+            'ranking_place with place=1',
+            icuTranslate('ranking_place', language, {
+              data: [{ key: 'place', value: 1 }],
+            })
+          )}
+          {renderDemoCard(
+            'ranking_place with place=3',
+            icuTranslate('ranking_place', language, {
+              data: [{ key: 'place', value: 3 }],
+            })
+          )}
+          {renderDemoCard(
+            'group_invite with count=5',
+            icuTranslate('group_invite', language, {
+              data: [{ key: 'count', value: 5 }],
             })
           )}
         </Stack>

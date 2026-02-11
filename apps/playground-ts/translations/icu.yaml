@@ -26,3 +26,23 @@ entries:
       de: 'Rechnungsbetrag: {amount|currency}'
       es: 'Total de la factura: {amount|currency}'
       fr: 'Total de la facture: {amount|currency}'
+
+  - key: ranking_place
+    description: ICU selectordinal demo
+    status: approved
+    tags: [demo, icu, selectordinal]
+    values:
+      en: 'You finished {place, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}.'
+      de: 'Du wurdest {place, selectordinal, one {#.} two {#.} few {#.} other {#.}}.'
+      es: 'Terminaste en {place, selectordinal, one {#.} two {#.} few {#.} other {#.}} lugar.'
+      fr: 'Tu as fini {place, selectordinal, one {#er} two {#e} few {#e} other {#e}}.'
+
+  - key: group_invite
+    description: ICU plural offset demo
+    status: approved
+    tags: [demo, icu, plural, offset]
+    values:
+      en: '{count, plural, offset:1 =0 {You joined.} one {You and # other joined.} other {You and # others joined.}}'
+      de: '{count, plural, offset:1 =0 {Du bist beigetreten.} one {Du und # weitere Person sind beigetreten.} other {Du und # weitere Personen sind beigetreten.}}'
+      es: '{count, plural, offset:1 =0 {Te uniste.} one {Tu y # persona mas se unieron.} other {Tu y # personas mas se unieron.}}'
+      fr: '{count, plural, offset:1 =0 {Tu as rejoint.} one {Toi et # autre personne avez rejoint.} other {Toi et # autres personnes avez rejoint.}}'

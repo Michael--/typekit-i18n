@@ -24,8 +24,13 @@ interface IcuRenderContext<TKey extends string, TLanguage extends string> {
 
 interface ParsedIcuExpression {
   variableName: string
-  expressionType: 'plural' | 'select'
+  expressionType: 'plural' | 'select' | 'selectordinal'
   optionsSource: string
+}
+
+interface ParsedIcuOptions {
+  options: ReadonlyMap<string, string>
+  offset: number
 }
 
 /**
@@ -36,8 +41,6 @@ interface ParsedIcuExpression {
  *
  * TODO(icu):
  * - Add `zero`, `two`, `few`, `many` category tests per locale.
- * - Add `selectordinal` support.
- * - Add `offset:n` support for plural expressions.
  * - Add escaping and apostrophe handling compatible with ICU message syntax.
  * - Add strict syntax errors (line/column) instead of graceful fallback on parse failures.
  * - Add compile/cache layer for parsed templates to avoid reparsing on every translate call.
@@ -104,8 +107,11 @@ const parseIcuExpression = (rawExpression: string): ParsedIcuExpression | null =
   if (variableName.length === 0 || optionsSource.length === 0) {
     return null
   }
-  // TODO(icu): Extend parser to recognize `selectordinal` and plural `offset:n`.
-  if (expressionTypeRaw !== 'plural' && expressionTypeRaw !== 'select') {
+  if (
+    expressionTypeRaw !== 'plural' &&
+    expressionTypeRaw !== 'select' &&
+    expressionTypeRaw !== 'selectordinal'
+  ) {
     return null
   }
 
@@ -116,9 +122,26 @@ const parseIcuExpression = (rawExpression: string): ParsedIcuExpression | null =
   }
 }
 
-const parseIcuOptions = (optionsSource: string): ReadonlyMap<string, string> | null => {
+const parseIcuOffset = (optionsSource: string): { offset: number; startIndex: number } | null => {
+  const offsetMatch = /^\s*offset\s*:\s*(-?\d+(?:\.\d+)?)\s*/u.exec(optionsSource)
+  if (!offsetMatch) {
+    return { offset: 0, startIndex: 0 }
+  }
+  const offsetValue = Number.parseFloat(offsetMatch[1])
+  if (!Number.isFinite(offsetValue)) {
+    return null
+  }
+  return { offset: offsetValue, startIndex: offsetMatch[0].length }
+}
+
+const parseIcuOptions = (optionsSource: string, allowOffset: boolean): ParsedIcuOptions | null => {
   const options = new Map<string, string>()
-  let index = 0
+  const offsetResult = allowOffset ? parseIcuOffset(optionsSource) : { offset: 0, startIndex: 0 }
+  if (!offsetResult) {
+    return null
+  }
+
+  let index = offsetResult.startIndex
 
   while (index < optionsSource.length) {
     while (index < optionsSource.length && /\s/u.test(optionsSource[index])) {
@@ -156,7 +179,7 @@ const parseIcuOptions = (optionsSource: string): ReadonlyMap<string, string> | n
     index = blockEnd + 1
   }
 
-  return options.size > 0 ? options : null
+  return options.size > 0 ? { options, offset: offsetResult.offset } : null
 }
 
 const toLocale = <TLanguage extends string>(
@@ -165,24 +188,30 @@ const toLocale = <TLanguage extends string>(
   localeByLanguage?: Partial<Record<TLanguage, string>>
 ): string => localeByLanguage?.[language] ?? localeByLanguage?.[defaultLanguage] ?? language
 
-const toPluralRules = (locale: string, cache: Map<string, Intl.PluralRules>): Intl.PluralRules => {
-  const cached = cache.get(locale)
+const toPluralRules = (
+  locale: string,
+  cache: Map<string, Intl.PluralRules>,
+  type: Intl.PluralRulesOptions['type'] = 'cardinal'
+): Intl.PluralRules => {
+  const cacheKey = `${locale}|${type}`
+  const cached = cache.get(cacheKey)
   if (cached) {
     return cached
   }
 
   try {
-    const created = new Intl.PluralRules(locale)
-    cache.set(locale, created)
+    const created = new Intl.PluralRules(locale, { type })
+    cache.set(cacheKey, created)
     return created
   } catch {
     const fallbackLocale = 'en'
-    const fallbackCached = cache.get(fallbackLocale)
+    const fallbackKey = `${fallbackLocale}|${type}`
+    const fallbackCached = cache.get(fallbackKey)
     if (fallbackCached) {
       return fallbackCached
     }
-    const fallback = new Intl.PluralRules(fallbackLocale)
-    cache.set(fallbackLocale, fallback)
+    const fallback = new Intl.PluralRules(fallbackLocale, { type })
+    cache.set(fallbackKey, fallback)
     return fallback
   }
 }
@@ -265,27 +294,35 @@ const applySimplePlaceholders = <TKey extends string, TLanguage extends string>(
 
 const resolveIcuBranch = <TKey extends string, TLanguage extends string>(
   parsed: ParsedIcuExpression,
-  options: ReadonlyMap<string, string>,
+  parsedOptions: ParsedIcuOptions,
   context: IcuRenderContext<TKey, TLanguage>
 ): string | null => {
   if (parsed.expressionType === 'select') {
     const selectedKey = String(context.values[parsed.variableName] ?? 'other')
-    return options.get(selectedKey) ?? options.get('other') ?? null
+    return parsedOptions.options.get(selectedKey) ?? parsedOptions.options.get('other') ?? null
   }
 
   const numericValue = toNumericValue(context.values[parsed.variableName])
-  const exactMatchKey = `=${numericValue}`
+  const adjustedValue = numericValue - parsedOptions.offset
+  const exactMatchKey = `=${adjustedValue}`
   const locale = toLocale(context.language, context.defaultLanguage, context.localeByLanguage)
-  const pluralRules = toPluralRules(locale, context.pluralRulesCache)
-  const category = pluralRules.select(numericValue)
+  const pluralRules = toPluralRules(
+    locale,
+    context.pluralRulesCache,
+    parsed.expressionType === 'selectordinal' ? 'ordinal' : 'cardinal'
+  )
+  const category = pluralRules.select(adjustedValue)
   const rawBranch =
-    options.get(exactMatchKey) ?? options.get(category) ?? options.get('other') ?? null
+    parsedOptions.options.get(exactMatchKey) ??
+    parsedOptions.options.get(category) ??
+    parsedOptions.options.get('other') ??
+    null
   if (rawBranch === null) {
     return null
   }
 
   const numberFormatter = toNumberFormatter(locale, context.numberFormatCache)
-  return rawBranch.replace(/#/g, numberFormatter.format(numericValue))
+  return rawBranch.replace(/#/g, numberFormatter.format(adjustedValue))
 }
 
 const formatIcuTemplate = <TKey extends string, TLanguage extends string>(
@@ -319,7 +356,7 @@ const formatIcuTemplate = <TKey extends string, TLanguage extends string>(
       continue
     }
 
-    const options = parseIcuOptions(parsed.optionsSource)
+    const options = parseIcuOptions(parsed.optionsSource, parsed.expressionType !== 'select')
     if (!options) {
       output += template.slice(index, blockEnd + 1)
       index = blockEnd + 1
@@ -371,7 +408,9 @@ const renderMessage = <TKey extends string, TLanguage extends string>(
  * Supported syntax:
  * - `{name}` and `{name|formatter}` placeholders
  * - `{count, plural, one {...} other {...}}` with exact matches like `=0`
+ * - `{count, plural, offset:1 one {...} other {...}}` for offset handling
  * - `{value, select, key {...} other {...}}`
+ * - `{place, selectordinal, one {...} two {...} few {...} other {...}}`
  *
  * @param table Translation table keyed by typed translation keys.
  * @param options Translator behavior options with optional ICU locale overrides.

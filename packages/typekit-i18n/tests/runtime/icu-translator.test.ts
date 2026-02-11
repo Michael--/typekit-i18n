@@ -3,7 +3,7 @@ import { createIcuTranslator } from '../../src/runtime/icuTranslator.js'
 import { TranslationTable } from '../../src/runtime/types.js'
 
 type TestLanguage = 'en' | 'de'
-type TestKey = 'inboxSummary' | 'invoiceTotal' | 'fallbackOnly'
+type TestKey = 'inboxSummary' | 'invoiceTotal' | 'fallbackOnly' | 'ordinalPlace' | 'offsetInvite'
 
 const table: TranslationTable<TestKey, TestLanguage> = {
   inboxSummary: {
@@ -20,6 +20,16 @@ const table: TranslationTable<TestKey, TestLanguage> = {
     description: 'Only default language available',
     en: 'Only English fallback',
     de: '',
+  },
+  ordinalPlace: {
+    description: 'Selectordinal demo',
+    en: 'You finished {place, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}.',
+    de: 'Du wurdest {place, selectordinal, one {#.} two {#.} few {#.} other {#.}}.',
+  },
+  offsetInvite: {
+    description: 'Plural offset demo',
+    en: '{count, plural, offset:1 =0 {You joined.} one {You and # other joined.} other {You and # others joined.}}',
+    de: '{count, plural, offset:1 =0 {Du bist beigetreten.} one {Du und # weitere Person sind beigetreten.} other {Du und # weitere Personen sind beigetreten.}}',
   },
 }
 
@@ -67,6 +77,42 @@ describe('createIcuTranslator', () => {
         data: [{ key: 'amount', value: 12.5 }],
       })
     ).toBe('Rechnungsbetrag: EUR 12.5')
+  })
+
+  test('supports selectordinal branches', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(
+      translate('ordinalPlace', 'en', {
+        data: [{ key: 'place', value: 1 }],
+      })
+    ).toBe('You finished 1st.')
+
+    expect(
+      translate('ordinalPlace', 'en', {
+        data: [{ key: 'place', value: 3 }],
+      })
+    ).toBe('You finished 3rd.')
+  })
+
+  test('applies plural offsets for selection and # formatting', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(
+      translate('offsetInvite', 'en', {
+        data: [{ key: 'count', value: 1 }],
+      })
+    ).toBe('You joined.')
+
+    expect(
+      translate('offsetInvite', 'en', {
+        data: [{ key: 'count', value: 5 }],
+      })
+    ).toBe('You and 4 others joined.')
   })
 
   test('falls back to default language and reports missing language', () => {
