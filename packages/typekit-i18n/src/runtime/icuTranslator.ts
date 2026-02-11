@@ -12,11 +12,13 @@ import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRe
  * - `{var, plural, =0 {...} one {...} other {...}}`
  * - `{var, plural, offset:1 one {...} other {...}}`
  * - `{var, selectordinal, one {...} two {...} few {...} other {...}}`
+ * - `{var, number[, style-or-skeleton]}`
+ * - `{var, date[, style-or-skeleton]}`
+ * - `{var, time[, style-or-skeleton]}`
  * - `#` replacement inside plural branches
  * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
  *
  * TODO(icu-next):
- * - Add support for ICU argument formats like `number`, `date`, and `time` (with style/skeleton handling).
  * - Validate selector quality in parser/options (duplicate selectors and invalid selector forms).
  * - Throw strict syntax errors for unmatched closing braces (`}`) in message templates.
  */
@@ -45,6 +47,8 @@ const toPlaceholderValueMap = (
  * - `{count, plural, offset:1 one {...} other {...}}` for offset handling
  * - `{value, select, key {...} other {...}}`
  * - `{place, selectordinal, one {...} two {...} few {...} other {...}}`
+ * - `{amount, number, ::currency/EUR}` and `{ratio, number, percent}`
+ * - `{date, date, short}` and `{date, time, ::HH:mm}`
  *
  * @param table Translation table keyed by typed translation keys.
  * @param options Translator behavior options with optional ICU locale overrides.
@@ -61,6 +65,7 @@ export const createIcuTranslator = <
   const missingStrategy = options.missingStrategy ?? 'fallback'
   const pluralRulesCache = new Map<string, Intl.PluralRules>()
   const numberFormatCache = new Map<string, Intl.NumberFormat>()
+  const dateTimeFormatCache = new Map<string, Intl.DateTimeFormat>()
   const compiledTemplateCache = new Map<string, CompiledIcuTemplate>()
 
   const handleMissing = (event: MissingTranslationEvent<TKey, TLanguage>): void => {
@@ -93,6 +98,7 @@ export const createIcuTranslator = <
         localeByLanguage: options.localeByLanguage,
         pluralRulesCache,
         numberFormatCache,
+        dateTimeFormatCache,
         compiledTemplateCache,
       }
       return renderIcuMessage(requestedText, context)
@@ -116,6 +122,7 @@ export const createIcuTranslator = <
         localeByLanguage: options.localeByLanguage,
         pluralRulesCache,
         numberFormatCache,
+        dateTimeFormatCache,
         compiledTemplateCache,
       }
       return renderIcuMessage(fallbackText, context)

@@ -176,17 +176,31 @@ const collectPlaceholderTokensFromTemplate = (value: string, result: Set<string>
     }
 
     const secondCommaIndex = findTopLevelComma(rawExpression, firstCommaIndex + 1)
+    const variableName = rawExpression.slice(0, firstCommaIndex).trim()
+    if (variableName.length === 0) {
+      index = blockEnd + 1
+      continue
+    }
+
+    const expressionType =
+      secondCommaIndex < 0
+        ? rawExpression.slice(firstCommaIndex + 1).trim()
+        : rawExpression.slice(firstCommaIndex + 1, secondCommaIndex).trim()
+
+    if (expressionType === 'number' || expressionType === 'date' || expressionType === 'time') {
+      result.add(variableName)
+      index = blockEnd + 1
+      continue
+    }
+
     if (secondCommaIndex < 0) {
       index = blockEnd + 1
       continue
     }
 
-    const variableName = rawExpression.slice(0, firstCommaIndex).trim()
-    const expressionType = rawExpression.slice(firstCommaIndex + 1, secondCommaIndex).trim()
     const optionsSource = rawExpression.slice(secondCommaIndex + 1).trim()
 
     if (
-      variableName.length === 0 ||
       optionsSource.length === 0 ||
       (expressionType !== 'plural' &&
         expressionType !== 'select' &&

@@ -3,10 +3,23 @@ import { isQuotedPosition } from './icuEscape.js'
 /**
  * Parsed ICU expression structure.
  */
+export type IcuExpressionType = 'plural' | 'select' | 'selectordinal' | 'number' | 'date' | 'time'
+
+/**
+ * ICU branch expression types that require selector options.
+ */
+export type IcuBranchExpressionType = 'plural' | 'select' | 'selectordinal'
+
+/**
+ * ICU argument expression types that format values directly.
+ */
+export type IcuArgumentExpressionType = 'number' | 'date' | 'time'
+
 export interface ParsedIcuExpression {
   variableName: string
-  expressionType: 'plural' | 'select' | 'selectordinal'
-  optionsSource: string
+  expressionType: IcuExpressionType
+  optionsSource?: string
+  formatStyleSource?: string
 }
 
 /**
@@ -79,23 +92,58 @@ export const parseIcuExpression = (rawExpression: string): ParsedIcuExpression |
   if (firstCommaIndex < 0) {
     return null
   }
+
+  const variableName = rawExpression.slice(0, firstCommaIndex).trim()
+  if (variableName.length === 0) {
+    return null
+  }
+
   const secondCommaIndex = findTopLevelComma(rawExpression, firstCommaIndex + 1)
+  const expressionTypeRaw =
+    secondCommaIndex < 0
+      ? rawExpression.slice(firstCommaIndex + 1).trim()
+      : rawExpression.slice(firstCommaIndex + 1, secondCommaIndex).trim()
+
+  if (
+    expressionTypeRaw !== 'plural' &&
+    expressionTypeRaw !== 'select' &&
+    expressionTypeRaw !== 'selectordinal' &&
+    expressionTypeRaw !== 'number' &&
+    expressionTypeRaw !== 'date' &&
+    expressionTypeRaw !== 'time'
+  ) {
+    return null
+  }
+
+  if (
+    expressionTypeRaw === 'number' ||
+    expressionTypeRaw === 'date' ||
+    expressionTypeRaw === 'time'
+  ) {
+    if (secondCommaIndex < 0) {
+      return {
+        variableName,
+        expressionType: expressionTypeRaw,
+      }
+    }
+
+    const formatStyleSource = rawExpression.slice(secondCommaIndex + 1).trim()
+    if (formatStyleSource.length === 0) {
+      return null
+    }
+    return {
+      variableName,
+      expressionType: expressionTypeRaw,
+      formatStyleSource,
+    }
+  }
+
   if (secondCommaIndex < 0) {
     return null
   }
 
-  const variableName = rawExpression.slice(0, firstCommaIndex).trim()
-  const expressionTypeRaw = rawExpression.slice(firstCommaIndex + 1, secondCommaIndex).trim()
   const optionsSource = rawExpression.slice(secondCommaIndex + 1).trim()
-
-  if (variableName.length === 0 || optionsSource.length === 0) {
-    return null
-  }
-  if (
-    expressionTypeRaw !== 'plural' &&
-    expressionTypeRaw !== 'select' &&
-    expressionTypeRaw !== 'selectordinal'
-  ) {
+  if (optionsSource.length === 0) {
     return null
   }
 

@@ -16,6 +16,10 @@ type TestKey =
   | 'unterminatedDemo'
   | 'missingOtherDemo'
   | 'cacheProbe'
+  | 'argumentFormats'
+  | 'dateTimeSkeletonFormats'
+  | 'invalidNumberStyle'
+  | 'invalidDateStyle'
 
 const table: TranslationTable<TestKey, TestLanguage> = {
   inboxSummary: {
@@ -71,6 +75,26 @@ const table: TranslationTable<TestKey, TestLanguage> = {
   cacheProbe: {
     description: 'Compile cache probe',
     en: '{count, plural, one {# item} other {# items}}',
+    de: '',
+  },
+  argumentFormats: {
+    description: 'ICU number/date/time argument formatting',
+    en: 'USD {amount, number, ::currency/USD}; RATIO {ratio, number, percent}; DATE {when, date, short}; TIME {when, time, short}',
+    de: '',
+  },
+  dateTimeSkeletonFormats: {
+    description: 'ICU skeleton date/time formatting',
+    en: '{when, date, ::yyyy-MM-dd} {when, time, ::HH:mm}',
+    de: '',
+  },
+  invalidNumberStyle: {
+    description: 'Invalid ICU number style',
+    en: '{amount, number, ::invalid-token}',
+    de: '',
+  },
+  invalidDateStyle: {
+    description: 'Invalid ICU date style',
+    en: '{when, date, nonsense}',
     de: '',
   },
 }
@@ -285,6 +309,65 @@ describe('createIcuTranslator', () => {
       })
     ).toThrow(
       /ICU syntax error for key "missingOtherDemo" in "en" at line 1, column 1: No matching branch/
+    )
+  })
+
+  test('supports ICU number/date/time argument formats', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    const output = translate('argumentFormats', 'en', {
+      data: [
+        { key: 'amount', value: 1234.56 },
+        { key: 'ratio', value: 0.5 },
+        { key: 'when', value: new Date('2025-01-15T12:34:56.000Z') },
+      ],
+    })
+
+    expect(output).toContain('USD $1,234.56')
+    expect(output).toContain('RATIO 50%')
+    expect(output).toMatch(/DATE .+; TIME .+/)
+  })
+
+  test('supports ICU date/time skeleton formatting', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    const output = translate('dateTimeSkeletonFormats', 'en', {
+      data: [{ key: 'when', value: new Date('2025-01-15T12:34:56.000Z') }],
+    })
+
+    expect(output).toMatch(/\d{4}.*\d{2}.*\d{2}/)
+    expect(output).toContain(':')
+  })
+
+  test('throws detailed syntax errors for invalid number styles', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('invalidNumberStyle', 'en', {
+        data: [{ key: 'amount', value: 123 }],
+      })
+    ).toThrow(
+      /ICU syntax error for key "invalidNumberStyle" in "en" at line 1, column 1: Invalid ICU number style/
+    )
+  })
+
+  test('throws detailed syntax errors for invalid date styles', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('invalidDateStyle', 'en', {
+        data: [{ key: 'when', value: new Date('2025-01-15T12:34:56.000Z') }],
+      })
+    ).toThrow(
+      /ICU syntax error for key "invalidDateStyle" in "en" at line 1, column 1: Invalid ICU date style/
     )
   })
 

@@ -33,6 +33,30 @@ entries:
       ar: 'Majmu al-fatura: {amount|currency}'
       pl: 'Suma faktury: {amount|currency}'
 
+  - key: icu_argument_style_demo
+    description: ICU number date time with style formats
+    status: approved
+    tags: [demo, icu, number, date, time]
+    values:
+      en: 'Amount: {amount, number, currency/USD}; Ratio: {ratio, number, percent}; Date: {when, date, full}; Time: {when, time, short}'
+      de: 'Betrag: {amount, number, currency/EUR}; Anteil: {ratio, number, percent}; Datum: {when, date, full}; Zeit: {when, time, short}'
+      es: 'Importe: {amount, number, currency/EUR}; Proporcion: {ratio, number, percent}; Fecha: {when, date, full}; Hora: {when, time, short}'
+      fr: 'Montant: {amount, number, currency/EUR}; Ratio: {ratio, number, percent}; Date: {when, date, full}; Heure: {when, time, short}'
+      ar: 'Al-mablagh: {amount, number, currency/SAR}; Al-nisba: {ratio, number, percent}; Al-tarikh: {when, date, full}; Al-waqt: {when, time, short}'
+      pl: 'Kwota: {amount, number, currency/PLN}; Wspolczynnik: {ratio, number, percent}; Data: {when, date, full}; Czas: {when, time, short}'
+
+  - key: icu_argument_skeleton_demo
+    description: ICU number date time with skeleton formats
+    status: approved
+    tags: [demo, icu, skeleton]
+    values:
+      en: 'Compact: {amount, number, ::compact-short}; Date skeleton: {when, date, ::yyyy-MM-dd}; Time skeleton: {when, time, ::HH:mm:ss}'
+      de: 'Kompakt: {amount, number, ::compact-short}; Datums-Skelett: {when, date, ::yyyy-MM-dd}; Zeit-Skelett: {when, time, ::HH:mm:ss}'
+      es: 'Compacto: {amount, number, ::compact-short}; Fecha esqueleto: {when, date, ::yyyy-MM-dd}; Hora esqueleto: {when, time, ::HH:mm:ss}'
+      fr: 'Compact: {amount, number, ::compact-short}; Date squelette: {when, date, ::yyyy-MM-dd}; Heure squelette: {when, time, ::HH:mm:ss}'
+      ar: 'Mokhtasar: {amount, number, ::compact-short}; Haykal al-tarikh: {when, date, ::yyyy-MM-dd}; Haykal al-waqt: {when, time, ::HH:mm:ss}'
+      pl: 'Skrocony: {amount, number, ::compact-short}; Szkielet daty: {when, date, ::yyyy-MM-dd}; Szkielet czasu: {when, time, ::HH:mm:ss}'
+
   - key: ranking_place
     description: ICU selectordinal demo
     status: approved

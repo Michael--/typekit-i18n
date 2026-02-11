@@ -178,6 +178,28 @@ entries:
     )
   })
 
+  test('validates ICU number/date/time argument variables in token consistency checks', () => {
+    const content = `version: "1"
+sourceLanguage: en
+languages: [en, de]
+entries:
+  - key: argument_formats
+    description: ICU argument format demo
+    placeholders:
+      - name: amount
+        type: number
+      - name: when
+        type: date
+    values:
+      en: "Amount: {amount, number, ::currency/EUR}; Date: {when, date, short}"
+      de: "Betrag."
+`
+
+    expect(() => toIrProjectFromYamlContent(content)).toThrow(
+      /Missing placeholder\(s\) "\{amount\}", "\{when\}" in language "de" at root.entries\[0\]\./
+    )
+  })
+
   test('roundtrips IR through YAML content', () => {
     const project: TranslationIrProject<'en' | 'de'> = {
       version: '1',

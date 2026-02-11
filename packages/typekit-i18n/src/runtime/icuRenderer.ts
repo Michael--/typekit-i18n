@@ -3,12 +3,23 @@ import { isQuotedPosition, unescapeIcuText } from './icuEscape.js'
 import {
   findMatchingBrace,
   findTopLevelComma,
+  IcuArgumentExpressionType,
+  IcuBranchExpressionType,
   parseIcuExpression,
   parseIcuOptions,
   ParsedIcuExpression,
   ParsedIcuOptions,
 } from './icuParser.js'
-import { toLocale, toNumberFormatter, toNumericValue, toPluralRules } from './icuFormatters.js'
+import {
+  toDateTimeFormatOptionsFromStyle,
+  toDateTimeFormatter,
+  toDateValue,
+  toLocale,
+  toNumberFormatOptionsFromStyle,
+  toNumberFormatter,
+  toNumericValue,
+  toPluralRules,
+} from './icuFormatters.js'
 
 const placeholderPattern = /\{([A-Za-z0-9_]+)(?:\|([A-Za-z0-9_-]+))?\}/g
 
@@ -26,6 +37,7 @@ export interface IcuRenderContext<TKey extends string, TLanguage extends string>
   localeByLanguage?: Partial<Record<TLanguage, string>>
   pluralRulesCache: Map<string, Intl.PluralRules>
   numberFormatCache: Map<string, Intl.NumberFormat>
+  dateTimeFormatCache?: Map<string, Intl.DateTimeFormat>
   compiledTemplateCache: Map<string, CompiledIcuTemplate>
 }
 
@@ -37,7 +49,9 @@ interface IcuTextToken {
 interface IcuExpressionToken {
   kind: 'expression'
   parsed: ParsedIcuExpression
-  parsedOptions: ParsedIcuOptions
+  parsedOptions?: ParsedIcuOptions
+  numberFormatOptions?: Intl.NumberFormatOptions
+  dateTimeFormatOptions?: Intl.DateTimeFormatOptions
   sourceIndex: number
   rawExpression: string
 }
@@ -45,6 +59,16 @@ interface IcuExpressionToken {
 type IcuTemplateToken = IcuTextToken | IcuExpressionToken
 
 export type CompiledIcuTemplate = ReadonlyArray<IcuTemplateToken>
+
+const isBranchExpressionType = (
+  expressionType: ParsedIcuExpression['expressionType']
+): expressionType is IcuBranchExpressionType =>
+  expressionType === 'select' || expressionType === 'plural' || expressionType === 'selectordinal'
+
+const isArgumentExpressionType = (
+  expressionType: ParsedIcuExpression['expressionType']
+): expressionType is IcuArgumentExpressionType =>
+  expressionType === 'number' || expressionType === 'date' || expressionType === 'time'
 
 const toLineAndColumn = (template: string, index: number): { line: number; column: number } => {
   let line = 1
@@ -127,9 +151,13 @@ export const applySimplePlaceholders = <TKey extends string, TLanguage extends s
  */
 export const resolveIcuBranch = <TKey extends string, TLanguage extends string>(
   parsed: ParsedIcuExpression,
-  parsedOptions: ParsedIcuOptions,
+  parsedOptions: ParsedIcuOptions | undefined,
   context: IcuRenderContext<TKey, TLanguage>
 ): string | null => {
+  if (!parsedOptions) {
+    return null
+  }
+
   if (parsed.expressionType === 'select') {
     const selectedKey = String(context.values[parsed.variableName] ?? 'other')
     return parsedOptions.options.get(selectedKey) ?? parsedOptions.options.get('other') ?? null
@@ -169,6 +197,38 @@ export const resolveIcuBranch = <TKey extends string, TLanguage extends string>(
   }
 
   return output
+}
+
+const formatIcuArgument = <TKey extends string, TLanguage extends string>(
+  token: IcuExpressionToken,
+  context: IcuRenderContext<TKey, TLanguage>
+): string | null => {
+  const locale = toLocale(context.language, context.defaultLanguage, context.localeByLanguage)
+  const rawValue = context.values[token.parsed.variableName]
+
+  if (token.parsed.expressionType === 'number') {
+    if (!token.numberFormatOptions) {
+      return null
+    }
+    const numericValue = toNumericValue(rawValue)
+    return toNumberFormatter(locale, context.numberFormatCache, token.numberFormatOptions).format(
+      numericValue
+    )
+  }
+
+  if (token.parsed.expressionType === 'date' || token.parsed.expressionType === 'time') {
+    if (!token.dateTimeFormatOptions) {
+      return null
+    }
+    const dateValue = toDateValue(rawValue)
+    const dateTimeFormatCache =
+      context.dateTimeFormatCache ?? new Map<string, Intl.DateTimeFormat>()
+    return toDateTimeFormatter(locale, dateTimeFormatCache, token.dateTimeFormatOptions).format(
+      dateValue
+    )
+  }
+
+  return null
 }
 
 /**
@@ -215,7 +275,7 @@ export const formatIcuTemplate = <TKey extends string, TLanguage extends string>
         throw toIcuSyntaxError(
           template,
           index,
-          `Invalid ICU expression "${rawExpression}". Supported types are "select", "plural", and "selectordinal".`,
+          `Invalid ICU expression "${rawExpression}". Supported types are "select", "plural", "selectordinal", "number", "date", and "time".`,
           context
         )
       }
@@ -223,14 +283,49 @@ export const formatIcuTemplate = <TKey extends string, TLanguage extends string>
       continue
     }
 
-    const parsedOptions = parseIcuOptions(parsed.optionsSource, parsed.expressionType !== 'select')
-    if (!parsedOptions) {
-      throw toIcuSyntaxError(
-        template,
-        index,
-        `Invalid ICU options for expression "${rawExpression}".`,
-        context
+    let parsedOptions: ParsedIcuOptions | undefined
+    let numberFormatOptions: Intl.NumberFormatOptions | undefined
+    let dateTimeFormatOptions: Intl.DateTimeFormatOptions | undefined
+
+    if (isBranchExpressionType(parsed.expressionType)) {
+      const parsedOptionsResult = parseIcuOptions(
+        parsed.optionsSource ?? '',
+        parsed.expressionType !== 'select'
       )
+      if (!parsedOptionsResult) {
+        throw toIcuSyntaxError(
+          template,
+          index,
+          `Invalid ICU options for expression "${rawExpression}".`,
+          context
+        )
+      }
+      parsedOptions = parsedOptionsResult
+    } else if (parsed.expressionType === 'number') {
+      const numberFormatOptionsResult = toNumberFormatOptionsFromStyle(parsed.formatStyleSource)
+      if (!numberFormatOptionsResult) {
+        throw toIcuSyntaxError(
+          template,
+          index,
+          `Invalid ICU number style for expression "${rawExpression}".`,
+          context
+        )
+      }
+      numberFormatOptions = numberFormatOptionsResult
+    } else if (parsed.expressionType === 'date' || parsed.expressionType === 'time') {
+      const dateTimeFormatOptionsResult = toDateTimeFormatOptionsFromStyle(
+        parsed.expressionType,
+        parsed.formatStyleSource
+      )
+      if (!dateTimeFormatOptionsResult) {
+        throw toIcuSyntaxError(
+          template,
+          index,
+          `Invalid ICU ${parsed.expressionType} style for expression "${rawExpression}".`,
+          context
+        )
+      }
+      dateTimeFormatOptions = dateTimeFormatOptionsResult
     }
 
     if (index > textStart) {
@@ -244,6 +339,8 @@ export const formatIcuTemplate = <TKey extends string, TLanguage extends string>
       kind: 'expression',
       parsed,
       parsedOptions,
+      numberFormatOptions,
+      dateTimeFormatOptions,
       sourceIndex: index,
       rawExpression,
     })
@@ -274,6 +371,20 @@ const renderCompiledTemplate = <TKey extends string, TLanguage extends string>(
   compiled.forEach((token) => {
     if (token.kind === 'text') {
       output += token.value
+      return
+    }
+
+    if (isArgumentExpressionType(token.parsed.expressionType)) {
+      const formattedValue = formatIcuArgument(token, context)
+      if (formattedValue === null) {
+        throw toIcuSyntaxError(
+          template,
+          token.sourceIndex,
+          `No formatter options resolved for expression "${token.rawExpression}".`,
+          context
+        )
+      }
+      output += formattedValue
       return
     }
 

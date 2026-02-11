@@ -25,6 +25,7 @@ type DemoCase =
   | 'basic'
   | 'placeholders'
   | 'formatters'
+  | 'icu-arguments'
   | 'icu-select'
   | 'icu-plural'
   | 'icu-selectordinal'
@@ -59,6 +60,11 @@ const demoCases: ReadonlyArray<DemoCaseDefinition> = [
     id: 'formatters',
     title: 'Custom Formatters',
     description: 'Named format hooks in templates',
+  },
+  {
+    id: 'icu-arguments',
+    title: 'ICU Arguments',
+    description: 'number, date, time with style/skeleton',
   },
   {
     id: 'icu-select',
@@ -118,6 +124,8 @@ const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR' | 'SAR' | 'PLN
 type IcuDemoKey =
   | 'inbox_summary'
   | 'invoice_total'
+  | 'icu_argument_style_demo'
+  | 'icu_argument_skeleton_demo'
   | 'ranking_place'
   | 'group_invite'
   | 'icu_escape_demo'
@@ -328,6 +336,38 @@ export const App = (): JSX.Element => {
             'date_formatted with date=now',
             translate('date_formatted', language, {
               data: [{ key: 'date', value: new Date() }],
+            })
+          )}
+        </Stack>
+      )
+    }
+
+    if (activeCase === 'icu-arguments') {
+      return (
+        <Stack gap="sm">
+          <Title order={2} size="h4" c="blue">
+            ICU Arguments
+          </Title>
+          <Text size="sm" c="dimmed">
+            Number, date, and time arguments support both named styles and ICU skeletons.
+          </Text>
+          {renderDemoCard(
+            'icu_argument_style_demo',
+            icuTranslate('icu_argument_style_demo', language, {
+              data: [
+                { key: 'amount', value: 1234.56 },
+                { key: 'ratio', value: 0.42 },
+                { key: 'when', value: new Date('2025-01-15T12:34:56.000Z') },
+              ],
+            })
+          )}
+          {renderDemoCard(
+            'icu_argument_skeleton_demo',
+            icuTranslate('icu_argument_skeleton_demo', language, {
+              data: [
+                { key: 'amount', value: 1234567 },
+                { key: 'when', value: new Date('2025-01-15T12:34:56.000Z') },
+              ],
             })
           )}
         </Stack>
