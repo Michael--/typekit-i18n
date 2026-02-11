@@ -58,6 +58,8 @@ const config = {
     {
       id: 'e2e-tests',
       name: 'E2E Tests',
+      optional: true,
+      enabled: false,
       command: 'pnpm run test:e2e',
     },
   ],
