@@ -18,7 +18,11 @@
     "typekit-i18n": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^25.0.9",
     "typescript": "^5.9.3",
-    "vitepress": "^1.6.3"
+    "mermaid": "^11.12.2",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17",
+    "vue": "^3.4.0"
   }
 }
