@@ -92,6 +92,51 @@ export const parseCsvContent = async (
 }
 
 /**
+ * Parses only CSV header names.
+ *
+ * @param content UTF-8 CSV content.
+ * @returns Parsed header names or empty list when no header row exists.
+ */
+export const parseCsvHeaders = async (content: string): Promise<ReadonlyArray<string>> => {
+  return new Promise((resolve, reject) => {
+    const delimiter = detectDelimiter(content)
+    let parsedHeaders: string[] = []
+    let settled = false
+
+    const rejectOnce = (error: Error): void => {
+      if (!settled) {
+        settled = true
+        reject(error)
+      }
+    }
+
+    const resolveOnce = (headers: ReadonlyArray<string>): void => {
+      if (!settled) {
+        settled = true
+        resolve(headers)
+      }
+    }
+
+    parseString<TranslationCsvRow, TranslationCsvRow>(content, {
+      headers: true,
+      delimiter,
+      trim: true,
+      maxRows: 1,
+    })
+      .on('headers', (headers: ReadonlyArray<string>) => {
+        parsedHeaders = [...headers]
+      })
+      .on('error', (error: Error) => rejectOnce(error))
+      .on('data', () => {
+        // Drain parser rows so stream can reach "end".
+      })
+      .on('end', () => {
+        resolveOnce(parsedHeaders)
+      })
+  })
+}
+
+/**
  * Reads and parses a CSV file from disk.
  *
  * @param filePath Path to CSV file.
@@ -100,4 +145,15 @@ export const parseCsvContent = async (
 export const readCsvFile = async (filePath: string): Promise<ReadonlyArray<TranslationCsvRow>> => {
   const content = await readFile(filePath, 'utf-8')
   return parseCsvContent(content)
+}
+
+/**
+ * Reads and parses only CSV header names from disk.
+ *
+ * @param filePath Path to CSV file.
+ * @returns Parsed header names or empty list when no header row exists.
+ */
+export const readCsvHeaders = async (filePath: string): Promise<ReadonlyArray<string>> => {
+  const content = await readFile(filePath, 'utf-8')
+  return parseCsvHeaders(content)
 }

@@ -312,10 +312,43 @@ entries:
       /Generation failed with \d+ error\(s\):/
     )
     await expect(generateTranslationTable(config)).rejects.toThrow(
-      /Missing language column "dk" in .*diagnostics\.csv at row 2\./
+      /Language declaration mismatch in .*diagnostics\.csv header: missing configured language\(s\): dk\./
     )
     await expect(generateTranslationTable(config)).rejects.toThrow(
       /YAML validation failed in ".*features\.yaml":/
+    )
+  })
+
+  test('fails with dedicated YAML language declaration mismatch message', async () => {
+    const directory = await createTempDirectory()
+    const yamlPath = join(directory, 'features.yaml')
+    const outputTablePath = join(directory, 'translationTable.ts')
+
+    await writeFile(
+      yamlPath,
+      `version: "1"
+sourceLanguage: en
+languages: [en, de, dk]
+entries:
+  - key: title
+    description: Main title
+    values:
+      en: Welcome
+      de: Willkommen
+      dk: Velkommen
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [yamlPath],
+      output: outputTablePath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await expect(generateTranslationTable(config)).rejects.toThrow(
+      /Language declaration mismatch in .*features\.yaml at "root.languages": unconfigured language\(s\): dk\./
     )
   })
 

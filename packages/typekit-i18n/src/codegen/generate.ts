@@ -1,13 +1,17 @@
 import { glob } from 'glob'
 import { dirname, extname, join, relative, resolve } from 'node:path'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import pc from 'picocolors'
+import { readCsvHeaders } from './csv.js'
 import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { TranslationIrProject } from './ir/types.js'
 import { toIrProjectFromYamlFile } from './ir/yaml.js'
 import { TranslationInputFormat, TranslationRecord, TypekitI18nConfig } from './types.js'
+import { parse as parseYaml } from 'yaml'
 
 const quote = (value: string): string => JSON.stringify(value)
+const CSV_BASE_COLUMNS: ReadonlySet<string> = new Set(['key', 'description'])
+const CSV_METADATA_COLUMNS: ReadonlySet<string> = new Set(['status', 'tags', 'placeholders'])
 
 const toTypeUnion = (values: ReadonlyArray<string>): string =>
   values.length === 0 ? 'never' : values.map((value) => quote(value)).join(' | ')
@@ -18,6 +22,41 @@ const toCombinedErrorMessage = (errors: ReadonlyArray<string>): string => {
   }
   const lines = errors.map((error) => `- ${error.split('\n').join('\n  ')}`)
   return `Generation failed with ${errors.length} error(s):\n${lines.join('\n')}`
+}
+
+const normalizeLanguageList = (languages: ReadonlyArray<string>): ReadonlyArray<string> =>
+  Array.from(
+    new Set(languages.map((language) => language.trim()).filter((language) => language.length > 0))
+  )
+
+const isLikelyLanguageCode = (value: string): boolean =>
+  /^[A-Za-z]{2}(?:-[A-Za-z0-9_]+)?$/.test(value)
+
+const toLanguageDeclarationMismatchMessage = (
+  scope: string,
+  declaredLanguages: ReadonlyArray<string>,
+  configuredLanguages: ReadonlyArray<string>
+): string | null => {
+  const missingConfigured = configuredLanguages.filter(
+    (language) => !declaredLanguages.includes(language)
+  )
+  const unconfigured = declaredLanguages.filter(
+    (language) => !configuredLanguages.includes(language)
+  )
+
+  if (missingConfigured.length === 0 && unconfigured.length === 0) {
+    return null
+  }
+
+  const details: string[] = []
+  if (missingConfigured.length > 0) {
+    details.push(`missing configured language(s): ${missingConfigured.join(', ')}`)
+  }
+  if (unconfigured.length > 0) {
+    details.push(`unconfigured language(s): ${unconfigured.join(', ')}`)
+  }
+
+  return `Language declaration mismatch in ${scope}: ${details.join('; ')}. Configured languages: ${configuredLanguages.join(', ')}. Declared languages: ${declaredLanguages.join(', ')}.`
 }
 
 const validateLanguageConfig = <TLanguage extends string>(
@@ -40,6 +79,78 @@ const validateLanguageConfig = <TLanguage extends string>(
 
 const normalizeCsvIrErrorMessage = (message: string): string =>
   message.replace(/source language/g, 'default language')
+
+const validateCsvLanguageDeclaration = async <TLanguage extends string>(
+  filePath: string,
+  config: TypekitI18nConfig<TLanguage>
+): Promise<void> => {
+  const headers = await readCsvHeaders(filePath)
+  const declaredLanguages = normalizeLanguageList(
+    headers.filter((header) => {
+      if (CSV_BASE_COLUMNS.has(header) || CSV_METADATA_COLUMNS.has(header)) {
+        return false
+      }
+      return config.languages.includes(header as TLanguage) || isLikelyLanguageCode(header)
+    })
+  )
+
+  const mismatchMessage = toLanguageDeclarationMismatchMessage(
+    `${filePath} header`,
+    declaredLanguages,
+    config.languages
+  )
+  if (mismatchMessage) {
+    throw new Error(mismatchMessage)
+  }
+}
+
+const readYamlDeclaredLanguages = async (
+  filePath: string
+): Promise<ReadonlyArray<string> | null> => {
+  try {
+    const content = await readFile(filePath, 'utf-8')
+    const parsed = parseYaml(content) as unknown
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return null
+    }
+
+    const root = parsed as Record<string, unknown>
+    const rawLanguages = root.languages
+    if (!Array.isArray(rawLanguages)) {
+      return null
+    }
+
+    const languages = rawLanguages.filter(
+      (language): language is string => typeof language === 'string'
+    )
+    if (languages.length === 0) {
+      return null
+    }
+
+    return normalizeLanguageList(languages)
+  } catch {
+    return null
+  }
+}
+
+const validateYamlLanguageDeclaration = async <TLanguage extends string>(
+  filePath: string,
+  config: TypekitI18nConfig<TLanguage>
+): Promise<void> => {
+  const declaredLanguages = await readYamlDeclaredLanguages(filePath)
+  if (!declaredLanguages) {
+    return
+  }
+
+  const mismatchMessage = toLanguageDeclarationMismatchMessage(
+    `${filePath} at "root.languages"`,
+    declaredLanguages,
+    config.languages
+  )
+  if (mismatchMessage) {
+    throw new Error(mismatchMessage)
+  }
+}
 
 const validateYamlProjectLanguageConfig = <TLanguage extends string>(
   project: TranslationIrProject<string>,
@@ -85,6 +196,7 @@ const loadProjectFromFile = async <TLanguage extends string>(
   config: TypekitI18nConfig<TLanguage>
 ): Promise<TranslationIrProject<string>> => {
   if (format === 'csv') {
+    await validateCsvLanguageDeclaration(filePath, config)
     return toIrProjectFromCsvFile(filePath, {
       languages: config.languages,
       sourceLanguage: config.defaultLanguage,
@@ -94,6 +206,7 @@ const loadProjectFromFile = async <TLanguage extends string>(
     })
   }
 
+  await validateYamlLanguageDeclaration(filePath, config)
   const project = await toIrProjectFromYamlFile(filePath)
   validateYamlProjectLanguageConfig(project, config, filePath)
   return project

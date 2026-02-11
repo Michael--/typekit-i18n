@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { parseCsvContent } from '../../src/codegen/csv.js'
+import { parseCsvContent, parseCsvHeaders } from '../../src/codegen/csv.js'
 
 describe('parseCsvContent', () => {
   test('parses semicolon-delimited rows with headers', async () => {
@@ -45,5 +45,14 @@ bye,Bye message,Goodbye
     await expect(parseCsvContent(content)).rejects.toThrow(
       /Invalid column count at row 3: expected 4, got 3\./
     )
+  })
+
+  test('parses header names', async () => {
+    const content = `key,description,en,de
+welcome,Welcome message,Hello,Hallo
+`
+
+    const headers = await parseCsvHeaders(content)
+    expect(headers).toEqual(['key', 'description', 'en', 'de'])
   })
 })
