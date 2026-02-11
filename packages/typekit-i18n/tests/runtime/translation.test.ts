@@ -24,8 +24,8 @@ beforeEach(() => {
 
 describe('translate', () => {
   test('returns existing translations for supported languages', () => {
-    expect(translate('Sun Position', 'en')).toBe('Sun Position')
-    expect(translate('Sun Position', 'de')).toBe('Sonnenposition')
+    expect(translate('Settings', 'en')).toBe('Settings')
+    expect(translate('Settings', 'de')).toBe('Einstellungen')
   })
 
   test('collects missing events when collection is enabled', () => {
