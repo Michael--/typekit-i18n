@@ -23,6 +23,7 @@ type TestKey =
   | 'duplicateSelectorDemo'
   | 'invalidPluralSelectorDemo'
   | 'invalidSelectSelectorDemo'
+  | 'unmatchedClosingDemo'
 
 const table: TranslationTable<TestKey, TestLanguage> = {
   inboxSummary: {
@@ -113,6 +114,11 @@ const table: TranslationTable<TestKey, TestLanguage> = {
   invalidSelectSelectorDemo: {
     description: 'Invalid selector form in select expression',
     en: '{gender, select, =1 {invalid} other {ok}}',
+    de: '',
+  },
+  unmatchedClosingDemo: {
+    description: 'Unmatched closing brace in template',
+    en: 'Text with stray closing brace } here.',
     de: '',
   },
 }
@@ -428,6 +434,16 @@ describe('createIcuTranslator', () => {
       })
     ).toThrow(
       /ICU syntax error for key "invalidSelectSelectorDemo" in "en" at line 1, column 1: Invalid ICU options/
+    )
+  })
+
+  test('throws for unmatched closing braces in templates', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() => translate('unmatchedClosingDemo', 'en')).toThrow(
+      /ICU syntax error for key "unmatchedClosingDemo" in "en" at line 1, column \d+: Unmatched "\}" expression/
     )
   })
 

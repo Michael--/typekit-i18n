@@ -17,9 +17,6 @@ import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRe
  * - `{var, time[, style-or-skeleton]}`
  * - `#` replacement inside plural branches
  * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
- *
- * TODO(icu-next):
- * - Throw strict syntax errors for unmatched closing braces (`}`) in message templates.
  */
 
 const toMissingTranslationMessage = <TKey extends string, TLanguage extends string>(

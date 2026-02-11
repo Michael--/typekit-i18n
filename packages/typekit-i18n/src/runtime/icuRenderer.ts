@@ -253,7 +253,19 @@ export const formatIcuTemplate = <TKey extends string, TLanguage extends string>
 
   while (index < template.length) {
     const char = template[index]
-    if (char !== '{' || isQuotedPosition(template, index)) {
+    if (isQuotedPosition(template, index)) {
+      index += 1
+      continue
+    }
+    if (char === '}') {
+      throw toIcuSyntaxError(
+        template,
+        index,
+        'Unmatched "}" expression. Missing opening "{".',
+        context
+      )
+    }
+    if (char !== '{') {
       index += 1
       continue
     }
