@@ -24,7 +24,8 @@
     "generate": "pnpm run gen",
     "check:codegen": "pnpm run gen && git diff --exit-code",
     "test:watch": "vitest",
-    "check": "pnpm run gen && pnpm run typecheck && pnpm run test"
+    "ci": "ci-runner",
+    "check": "ci-runner --target full"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
