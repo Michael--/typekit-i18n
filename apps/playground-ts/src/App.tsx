@@ -102,13 +102,17 @@ const numberLocaleByLanguage: Record<TranslateLanguage, string> = {
   de: 'de-DE',
   es: 'es-ES',
   fr: 'fr-FR',
+  ar: 'ar-SA',
+  pl: 'pl-PL',
 }
 
-const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR'> = {
+const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR' | 'SAR' | 'PLN'> = {
   en: 'USD',
   de: 'EUR',
   es: 'EUR',
   fr: 'EUR',
+  ar: 'SAR',
+  pl: 'PLN',
 }
 
 type IcuDemoKey =
@@ -216,7 +220,7 @@ export const App = (): JSX.Element => {
     setMode(newMode as TranslationMode)
   }
 
-  const languages: ReadonlyArray<TranslateLanguage> = ['en', 'de', 'es', 'fr']
+  const languages: ReadonlyArray<TranslateLanguage> = ['en', 'de', 'es', 'fr', 'ar', 'pl']
   const activeCaseDefinition = demoCases.find((item) => item.id === activeCase) ?? demoCases[0]
 
   const renderDemoCard = (label: string, value: string): JSX.Element => (

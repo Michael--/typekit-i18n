@@ -9,7 +9,7 @@ const config = defineTypekitI18nConfig({
   ],
   output: './generated/translationTable.ts',
   outputKeys: './generated/translationKeys.ts',
-  languages: ['en', 'de', 'es', 'fr'] as const,
+  languages: ['en', 'de', 'es', 'fr', 'ar', 'pl'] as const,
   defaultLanguage: 'en',
 })
 

@@ -5,6 +5,8 @@ languages:
   - de
   - es
   - fr
+  - ar
+  - pl
 
 entries:
   - key: inbox_summary
@@ -16,6 +18,8 @@ entries:
       de: '{gender, select, male {Er hat} female {Sie hat} other {Sie haben}} {count, plural, =0 {keine Nachrichten} one {eine Nachricht} other {# Nachrichten}}.'
       es: '{gender, select, male {El tiene} female {Ella tiene} other {Elle tiene}} {count, plural, =0 {ningun mensaje} one {# mensaje} other {# mensajes}}.'
       fr: '{gender, select, male {Il a} female {Elle a} other {Iel a}} {count, plural, =0 {aucun message} one {# message} other {# messages}}.'
+      ar: '{gender, select, male {Ladayhi} female {Ladayha} other {Ladayhum}} {count, plural, =0 {la rasil} one {risala wahida} other {# rasail}}.'
+      pl: '{gender, select, male {Ma} female {Ma} other {Maja}} {count, plural, =0 {brak wiadomosci} one {# wiadomosc} few {# wiadomosci} many {# wiadomosci} other {# wiadomosci}}.'
 
   - key: invoice_total
     description: Formatter inside ICU translator
@@ -26,6 +30,8 @@ entries:
       de: 'Rechnungsbetrag: {amount|currency}'
       es: 'Total de la factura: {amount|currency}'
       fr: 'Total de la facture: {amount|currency}'
+      ar: 'Majmu al-fatura: {amount|currency}'
+      pl: 'Suma faktury: {amount|currency}'
 
   - key: ranking_place
     description: ICU selectordinal demo
@@ -36,6 +42,8 @@ entries:
       de: 'Du wurdest {place, selectordinal, one {#.} two {#.} few {#.} other {#.}}.'
       es: 'Terminaste en {place, selectordinal, one {#.} two {#.} few {#.} other {#.}} lugar.'
       fr: 'Tu as fini {place, selectordinal, one {#er} two {#e} few {#e} other {#e}}.'
+      ar: 'Anhayta fi al-markaz {place, selectordinal, one {#} two {#} few {#} other {#}}.'
+      pl: 'Ukonczyles na miejscu {place, selectordinal, one {#.} two {#.} few {#.} other {#.}}.'
 
   - key: group_invite
     description: ICU plural offset demo
@@ -46,6 +54,8 @@ entries:
       de: '{count, plural, offset:1 =0 {Du bist beigetreten.} one {Du und # weitere Person sind beigetreten.} other {Du und # weitere Personen sind beigetreten.}}'
       es: '{count, plural, offset:1 =0 {Te uniste.} one {Tu y # persona mas se unieron.} other {Tu y # personas mas se unieron.}}'
       fr: '{count, plural, offset:1 =0 {Tu as rejoint.} one {Toi et # autre personne avez rejoint.} other {Toi et # autres personnes avez rejoint.}}'
+      ar: '{count, plural, offset:1 =0 {Inta damamta.} one {Inta wa # shakhs akhar damamtu.} other {Inta wa # ashkhas akharun damamtu.}}'
+      pl: '{count, plural, offset:1 =0 {Dolaczyles.} one {Ty i # inna osoba dolaczyliscie.} few {Ty i # inne osoby dolaczyliscie.} many {Ty i # innych osob dolaczyliscie.} other {Ty i # osoby dolaczyliscie.}}'
 
   - key: icu_escape_demo
     description: ICU apostrophe escaping demo
@@ -56,6 +66,8 @@ entries:
       de: "Hallo {name}, es ist einfach: nutze '{geschweifte Klammern}' fuer literale Klammern."
       es: "Hola {name}, es facil: usa '{llaves}' para llaves literales."
       fr: "Bonjour {name}, c''est facile: utilise '{accolades}' pour des accolades litterales."
+      ar: "Marhaban {name}, innahu sahil: istakhdim '{aqwas}' li idharat al-aqwas al-harfiya."
+      pl: "Czesc {name}, to proste: uzyj '{nawiasow}' aby pokazac doslowne nawiasy."
 
   - key: plural_categories_demo
     description: ICU plural category coverage demo
@@ -66,3 +78,5 @@ entries:
       de: '{count, plural, zero {null Elemente} one {ein Element} two {zwei Elemente} few {wenige Elemente} many {viele Elemente} other {# Elemente}}'
       es: '{count, plural, zero {cero elementos} one {un elemento} two {dos elementos} few {pocos elementos} many {muchos elementos} other {# elementos}}'
       fr: "{count, plural, zero {zero element} one {un element} two {deux elements} few {quelques elements} many {beaucoup d''elements} other {# elements}}"
+      ar: '{count, plural, zero {sifr anasir} one {unsur wahid} two {unsuran} few {qillat anasir} many {adad kabir min alanasir} other {# unsur}}'
+      pl: '{count, plural, zero {zero elementow} one {jeden element} two {dwa elementy} few {kilka elementow} many {wiele elementow} other {# elementu}}'
