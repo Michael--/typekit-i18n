@@ -17,11 +17,7 @@ import {
 import { createIcuTranslator, createTranslator } from 'typekit-i18n'
 import { type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
 import { translationTable } from '@gen/translationTable'
-import type {
-  MissingTranslationEvent,
-  PlaceholderFormatterMap,
-  TranslationTable,
-} from 'typekit-i18n'
+import type { MissingTranslationEvent, PlaceholderFormatterMap } from 'typekit-i18n'
 
 type TranslationMode = 'fallback' | 'strict'
 type DemoCase =
@@ -93,23 +89,6 @@ const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR'> = {
 
 type IcuDemoKey = 'inbox_summary' | 'invoice_total'
 
-const icuDemoTable: TranslationTable<IcuDemoKey, TranslateLanguage> = {
-  inbox_summary: {
-    description: 'ICU plural and select demo',
-    en: '{gender, select, male {He} female {She} other {They}} has {count, plural, =0 {no messages} one {# message} other {# messages}}.',
-    de: '{gender, select, male {Er} female {Sie} other {Sie}} hat {count, plural, =0 {keine Nachrichten} one {# Nachricht} other {# Nachrichten}}.',
-    es: '{gender, select, male {El} female {Ella} other {Elle}} tiene {count, plural, =0 {ningun mensaje} one {# mensaje} other {# mensajes}}.',
-    fr: '{gender, select, male {Il} female {Elle} other {Iel}} a {count, plural, =0 {aucun message} one {# message} other {# messages}}.',
-  },
-  invoice_total: {
-    description: 'Formatter inside ICU translator',
-    en: 'Invoice total: {amount|currency}',
-    de: 'Rechnungsbetrag: {amount|currency}',
-    es: 'Total de la factura: {amount|currency}',
-    fr: 'Total de la facture: {amount|currency}',
-  },
-}
-
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
  */
@@ -139,14 +118,14 @@ export const App = (): JSX.Element => {
   const [mode, setMode] = useState<TranslationMode>('fallback')
   const [activeCase, setActiveCase] = useState<DemoCase>('overview')
   const [missingEvents, setMissingEvents] = useState<
-    MissingTranslationEvent<string, TranslateLanguage>[]
+    MissingTranslationEvent<TranslateKey, TranslateLanguage>[]
   >([])
 
   // Use ref to collect missing translations without triggering re-renders during render
-  const missingEventsRef = useRef<MissingTranslationEvent<string, TranslateLanguage>[]>([])
+  const missingEventsRef = useRef<MissingTranslationEvent<TranslateKey, TranslateLanguage>[]>([])
 
   const onMissingTranslation = useCallback(
-    (event: MissingTranslationEvent<string, TranslateLanguage>) => {
+    (event: MissingTranslationEvent<TranslateKey, TranslateLanguage>) => {
       // Check if this event already exists
       const exists = missingEventsRef.current.some(
         (e) => e.key === event.key && e.language === event.language && e.reason === event.reason
@@ -178,12 +157,15 @@ export const App = (): JSX.Element => {
 
   const icuTranslate = useMemo(
     () =>
-      createIcuTranslator<TranslateLanguage, IcuDemoKey, typeof icuDemoTable>(icuDemoTable, {
-        defaultLanguage: 'en',
-        missingStrategy: mode,
-        formatters,
-        onMissingTranslation,
-      }),
+      createIcuTranslator<TranslateLanguage, IcuDemoKey, typeof translationTable>(
+        translationTable,
+        {
+          defaultLanguage: 'en',
+          missingStrategy: mode,
+          formatters,
+          onMissingTranslation,
+        }
+      ),
     [mode, onMissingTranslation]
   )
 

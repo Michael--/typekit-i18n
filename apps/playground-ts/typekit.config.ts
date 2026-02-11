@@ -5,6 +5,7 @@ const config = defineTypekitI18nConfig({
     './translations/ui.csv',
     './translations/features.yaml',
     './translations/diagnostics.csv',
+    './translations/icu.yaml',
   ],
   output: './generated/translationTable.ts',
   outputKeys: './generated/translationKeys.ts',
