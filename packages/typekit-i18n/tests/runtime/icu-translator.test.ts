@@ -20,6 +20,9 @@ type TestKey =
   | 'dateTimeSkeletonFormats'
   | 'invalidNumberStyle'
   | 'invalidDateStyle'
+  | 'duplicateSelectorDemo'
+  | 'invalidPluralSelectorDemo'
+  | 'invalidSelectSelectorDemo'
 
 const table: TranslationTable<TestKey, TestLanguage> = {
   inboxSummary: {
@@ -95,6 +98,21 @@ const table: TranslationTable<TestKey, TestLanguage> = {
   invalidDateStyle: {
     description: 'Invalid ICU date style',
     en: '{when, date, nonsense}',
+    de: '',
+  },
+  duplicateSelectorDemo: {
+    description: 'Duplicate selector in ICU options',
+    en: '{count, plural, one {# item} one {duplicate} other {# items}}',
+    de: '',
+  },
+  invalidPluralSelectorDemo: {
+    description: 'Invalid selector form in plural expression',
+    en: '{count, plural, singular {# item} other {# items}}',
+    de: '',
+  },
+  invalidSelectSelectorDemo: {
+    description: 'Invalid selector form in select expression',
+    en: '{gender, select, =1 {invalid} other {ok}}',
     de: '',
   },
 }
@@ -368,6 +386,48 @@ describe('createIcuTranslator', () => {
       })
     ).toThrow(
       /ICU syntax error for key "invalidDateStyle" in "en" at line 1, column 1: Invalid ICU date style/
+    )
+  })
+
+  test('throws for duplicate selectors in ICU options', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('duplicateSelectorDemo', 'en', {
+        data: [{ key: 'count', value: 1 }],
+      })
+    ).toThrow(
+      /ICU syntax error for key "duplicateSelectorDemo" in "en" at line 1, column 1: Invalid ICU options/
+    )
+  })
+
+  test('throws for invalid selector forms in plural expressions', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('invalidPluralSelectorDemo', 'en', {
+        data: [{ key: 'count', value: 1 }],
+      })
+    ).toThrow(
+      /ICU syntax error for key "invalidPluralSelectorDemo" in "en" at line 1, column 1: Invalid ICU options/
+    )
+  })
+
+  test('throws for invalid selector forms in select expressions', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(() =>
+      translate('invalidSelectSelectorDemo', 'en', {
+        data: [{ key: 'gender', value: 'female' }],
+      })
+    ).toThrow(
+      /ICU syntax error for key "invalidSelectSelectorDemo" in "en" at line 1, column 1: Invalid ICU options/
     )
   })
 

@@ -288,10 +288,7 @@ export const formatIcuTemplate = <TKey extends string, TLanguage extends string>
     let dateTimeFormatOptions: Intl.DateTimeFormatOptions | undefined
 
     if (isBranchExpressionType(parsed.expressionType)) {
-      const parsedOptionsResult = parseIcuOptions(
-        parsed.optionsSource ?? '',
-        parsed.expressionType !== 'select'
-      )
+      const parsedOptionsResult = parseIcuOptions(parsed.optionsSource ?? '', parsed.expressionType)
       if (!parsedOptionsResult) {
         throw toIcuSyntaxError(
           template,

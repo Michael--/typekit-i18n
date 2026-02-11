@@ -19,7 +19,6 @@ import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRe
  * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
  *
  * TODO(icu-next):
- * - Validate selector quality in parser/options (duplicate selectors and invalid selector forms).
  * - Throw strict syntax errors for unmatched closing braces (`}`) in message templates.
  */
 

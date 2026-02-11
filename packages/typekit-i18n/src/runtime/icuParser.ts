@@ -174,19 +174,31 @@ export const parseIcuOffset = (
   return { offset: offsetValue, startIndex: offsetMatch[0].length }
 }
 
+const pluralSelectorPattern = /^(?:zero|one|two|few|many|other|=-?\d+(?:\.\d+)?)$/u
+
+const isValidSelector = (selector: string, expressionType: IcuBranchExpressionType): boolean => {
+  if (expressionType === 'select') {
+    return !selector.startsWith('=')
+  }
+  return pluralSelectorPattern.test(selector)
+}
+
 /**
  * Parses ICU options map from selector-message pairs.
  *
  * @param optionsSource Options string with selectors and messages.
- * @param allowOffset Whether to parse offset directive.
+ * @param expressionType ICU branch expression type.
  * @returns Parsed options with offset or null if invalid.
  */
 export const parseIcuOptions = (
   optionsSource: string,
-  allowOffset: boolean
+  expressionType: IcuBranchExpressionType
 ): ParsedIcuOptions | null => {
   const options = new Map<string, string>()
-  const offsetResult = allowOffset ? parseIcuOffset(optionsSource) : { offset: 0, startIndex: 0 }
+  const offsetResult =
+    expressionType === 'plural' || expressionType === 'selectordinal'
+      ? parseIcuOffset(optionsSource)
+      : { offset: 0, startIndex: 0 }
   if (!offsetResult) {
     return null
   }
@@ -206,7 +218,11 @@ export const parseIcuOptions = (
       index += 1
     }
     const selector = optionsSource.slice(selectorStart, index).trim()
-    if (selector.length === 0) {
+    if (
+      selector.length === 0 ||
+      !isValidSelector(selector, expressionType) ||
+      options.has(selector)
+    ) {
       return null
     }
 
