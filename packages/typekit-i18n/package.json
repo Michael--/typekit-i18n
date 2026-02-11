@@ -12,7 +12,6 @@
     "dist/codegen.js",
     "dist/cli.js",
     "dist/src",
-    "dist/generated",
     "README.md"
   ],
   "bin": {

@@ -6,7 +6,6 @@ import {
   PlaceholderFormatterMap,
   TranslationTable,
 } from './types.js'
-import { TranslateLanguage, TranslateKeys } from '@gen/translationKeys'
 import { translationTable } from '@gen/translationTable'
 
 /**
@@ -249,12 +248,15 @@ export const createTranslationRuntime = <
   }
 }
 
+type RuntimeTranslationLanguage = Iso639CodeType
+type RuntimeTranslationKey = string
+
 /**
  * Runtime missing translation event type for the generated default table.
  */
 export type RuntimeMissingTranslationEvent = MissingTranslationEvent<
-  TranslateKeys,
-  TranslateLanguage
+  RuntimeTranslationKey,
+  RuntimeTranslationLanguage
 >
 
 /**
@@ -266,13 +268,13 @@ export type RuntimeMissingTranslationHandler = (event: RuntimeMissingTranslation
  * Configures runtime behavior for the default `translate` API.
  */
 export type TranslationRuntimeOptions = TranslationRuntimeConfiguration<
-  TranslateLanguage,
-  TranslateKeys
+  RuntimeTranslationLanguage,
+  RuntimeTranslationKey
 >
 
 const defaultRuntime = createTranslationRuntime<
-  TranslateLanguage,
-  TranslateKeys,
+  RuntimeTranslationLanguage,
+  RuntimeTranslationKey,
   typeof translationTable
 >(translationTable, {
   defaultLanguage: 'en',
@@ -315,7 +317,7 @@ export const clearCollectedMissingTranslations = (): void => {
  * @throws When `missingStrategy` is `strict` and a translation cannot be resolved.
  */
 export const translate = (
-  key: TranslateKeys,
+  key: RuntimeTranslationKey,
   language: Iso639CodeType,
   placeholder?: Placeholder
 ): string => {
