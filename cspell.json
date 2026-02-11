@@ -93,7 +93,9 @@
     "package-lock.json",
     ".git",
     "*.tsbuildinfo",
-    "DEMO_PLAN.md"
+    "DEMO_PLAN.md",
+    "ROADMAP.md",
+    "translations"
   ],
   "ignoreRegExpList": [
     "/\\b[a-f0-9]{32,}\\b/gi",

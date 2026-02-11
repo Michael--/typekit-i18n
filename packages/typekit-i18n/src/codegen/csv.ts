@@ -2,7 +2,18 @@ import { parseString } from 'fast-csv'
 import { readFile } from 'node:fs/promises'
 import { TranslationCsvRow } from './types.js'
 
-const CSV_DELIMITER = ';'
+/**
+ * Auto-detects CSV delimiter from the first line.
+ *
+ * @param content CSV content.
+ * @returns Detected delimiter (comma or semicolon).
+ */
+const detectDelimiter = (content: string): ',' | ';' => {
+  const firstLine = content.split('\n')[0] || ''
+  const commaCount = (firstLine.match(/,/g) || []).length
+  const semicolonCount = (firstLine.match(/;/g) || []).length
+  return semicolonCount > commaCount ? ';' : ','
+}
 
 /**
  * Parses CSV content into row objects.
@@ -15,10 +26,11 @@ export const parseCsvContent = async (
 ): Promise<ReadonlyArray<TranslationCsvRow>> => {
   return new Promise((resolve, reject) => {
     const rows: TranslationCsvRow[] = []
+    const delimiter = detectDelimiter(content)
 
     parseString<TranslationCsvRow, TranslationCsvRow>(content, {
       headers: true,
-      delimiter: CSV_DELIMITER,
+      delimiter,
       trim: true,
       discardUnmappedColumns: false,
     })

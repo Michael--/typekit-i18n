@@ -1,4 +1,4 @@
-key;description;en;de;es;fr
-diagnostics_title;Diagnostics panel title;Translation Diagnostics;Uebersetzungsdiagnose;Diagnosticos de traduccion;Diagnostics de traduction
-no_issues;No issues found;No missing translations;Keine fehlenden Uebersetzungen;No hay traducciones faltantes;Aucune traduction manquante
-missing_count;Count of missing translations;{count} missing translation(s) detected;{count} fehlende Uebersetzung(en) erkannt;{count} traduccion(es) faltante(s) detectada(s);{count} traduction(s) manquante(s) detectee(s)
+"key","description","en","de","es","fr"
+"diagnostics_title","Diagnostics panel title","Translation Diagnostics","Uebersetzungsdiagnose","Diagnosticos de traduccion","Diagnostics de traduction"
+"no_issues","No issues found","No missing translations","Keine fehlenden Uebersetzungen","No hay traducciones faltantes","Aucune traduction manquante"
+"missing_count","Count of missing translations","{count} missing translation(s) detected","{count} fehlende Uebersetzung(en) erkannt","{count} traduccion(es) faltante(s) detectada(s)","{count} traduction(s) manquante(s) detectee(s)"

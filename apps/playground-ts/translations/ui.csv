@@ -1,8 +1,8 @@
-key;description;en;de;es;fr
-settings_title;Settings section title;Settings;Einstellungen;Configuracion;Parametres
-language_label;Language selector label;Select Language;Sprache waehlen;Seleccionar idioma;Choisir la langue
-mode_label;Mode selector label;Translation Mode;Uebersetzungsmodus;Modo de traduccion;Mode de traduction
-mode_fallback;Fallback mode option;Fallback (graceful);Fallback (tolerant);Fallback (tolerante);Fallback (tolerant)
-mode_strict;Strict mode option;Strict (throws errors);Strikt (wirft Fehler);Estricto (lanza errores);Strict (leve des erreurs)
-features_title;Features section title;Feature Demonstrations;Feature-Demonstrationen;Demostraciones de caracteristicas;Demonstrations de fonctionnalites
-error_message;Generic error text;An error occurred;Ein Fehler ist aufgetreten;Se ha producido un error;Une erreur s'est produite
+"key","description","en","de","es","fr"
+"settings_title","Settings section title","Settings","Einstellungen","Configuracion","Parametres"
+"language_label","Language selector label","Select Language","Sprache waehlen","Seleccionar idioma","Choisir la langue"
+"mode_label","Mode selector label","Translation Mode","Uebersetzungsmodus","Modo de traduccion","Mode de traduction"
+"mode_fallback","Fallback mode option","Fallback (graceful)","Fallback (tolerant)","Fallback (tolerante)","Fallback (tolerant)"
+"mode_strict","Strict mode option","Strict (throws errors)","Strikt (wirft Fehler)","Estricto (lanza errores)","Strict (leve des erreurs)"
+"features_title","Features section title","Feature Demonstrations","Feature-Demonstrationen","Demostraciones de caracteristicas","Demonstrations de fonctionnalites"
+"error_message","Generic error text","An error occurred","Ein Fehler ist aufgetreten","Se ha producido un error","Une erreur s'est produite"
