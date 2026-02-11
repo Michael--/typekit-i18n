@@ -137,6 +137,47 @@ entries:
     expect(project.entries[0].values.de).toContain("'{geschweifte Klammern}'")
   })
 
+  test('validates ICU expression variables as placeholder tokens', () => {
+    const content = `version: "1"
+sourceLanguage: en
+languages: [en, de]
+entries:
+  - key: inbox_count
+    description: ICU plural count
+    placeholders:
+      - name: count
+        type: number
+    values:
+      en: "{count, plural, one {# message} other {# messages}}"
+      de: "Postfach."
+`
+
+    expect(() => toIrProjectFromYamlContent(content)).toThrow(
+      /Missing placeholder\(s\) "\{count\}" in language "de" at root.entries\[0\]\./
+    )
+  })
+
+  test('validates formatter placeholders in token consistency checks', () => {
+    const content = `version: "1"
+sourceLanguage: en
+languages: [en, de]
+entries:
+  - key: total
+    description: Formatter placeholder
+    placeholders:
+      - name: amount
+        type: number
+        formatHint: currency
+    values:
+      en: "Total: {amount|currency}"
+      de: "Summe."
+`
+
+    expect(() => toIrProjectFromYamlContent(content)).toThrow(
+      /Missing placeholder\(s\) "\{amount\}" in language "de" at root.entries\[0\]\./
+    )
+  })
+
   test('roundtrips IR through YAML content', () => {
     const project: TranslationIrProject<'en' | 'de'> = {
       version: '1',

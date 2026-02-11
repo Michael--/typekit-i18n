@@ -14,6 +14,11 @@ import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRe
  * - `{var, selectordinal, one {...} two {...} few {...} other {...}}`
  * - `#` replacement inside plural branches
  * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
+ *
+ * TODO(icu-next):
+ * - Add support for ICU argument formats like `number`, `date`, and `time` (with style/skeleton handling).
+ * - Validate selector quality in parser/options (duplicate selectors and invalid selector forms).
+ * - Throw strict syntax errors for unmatched closing braces (`}`) in message templates.
  */
 
 const toMissingTranslationMessage = <TKey extends string, TLanguage extends string>(
