@@ -2,6 +2,13 @@
 
 Runtime imports come from `typekit-i18n`.
 
+## Core Types
+
+- `TranslationTable<TKey, TLanguage>`
+- `Placeholder` and `PlaceholderValue`
+- `MissingTranslationEvent`
+- `PlaceholderFormatterMap`
+
 ## `createTranslator(table, options)`
 
 Creates a typed translator function:
@@ -10,46 +17,57 @@ Creates a typed translator function:
 ;(key, language, placeholder?) => string
 ```
 
-`options`:
+Options:
 
 - `defaultLanguage: TLanguage`
 - `missingStrategy?: 'fallback' | 'strict'`
-- `formatters?: Record<string, PlaceholderFormatter>`
+- `formatters?: PlaceholderFormatterMap<TKey, TLanguage>`
 - `onMissingTranslation?: (event) => void`
 
-Behavior:
-
-- Returns requested translation when present
-- Falls back to `defaultLanguage` when target translation is empty
-- Returns `key` when no value can be resolved
-- Throws in `strict` mode on missing key/language/fallback
-
-```mermaid
-flowchart TD
-  A["translate(key, language, placeholder?)"] --> B{"Key exists?"}
-  B -- "No" --> C["Emit reason: missingKey"]
-  C --> D{"missingStrategy = strict?"}
-  D -- "Yes" --> E["Throw error"]
-  D -- "No" --> F["Return key"]
-  B -- "Yes" --> G{"Requested language text non-empty?"}
-  G -- "Yes" --> H["Apply placeholders + formatters"]
-  H --> I["Return requested text"]
-  G -- "No" --> J{"Fallback text non-empty?"}
-  J -- "Yes" --> K["Emit reason: missingLanguage"]
-  K --> H
-  J -- "No" --> L["Emit reason: missingFallback"]
-  L --> D
-```
-
-Missing event reasons:
+Missing reasons:
 
 - `missingKey`
 - `missingLanguage`
 - `missingFallback`
 
+Behavior summary:
+
+- uses target language value when non-empty
+- falls back to `defaultLanguage` when target language value is empty
+- returns key when no value can be resolved
+- throws in strict mode
+
+## `createIcuTranslator(table, options)`
+
+Same base behavior as `createTranslator`, plus ICU rendering.
+
+Additional option:
+
+- `localeByLanguage?: Partial<Record<TLanguage, string>>`
+
+Supported ICU subset:
+
+- `select`: `{gender, select, male {...} female {...} other {...}}`
+- `plural`: `{count, plural, =0 {...} one {...} other {...}}`
+- `plural` with offset: `{count, plural, offset:1 one {...} other {...}}`
+- `selectordinal`: `{place, selectordinal, one {...} two {...} few {...} other {...}}`
+- number arguments:
+  - `{amount, number}`
+  - `{ratio, number, percent}`
+  - `{amount, number, currency/EUR}`
+  - skeleton form: `{amount, number, ::compact-short}`
+- date/time arguments:
+  - `{when, date, short|medium|long|full}`
+  - `{when, time, short|medium|long|full}`
+  - skeleton form: `{when, time, ::HH:mm}` or `{when, date, ::yyyy-MM-dd}`
+- `#` replacement in plural/selectordinal branches
+- apostrophe escaping (`''`, quoted literals)
+
+Invalid ICU expressions throw detailed syntax errors with key, language, line, and column.
+
 ## Placeholder Replacement
 
-Placeholder payload:
+Payload shape:
 
 ```ts
 {
@@ -57,23 +75,16 @@ Placeholder payload:
 }
 ```
 
-Template usage:
+Tokens:
 
-- Raw replacement: `{name}`
-- Named formatter: `{amount|currency}`
+- `{name}`: raw replacement
+- `{amount|currency}`: named formatter callback
 
-If a formatter is missing, raw string conversion is used as fallback.
+If formatter is missing, fallback is `String(value)`.
 
-```mermaid
-flowchart LR
-  A["Template token {amount|currency}"] --> B{"Formatter exists?"}
-  B -- "Yes" --> C["Run formatter(value, context)"]
-  B -- "No" --> D["Use String(value) fallback"]
-```
+## Translation Runtime Object
 
-## `createTranslationRuntime(table, options)`
-
-Creates an isolated runtime instance with mutable behavior:
+`createTranslationRuntime(table, options)` returns:
 
 - `translate(key, language, placeholder?)`
 - `configure(options)`
@@ -84,16 +95,16 @@ Creates an isolated runtime instance with mutable behavior:
 
 - `defaultLanguage`
 - `missingStrategy`
-- `onMissingTranslation`
-- `formatters`
+- `onMissingTranslation` (`null` clears)
+- `formatters` (`null` clears)
 - `collectMissingTranslations`
 
 ## Default Runtime Helpers
 
-These helpers operate on the package default generated table:
+Also exported:
 
-- `translate(key, language, placeholder?)`
-- `configureTranslationRuntime(options)`
+- `translate(...)`
+- `configureTranslationRuntime(...)`
 - `getCollectedMissingTranslations()`
 - `clearCollectedMissingTranslations()`
 - `createConsoleMissingTranslationReporter(writer?)`

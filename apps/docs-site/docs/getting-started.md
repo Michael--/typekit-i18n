@@ -11,15 +11,7 @@
 pnpm install
 ```
 
-```mermaid
-flowchart LR
-  A["Install dependencies"] --> B["Configure resources + typekit.config.ts"]
-  B --> C["Run typekit-i18n generate"]
-  C --> D["Generated translationTable.ts + translationKeys.ts"]
-  D --> E["Use createTranslator(...) in app runtime"]
-```
-
-Generate translations for the workspace demo:
+Generate package + playground artifacts:
 
 ```bash
 pnpm run gen:typekit-i18n
@@ -37,25 +29,25 @@ Run docs site:
 pnpm run dev:docs
 ```
 
-## Minimal App Setup
+## Minimal Package Setup
 
-### 1. Add package
+### 1. Install package
 
 ```bash
 pnpm add typekit-i18n
 ```
 
-### 2. Create translation resources
+### 2. Add translation resources
 
-Example: `translations/ui.csv`
+Example `translations/ui.csv`:
 
 ```csv
 key;description;en;de
-greeting_title;Greeting title;Welcome;Willkommen
-greeting_body;Greeting with placeholder;Hello {name};Hallo {name}
+welcome_title;Main title;Welcome;Willkommen
+welcome_body;Greeting with placeholder;Hello {name};Hallo {name}
 ```
 
-### 3. Create `typekit.config.ts`
+### 3. Add `typekit.config.ts`
 
 ```ts
 import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
@@ -69,13 +61,13 @@ export default defineTypekitI18nConfig({
 })
 ```
 
-### 4. Run generator
+### 4. Generate table and key types
 
 ```bash
 npx typekit-i18n
 ```
 
-### 5. Use generated table at runtime
+### 5. Use translator in runtime
 
 ```ts
 import { createTranslator } from 'typekit-i18n'
@@ -84,20 +76,18 @@ import type { TranslateKey, TranslateLanguage } from './generated/translationKey
 
 const t = createTranslator<TranslateLanguage, TranslateKey, typeof translationTable>(
   translationTable,
-  {
-    defaultLanguage: 'en',
-  }
+  { defaultLanguage: 'en' }
 )
 
-const title = t('greeting_title', 'de')
+const text = t('welcome_title', 'de')
 ```
 
-## Docs Build for GitHub Pages
+## Flow
 
-When deploying a project site (for example `https://<user>.github.io/typekit-i18n/`), build docs with base path:
-
-```bash
-DOCS_BASE_PATH=/typekit-i18n/ pnpm --filter @typekit-i18n/docs-site run docs:build
+```mermaid
+flowchart LR
+  A["Add CSV/YAML resources"] --> B["Create typekit.config.ts"]
+  B --> C["Run typekit-i18n generate"]
+  C --> D["Use generated translationTable + translationKeys"]
+  D --> E["Translate via createTranslator/createIcuTranslator"]
 ```
-
-If `DOCS_BASE_PATH` is not set, docs use `/`.

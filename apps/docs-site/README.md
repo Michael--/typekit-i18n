@@ -10,11 +10,14 @@ pnpm --filter @typekit-i18n/docs-site run docs:build
 pnpm --filter @typekit-i18n/docs-site run docs:preview
 ```
 
-## GitHub Pages Build
+## Content and Config
 
-The VitePress config reads `DOCS_BASE_PATH`.
+- docs content: `apps/docs-site/docs/*.md`
+- VitePress config: `apps/docs-site/docs/.vitepress/config.ts`
 
-Example for repository project pages (`/<repo>/`):
+## GitHub Pages
+
+Build with repository base path:
 
 ```bash
 DOCS_BASE_PATH=/typekit-i18n/ pnpm --filter @typekit-i18n/docs-site run docs:build
@@ -22,7 +25,7 @@ DOCS_BASE_PATH=/typekit-i18n/ pnpm --filter @typekit-i18n/docs-site run docs:bui
 
 Without `DOCS_BASE_PATH`, base defaults to `/`.
 
-## Content Location
+Deployment workflow:
 
-- Docs pages: `apps/docs-site/docs/*.md`
-- VitePress config: `apps/docs-site/docs/.vitepress/config.ts`
+- file: `.github/workflows/pages.yml`
+- build output: `apps/docs-site/docs/.vitepress/dist`

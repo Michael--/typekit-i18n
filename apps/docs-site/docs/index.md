@@ -1,27 +1,26 @@
 # typekit-i18n
 
-Type-safe internationalization workflow for TypeScript applications.
+Type-safe internationalization toolkit for TypeScript with runtime APIs, ICU rendering, and CSV/YAML code generation.
 
-`typekit-i18n` combines a runtime translation API with code generation from CSV/YAML resources.
+## What It Provides
 
-## Core Capabilities
-
-- Typed translation keys and language unions
-- Runtime fallback and strict missing-translation modes
+- Typed translation keys and language unions via generated files
+- Runtime translators with fallback or strict missing behavior
 - Placeholder replacement and named formatter hooks
-- Multi-file resource generation (`.csv` and `.yaml`)
-- Validation and conversion via CLI
+- ICU-capable translator for plural/select/selectordinal/number/date/time
+- Validation and conversion tooling for translation resources
 
 ## Workspace Targets
 
 - `packages/typekit-i18n`: npm package (runtime + codegen + CLI)
-- `apps/playground-ts`: React demo for runtime/codegen behavior
+- `apps/playground-ts`: React feature playground
 - `apps/docs-site`: this VitePress documentation site
 
-## Quick Links
+## Documentation Map
 
 - [Getting Started](./getting-started)
-- [Translation Strategy](./translation-strategy)
 - [Runtime API](./runtime-api)
 - [Codegen + CLI](./codegen-cli)
 - [Resource Formats](./resource-formats)
+- [Translation Strategy](./translation-strategy)
+- [GitHub Pages](./github-pages)

@@ -4,7 +4,7 @@ Codegen imports come from `typekit-i18n/codegen`.
 
 ## Config Helper
 
-Use `defineTypekitI18nConfig` for typed language inference:
+Use `defineTypekitI18nConfig` for language inference:
 
 ```ts
 import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
@@ -21,53 +21,59 @@ export default defineTypekitI18nConfig({
 Config fields:
 
 - `input`: file path or glob pattern(s)
-- `format?`: optional override (`csv` or `yaml`) for all inputs
+- `format?`: optional force format for all inputs (`csv` or `yaml`)
 - `output`: generated table file path
 - `outputKeys?`: generated key/language type file path
-- `languages`: supported language list
-- `defaultLanguage`: fallback language (must be part of `languages`)
+- `languages`: supported languages
+- `defaultLanguage`: fallback language
 
-`input` is intentionally multi-file capable so teams can keep translation resources split by feature/domain instead of one monolithic table.
+Rules:
 
-## Config File Discovery
+- `languages` must be non-empty and unique
+- `defaultLanguage` must be part of `languages`
+- `output` and `outputKeys` must not be identical
+- duplicate keys across merged files fail generation
 
-When no explicit `--config` is passed, the CLI checks:
+## Config Discovery
+
+When no `--config` is passed, CLI checks:
 
 - `typekit.config.ts|json|yaml|yml`
 - `typekit-i18n.config.ts|json|yaml|yml`
 
-```mermaid
-flowchart LR
-  A["Load config"] --> B["Resolve input globs"]
-  B --> C["Infer/resolve format per file"]
-  C --> D["Validate language contract + IR schema"]
-  D --> E["Merge entries + reject duplicate keys"]
-  E --> F["Write translationTable.ts"]
-  E --> G["Write translationKeys.ts"]
-```
+## Generation Output
+
+`generate` writes:
+
+- `translationTable.ts`
+- `translationKeys.ts`
+
+Generated types include:
+
+- `TranslateKey`
+- `TranslateKeys`
+- `LanguageCodes`
+- `TranslateLanguage`
 
 ## CLI Commands
 
-Binary: `typekit-i18n`
+Binary name: `typekit-i18n`
 
 ### `generate` (default)
 
 ```bash
 typekit-i18n generate --config ./typekit.config.ts
-# or:
+# or simply
 typekit-i18n
 ```
 
-Output:
-
-- `translationTable.ts`
-- `translationKeys.ts`
+If no config is found, command exits successfully and skips generation.
 
 ### `validate`
 
 ```bash
-# YAML
-typekit-i18n validate --input ./translations/features.yaml --format yaml
+# YAML (format inferred)
+typekit-i18n validate --input ./translations/features.yaml
 
 # CSV
 typekit-i18n validate \
@@ -77,7 +83,7 @@ typekit-i18n validate \
   --source-language en
 ```
 
-For CSV, `--languages` and `--source-language` are required.
+CSV validation requires `--languages` and `--source-language` (or `--sourceLanguage`).
 
 ### `convert`
 
@@ -99,21 +105,25 @@ typekit-i18n convert \
   --source-language en
 ```
 
-When converting from CSV, CSV context args are required.
-
-```mermaid
-flowchart LR
-  A["CSV input"] -->|convert --from csv --to yaml| B["YAML output"]
-  B -->|convert --from yaml --to csv| A
-  A --> C["validate (needs --languages + --source-language)"]
-  B --> D["validate"]
-```
+For CSV input conversion, CSV context arguments are required.
 
 ## Programmatic API
 
-Also available from `typekit-i18n/codegen`:
+Also exported:
 
 - `generateTranslationTable(config)`
 - `validateTranslationFile(options)`
 - `validateYamlTranslationFile(path)`
 - `loadTypekitI18nConfig(path?)`
+
+## Flow
+
+```mermaid
+flowchart LR
+  A["Load config"] --> B["Resolve input files"]
+  B --> C["Validate CSV/YAML structure"]
+  C --> D["Validate language contract"]
+  D --> E["Merge entries + reject duplicate keys"]
+  E --> F["Write translationTable.ts"]
+  E --> G["Write translationKeys.ts"]
+```

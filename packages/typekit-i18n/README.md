@@ -16,20 +16,38 @@ npm install typekit-i18n
 yarn add typekit-i18n
 ```
 
-## What You Get
+## Exports
 
-- Typed translator creation (`createTranslator`)
-- Runtime fallback or strict error behavior for missing translations
-- Placeholder replacement with optional named formatters
-- Generator config helpers (`defineTypekitI18nConfig`)
-- CLI for generation, validation, and format conversion
-- CSV and YAML translation resource support
+Runtime APIs:
 
-## Runtime Quick Start
+```ts
+import { createTranslator, createIcuTranslator } from 'typekit-i18n'
+```
 
-### 1. Generate a translation table
+Codegen APIs:
 
-Create `typekit.config.ts`:
+```ts
+import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
+```
+
+CLI binary:
+
+```bash
+typekit-i18n
+```
+
+## Feature Overview
+
+- Typed translator creation from generated key and language unions
+- Fallback or strict error behavior for missing translations
+- Placeholder replacement (`{name}`) and formatter tokens (`{amount|currency}`)
+- ICU-capable translator for `plural`, `select`, `selectordinal`, `number`, `date`, `time`
+- Translation generation from mixed CSV and YAML files
+- Validation and format conversion via CLI
+
+## Quick Start
+
+### 1. Create config (`typekit.config.ts`)
 
 ```ts
 import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
@@ -43,14 +61,14 @@ export default defineTypekitI18nConfig({
 })
 ```
 
-Run generator:
+### 2. Generate translation outputs
 
 ```bash
 npx typekit-i18n
 # same as: npx typekit-i18n generate
 ```
 
-### 2. Create a translator
+### 3. Create a runtime translator
 
 ```ts
 import { createTranslator } from 'typekit-i18n'
@@ -81,41 +99,79 @@ const price = t('price_formatted', 'de', {
 
 ### `createTranslator(table, options)`
 
-Creates a translator function:
+Creates a typed translator:
 
 ```ts
 ;(key, language, placeholder?) => string
 ```
 
-`options`:
+Options:
 
-- `defaultLanguage`: fallback language
-- `missingStrategy`: `'fallback' | 'strict'` (default: `'fallback'`)
-- `formatters`: formatter map for tokens like `{value|currency}`
-- `onMissingTranslation`: callback for missing key/language/fallback events
+- `defaultLanguage: TLanguage`
+- `missingStrategy?: 'fallback' | 'strict'` (default: `'fallback'`)
+- `formatters?: PlaceholderFormatterMap<TKey, TLanguage>`
+- `onMissingTranslation?: (event) => void`
 
-Missing translation reasons:
+Missing reasons:
 
 - `missingKey`
 - `missingLanguage`
 - `missingFallback`
 
-### `createTranslationRuntime(table, options)`
+Behavior summary:
 
-Creates an isolated runtime object with:
+- Requested language value is used when non-empty.
+- Empty requested language falls back to `defaultLanguage`.
+- If fallback is missing, translator returns the key (or throws in strict mode).
 
-- `translate(...)`
-- `configure(...)`
-- `getCollectedMissingTranslations()`
-- `clearCollectedMissingTranslations()`
+### `createIcuTranslator(table, options)`
 
-### Default runtime helpers
+Creates a typed translator with ICU support.
 
-- `translate(key, language, placeholder?)`
-- `configureTranslationRuntime(options)`
-- `getCollectedMissingTranslations()`
-- `clearCollectedMissingTranslations()`
+Additional option:
+
+- `localeByLanguage?: Partial<Record<TLanguage, string>>`
+
+Supported ICU subset:
+
+- Branch expressions:
+  - `{count, plural, =0 {...} one {...} other {...}}`
+  - `{count, plural, offset:1 one {...} other {...}}`
+  - `{gender, select, male {...} female {...} other {...}}`
+  - `{place, selectordinal, one {...} two {...} few {...} other {...}}`
+- Argument formatting:
+  - `{value, number}`
+  - `{value, number, percent}`
+  - `{value, number, currency/EUR}`
+  - `{dateValue, date, short}`
+  - `{dateValue, time, ::HH:mm}`
+- `#` substitution inside plural/selectordinal branches
+- Apostrophe escaping (`''`, quoted literals)
+
+If ICU syntax is invalid, detailed runtime errors include key, language, and line/column location.
+
+### Placeholder Types
+
+```ts
+type PlaceholderValue = string | number | boolean | bigint | Date
+
+interface Placeholder {
+  data: ReadonlyArray<{ key: string; value: PlaceholderValue }>
+}
+```
+
+### Runtime Helper APIs
+
+Also exported:
+
+- `createTranslationRuntime(table, options)`
 - `createConsoleMissingTranslationReporter(writer?)`
+- `translate(...)`
+- `configureTranslationRuntime(...)`
+- `getCollectedMissingTranslations()`
+- `clearCollectedMissingTranslations()`
+
+For application integrations, `createTranslator` or `createIcuTranslator` should be preferred.
 
 ## Codegen Config API (`typekit-i18n/codegen`)
 
@@ -124,6 +180,7 @@ Main exports:
 - `defineTypekitI18nConfig(...)`
 - `generateTranslationTable(...)`
 - `validateTranslationFile(...)`
+- `validateYamlTranslationFile(...)`
 - `loadTypekitI18nConfig(...)`
 
 Config shape:
@@ -139,7 +196,14 @@ interface TypekitI18nConfig<TLanguage extends string = string> {
 }
 ```
 
-Config file auto-discovery order:
+Notes:
+
+- `input` accepts multiple files/globs and merges them deterministically.
+- Without `format`, each file format is inferred by extension.
+- Duplicate keys across all inputs are rejected.
+- `output` and `outputKeys` must not be the same file path.
+
+Auto-discovered config file order when `--config` is omitted:
 
 - `typekit.config.ts`
 - `typekit.config.json`
@@ -162,22 +226,27 @@ typekit-i18n generate --config ./typekit.config.ts
 typekit-i18n
 ```
 
-- Loads config and generates `translationTable.ts` + `translationKeys.ts`
-- If no config file is found, command exits without failure
+- Loads config and generates `translationTable.ts` and `translationKeys.ts`
+- If no config is found, exits successfully and skips generation
 
 ### `validate`
 
 ```bash
-# YAML validation
-typekit-i18n validate --input ./translations/features.yaml --format yaml
+# YAML (format can be inferred from extension)
+typekit-i18n validate --input ./translations/features.yaml
 
-# CSV validation (requires languages and source language)
+# CSV (requires CSV context)
 typekit-i18n validate \
   --input ./translations/ui.csv \
   --format csv \
   --languages en,de,fr \
   --source-language en
 ```
+
+CSV validation requires:
+
+- `--languages`
+- `--source-language` (or `--sourceLanguage`)
 
 ### `convert`
 
@@ -189,7 +258,7 @@ typekit-i18n convert \
   --input ./translations/features.yaml \
   --output ./translations/features.csv
 
-# CSV -> YAML (CSV context required)
+# CSV -> YAML (requires CSV context)
 typekit-i18n convert \
   --from csv \
   --to yaml \
@@ -203,24 +272,25 @@ typekit-i18n convert \
 
 ### CSV
 
-- Delimiter is auto-detected (`;` or `,`)
-- Required columns: `key`, `description`, one column per configured language
-- Optional metadata columns:
+- Delimiter auto-detection: `;` or `,`
+- Required columns:
+  - `key`
+  - `description`
+  - one column per configured language
+- Optional columns:
   - `status` (`draft | review | approved`)
   - `tags` (comma-separated)
-  - `placeholders` (comma-separated: `name:type:formatHint`)
-- Default/source language value must not be empty
+  - `placeholders` (comma-separated definitions: `name:type:formatHint`)
 
 Example:
 
 ```csv
 key;description;status;tags;placeholders;en;de
-welcome_title;Main title;approved;ui,home;name:string;Welcome {name};Willkommen {name}
+greeting_title;Main title;approved;ui,home;name:string;Welcome {name};Willkommen {name}
+price_formatted;Price line;review;billing;amount:number:currency;Price {amount|currency};Preis {amount|currency}
 ```
 
 ### YAML
-
-Example:
 
 ```yaml
 version: '1'
@@ -229,7 +299,7 @@ languages:
   - en
   - de
 entries:
-  - key: welcome_title
+  - key: greeting_title
     description: Main title
     status: approved
     tags: [ui, home]
@@ -241,8 +311,20 @@ entries:
       de: 'Willkommen {name}'
 ```
 
+## Validation Guarantees
+
+Validation covers:
+
+- schema correctness
+- non-empty key and description
+- language declaration consistency
+- source/default language completeness
+- placeholder declaration consistency
+- placeholder token parity across all languages
+- duplicate key detection
+
 ## Notes
 
-- Generated key unions preserve key strings exactly.
-- Keep translation keys identifier-friendly (for example `snake_case`) for best DX.
-- For complete workspace docs and examples, see the repository root README.
+- Generated key unions preserve exact key strings.
+- Use identifier-friendly keys (for example `snake_case`) for best developer experience.
+- For workspace-level docs and deployment details, see the repository root README.

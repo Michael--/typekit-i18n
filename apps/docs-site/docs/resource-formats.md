@@ -2,43 +2,51 @@
 
 `typekit-i18n` supports CSV and YAML translation resources.
 
-## CSV Format
+## CSV
 
-Parser behavior:
+Behavior:
 
-- Delimiter auto-detection: `;` or `,`
-- Header-based rows
-- Strict column handling
+- delimiter auto-detection: `;` or `,`
+- header-based rows
+- strict language validation against configured language list
 
 Required columns:
 
 - `key`
 - `description`
-- one column for each configured language
+- one column per configured language
 
 Optional metadata columns:
 
 - `status` (`draft | review | approved`)
 - `tags` (comma-separated)
-- `placeholders` (comma-separated items in form `name:type:formatHint`)
+- `placeholders` (comma-separated definitions)
 
-Rules:
+Placeholder column syntax:
 
-- Source/default language value must be non-empty
-- Declared language columns must match configured languages
-- Duplicate keys across all inputs are rejected
+- `name`
+- `name:type`
+- `name:type:formatHint`
+
+Supported placeholder `type` values:
+
+- `string`
+- `number`
+- `boolean`
+- `date`
+- `currency`
 
 Example:
 
 ```csv
-key;description;status;tags;placeholders;en;de;fr
-greeting_title;Main greeting;approved;ui,home;name:string;Hello {name};Hallo {name};Bonjour {name}
-price_formatted;Price line;review;billing;amount:number:currency;Price {amount|currency};Preis {amount|currency};Prix {amount|currency}
+key;description;status;tags;placeholders;en;de
+greeting_title;Main greeting;approved;ui,home;name:string;Hello {name};Hallo {name}
+price_label;Price line;review;billing;amount:number:currency;Price {amount|currency};Preis {amount|currency}
 ```
 
-## YAML Format
+## YAML
 
-Project-level fields:
+Root fields:
 
 - `version: '1'`
 - `sourceLanguage`
@@ -47,10 +55,8 @@ Project-level fields:
 
 Entry fields:
 
-- `key`
-- `description`
-- `values`
-- optional `status`, `tags`, `placeholders`
+- required: `key`, `description`, `values`
+- optional: `status`, `tags`, `placeholders`
 
 Example:
 
@@ -60,7 +66,6 @@ sourceLanguage: en
 languages:
   - en
   - de
-  - fr
 entries:
   - key: greeting_title
     description: Main greeting
@@ -72,24 +77,26 @@ entries:
     values:
       en: 'Hello {name}'
       de: 'Hallo {name}'
-      fr: 'Bonjour {name}'
 ```
 
-## Placeholder Tokens
+## Placeholder Consistency Rules
 
-Template tokens in translation values:
+Validation checks:
 
-- `{name}`: plain placeholder replacement
-- `{amount|currency}`: named formatter token
+- source-language placeholders must exist in all languages
+- extra placeholders in non-source languages are rejected
+- if `placeholders` are declared, all used placeholders must be declared
+- duplicate placeholder declarations are rejected
 
-Runtime formatter hooks are optional; missing formatters fall back to plain value strings.
+This applies to plain placeholders and ICU-related variable references.
 
-## Validation Scope
+## Merged Multi-File Inputs
 
-Validation checks include:
+You can split resources by domain and format (for example CSV + YAML mixed).
 
-- schema/structure correctness
-- language declaration consistency
-- source/default language completeness
-- placeholder declaration and token consistency
-- duplicate key detection across merged input files
+Generation guarantees:
+
+- deterministic file ordering
+- deterministic key union output
+- duplicate key rejection across all files
+- aggregated validation errors with file context

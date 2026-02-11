@@ -7,7 +7,7 @@ const normalizedBase = envBase.endsWith('/') ? envBase : `${envBase}/`
 export default withMermaid(
   defineConfig({
     title: 'typekit-i18n',
-    description: 'Type-safe i18n toolkit for TypeScript',
+    description: 'Type-safe i18n toolkit for TypeScript with runtime, ICU, and codegen',
     base: normalizedBase,
     vite: {
       ssr: { noExternal: ['mermaid'] },
@@ -29,10 +29,10 @@ export default withMermaid(
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/getting-started' },
-        { text: 'Translation Strategy', link: '/translation-strategy' },
         { text: 'Runtime API', link: '/runtime-api' },
         { text: 'Codegen + CLI', link: '/codegen-cli' },
         { text: 'Resource Formats', link: '/resource-formats' },
+        { text: 'GitHub Pages', link: '/github-pages' },
       ],
       sidebar: [
         {
@@ -41,6 +41,7 @@ export default withMermaid(
             { text: 'Overview', link: '/' },
             { text: 'Getting Started', link: '/getting-started' },
             { text: 'Translation Strategy', link: '/translation-strategy' },
+            { text: 'GitHub Pages', link: '/github-pages' },
           ],
         },
         {
