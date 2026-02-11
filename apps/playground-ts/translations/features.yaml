@@ -1,0 +1,109 @@
+version: '1'
+sourceLanguage: en
+languages:
+  - en
+  - de
+  - es
+  - fr
+
+entries:
+  - key: greeting_title
+    description: Headline text for the playground
+    status: approved
+    tags: [demo, greeting]
+    values:
+      en: 'Welcome to typekit-i18n'
+      de: 'Willkommen bei typekit-i18n'
+      es: 'Bienvenido a typekit-i18n'
+      fr: 'Bienvenue sur typekit-i18n'
+
+  - key: greeting_body
+    description: Greeting message with user placeholder
+    status: approved
+    tags: [demo, greeting, placeholder]
+    placeholders:
+      - name: name
+        type: string
+    values:
+      en: 'Hello {name}, nice to see you.'
+      de: 'Hallo {name}, schoen dich zu sehen.'
+      es: 'Hola {name}, encantado de verte.'
+      fr: 'Bonjour {name}, ravi de te voir.'
+
+  - key: item_count
+    description: Summary line with count placeholder
+    status: approved
+    tags: [demo, placeholder, number]
+    placeholders:
+      - name: count
+        type: number
+        formatHint: integer
+    values:
+      en: 'You currently have {count} items.'
+      de: 'Du hast aktuell {count} Eintraege.'
+      es: 'Actualmente tienes {count} elementos.'
+      fr: 'Tu as actuellement {count} elements.'
+
+  - key: price_formatted
+    description: Price with custom formatter
+    status: approved
+    tags: [demo, formatter, currency]
+    placeholders:
+      - name: amount
+        type: number
+        formatHint: currency
+    values:
+      en: 'The price is {amount|currency}.'
+      de: 'Der Preis betraegt {amount|currency}.'
+      es: 'El precio es {amount|currency}.'
+      fr: 'Le prix est de {amount|currency}.'
+
+  - key: date_formatted
+    description: Date with custom formatter
+    status: approved
+    tags: [demo, formatter, date]
+    placeholders:
+      - name: date
+        type: date
+        formatHint: short
+    values:
+      en: 'Last updated: {date|dateShort}'
+      de: 'Zuletzt aktualisiert: {date|dateShort}'
+      es: 'Ultima actualizacion: {date|dateShort}'
+      fr: 'Derniere mise a jour: {date|dateShort}'
+
+  - key: fallback_demo
+    description: Intentionally missing in some languages
+    status: approved
+    tags: [demo, fallback]
+    values:
+      en: 'This text should fallback'
+      de: 'Dieser Text sollte zurueckfallen'
+      es: ''
+      fr: 'Ce texte devrait avoir un repli'
+
+  - key: placeholder_basic
+    description: Basic placeholder demo
+    status: approved
+    tags: [demo, placeholder]
+    placeholders:
+      - name: text
+        type: string
+    values:
+      en: 'Basic: {text}'
+      de: 'Einfach: {text}'
+      es: 'Basico: {text}'
+      fr: 'Basique: {text}'
+
+  - key: placeholder_number
+    description: Number placeholder demo
+    status: approved
+    tags: [demo, placeholder, number]
+    placeholders:
+      - name: num
+        type: number
+    values:
+      en: 'Number: {num}'
+      de: 'Zahl: {num}'
+      es: 'Numero: {num}'
+      fr: 'Nombre: {num}'

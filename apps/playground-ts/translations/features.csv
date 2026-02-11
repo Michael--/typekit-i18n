@@ -1,9 +1,0 @@
-key;description;en;de;es;fr
-greeting_title;Headline text for the playground;Welcome to typekit-i18n;Willkommen bei typekit-i18n;Bienvenido a typekit-i18n;Bienvenue sur typekit-i18n
-greeting_body;Greeting message with user placeholder;Hello {name}, nice to see you.;Hallo {name}, schoen dich zu sehen.;Hola {name}, encantado de verte.;Bonjour {name}, ravi de te voir.
-item_count;Summary line with count placeholder;You currently have {count} items.;Du hast aktuell {count} Eintraege.;Actualmente tienes {count} elementos.;Tu as actuellement {count} elements.
-price_formatted;Price with custom formatter;The price is {amount|currency}.;Der Preis betraegt {amount|currency}.;El precio es {amount|currency}.;Le prix est de {amount|currency}.
-date_formatted;Date with custom formatter;Last updated: {date|dateShort};Zuletzt aktualisiert: {date|dateShort};Ultima actualizacion: {date|dateShort};Derniere mise a jour: {date|dateShort}
-fallback_demo;Intentionally missing in some languages;This text should fallback;Dieser Text sollte zurueckfallen;;Ce texte devrait avoir un repli
-placeholder_basic;Basic placeholder demo;Basic: {text};Einfach: {text};Basico: {text};Basique: {text}
-placeholder_number;Number placeholder demo;Number: {num};Zahl: {num};Numero: {num};Nombre: {num}
