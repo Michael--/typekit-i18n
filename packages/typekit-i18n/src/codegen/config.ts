@@ -2,6 +2,7 @@ import { access, readFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { extname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { tsImport } from 'tsx/esm/api'
 import { parse as parseYaml } from 'yaml'
 import { TypekitI18nConfig } from './types.js'
 
@@ -16,7 +17,8 @@ const DEFAULT_CONFIG_FILE_CANDIDATES = [
   'typekit-i18n.config.yml',
 ] as const
 
-const MODULE_CONFIG_EXTENSIONS = new Set<string>(['.ts', '.mts', '.cts', '.js', '.mjs', '.cjs'])
+const TS_MODULE_CONFIG_EXTENSIONS = new Set<string>(['.ts', '.mts', '.cts'])
+const JS_MODULE_CONFIG_EXTENSIONS = new Set<string>(['.js', '.mjs', '.cjs'])
 const YAML_CONFIG_EXTENSIONS = new Set<string>(['.yaml', '.yml'])
 
 const resolveConfigPath = async (inputPath?: string): Promise<string | null> => {
@@ -53,11 +55,22 @@ const toConfigObject = <TLanguage extends string>(
   return value as TypekitI18nConfig<TLanguage>
 }
 
-const loadConfigFromModule = async <TLanguage extends string>(
+const loadConfigFromJavaScriptModule = async <TLanguage extends string>(
   configPath: string
 ): Promise<TypekitI18nConfig<TLanguage>> => {
   const moduleUrl = pathToFileURL(configPath).toString()
   const imported = (await import(moduleUrl)) as { default?: unknown }
+  if (imported.default === undefined) {
+    throw new Error(`Configuration "${configPath}" must export default TypekitI18nConfig object.`)
+  }
+  return toConfigObject(imported.default, configPath)
+}
+
+const loadConfigFromTypeScriptModule = async <TLanguage extends string>(
+  configPath: string
+): Promise<TypekitI18nConfig<TLanguage>> => {
+  const moduleUrl = pathToFileURL(configPath).toString()
+  const imported = (await tsImport(moduleUrl, import.meta.url)) as { default?: unknown }
   if (imported.default === undefined) {
     throw new Error(`Configuration "${configPath}" must export default TypekitI18nConfig object.`)
   }
@@ -93,8 +106,11 @@ const loadConfigFromPath = async <TLanguage extends string>(
 ): Promise<TypekitI18nConfig<TLanguage>> => {
   const extension = extname(configPath).toLowerCase()
 
-  if (MODULE_CONFIG_EXTENSIONS.has(extension)) {
-    return loadConfigFromModule(configPath)
+  if (TS_MODULE_CONFIG_EXTENSIONS.has(extension)) {
+    return loadConfigFromTypeScriptModule(configPath)
+  }
+  if (JS_MODULE_CONFIG_EXTENSIONS.has(extension)) {
+    return loadConfigFromJavaScriptModule(configPath)
   }
   if (extension === '.json') {
     return loadConfigFromJson(configPath)

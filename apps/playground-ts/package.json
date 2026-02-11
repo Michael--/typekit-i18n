@@ -6,8 +6,7 @@
   "scripts": {
     "clean": "rm -rf dist generated",
     "dev": "vite",
-    "gen": "pnpm run gen:typekit-i18n",
-    "gen:typekit-i18n": "node --import tsx ../../packages/typekit-i18n/src/codegen/cli.ts generate",
+    "gen": "typekit-i18n",
     "build": "pnpm run gen && vite build",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "preview": "vite preview",

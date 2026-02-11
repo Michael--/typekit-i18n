@@ -1,4 +1,4 @@
-import { TypekitI18nConfig } from './src/codegen/index.js'
+import type { TypekitI18nConfig } from './src/codegen/index.js'
 
 const config: TypekitI18nConfig<'en' | 'de'> = {
   input: ['./resources/translations/*.csv'],

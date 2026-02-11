@@ -6,6 +6,9 @@
   "main": "./src/index.ts",
   "module": "./src/index.ts",
   "types": "./src/index.ts",
+  "bin": {
+    "typekit-i18n": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -22,9 +25,9 @@
   },
   "scripts": {
     "clean": "rm -rf dist generated",
-    "gen": "node --import tsx src/codegen/cli.ts",
+    "gen": "node --import tsx src/codegen/cli.ts generate",
     "validate:yaml-example": "node --import tsx src/codegen/cli.ts validate --input resources/translations/translationTableExample.yaml --format yaml",
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && vite build --config vite.cli.config.ts && tsc -p tsconfig.build.json",
     "dev": "vite build --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run --passWithNoTests",
@@ -34,6 +37,7 @@
     "fast-csv": "^5.0.5",
     "glob": "^11.0.3",
     "picocolors": "^1.1.1",
+    "tsx": "^4.20.5",
     "yaml": "^2.8.2"
   },
   "devDependencies": {
