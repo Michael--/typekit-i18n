@@ -34,6 +34,16 @@ When no explicit `--config` is passed, the CLI checks:
 - `typekit.config.ts|json|yaml|yml`
 - `typekit-i18n.config.ts|json|yaml|yml`
 
+```mermaid
+flowchart LR
+  A["Load config"] --> B["Resolve input globs"]
+  B --> C["Infer/resolve format per file"]
+  C --> D["Validate language contract + IR schema"]
+  D --> E["Merge entries + reject duplicate keys"]
+  E --> F["Write translationTable.ts"]
+  E --> G["Write translationKeys.ts"]
+```
+
 ## CLI Commands
 
 Binary: `typekit-i18n`
@@ -88,6 +98,14 @@ typekit-i18n convert \
 ```
 
 When converting from CSV, CSV context args are required.
+
+```mermaid
+flowchart LR
+  A["CSV input"] -->|convert --from csv --to yaml| B["YAML output"]
+  B -->|convert --from yaml --to csv| A
+  A --> C["validate (needs --languages + --source-language)"]
+  B --> D["validate"]
+```
 
 ## Programmatic API
 

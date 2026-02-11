@@ -11,6 +11,14 @@
 pnpm install
 ```
 
+```mermaid
+flowchart LR
+  A["Install dependencies"] --> B["Configure resources + typekit.config.ts"]
+  B --> C["Run typekit-i18n generate"]
+  C --> D["Generated translationTable.ts + translationKeys.ts"]
+  D --> E["Use createTranslator(...) in app runtime"]
+```
+
 Generate translations for the workspace demo:
 
 ```bash
