@@ -105,13 +105,13 @@ export const App = (): JSX.Element => {
   const languages: TranslateLanguage[] = ['en', 'de', 'es', 'fr']
 
   return (
-    <Container size="xl" py="xl">
-      <Stack gap="xl">
+    <Container size="lg" py="md">
+      <Stack gap="md">
         {/* Header */}
         <Stack gap="xs" align="center">
           <Title
             order={1}
-            size="3rem"
+            size="1.5rem"
             fw={700}
             style={{
               background: 'linear-gradient(135deg, #228be6 0%, #7950f2 100%)',
@@ -130,8 +130,8 @@ export const App = (): JSX.Element => {
         </Stack>
 
         {/* Controls */}
-        <Paper shadow="sm" p="lg" radius="md" withBorder>
-          <Group gap="xl" grow>
+        <Paper shadow="sm" p="md" radius="md" withBorder>
+          <Group gap="lg" grow>
             <Select
               label={translate('language_label', language)}
               value={language}
@@ -156,9 +156,9 @@ export const App = (): JSX.Element => {
         {/* Feature Grid */}
         <Grid>
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md" withBorder h="100%">
-              <Stack gap="md">
-                <Title order={2} size="h3" c="blue">
+            <Paper shadow="sm" p="md" radius="md" withBorder h="100%">
+              <Stack gap="sm">
+                <Title order={2} size="h4" c="blue">
                   {translate('features_title', language)}
                 </Title>
 
@@ -220,9 +220,9 @@ export const App = (): JSX.Element => {
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Paper shadow="sm" p="lg" radius="md" withBorder h="100%">
-              <Stack gap="md">
-                <Title order={2} size="h3" c="blue">
+            <Paper shadow="sm" p="md" radius="md" withBorder h="100%">
+              <Stack gap="sm">
+                <Title order={2} size="h4" c="blue">
                   Fallback Behavior
                 </Title>
 
@@ -247,9 +247,9 @@ export const App = (): JSX.Element => {
         </Grid>
 
         {/* Diagnostics */}
-        <Paper shadow="sm" p="lg" radius="md" withBorder>
-          <Stack gap="md">
-            <Title order={2} size="h3" c="orange">
+        <Paper shadow="sm" p="md" radius="md" withBorder>
+          <Stack gap="sm">
+            <Title order={2} size="h4" c="orange">
               {translate('diagnostics_title', language)}
             </Title>
 
@@ -278,14 +278,14 @@ export const App = (): JSX.Element => {
                 </Alert>
 
                 <Stack gap="xs">
-                  {missingEvents.map((event, index) => (
-                    <Paper key={index} p="sm" bg="dark.6" radius="sm" withBorder>
-                      <Text size="sm" ff="monospace">
+                  <Paper p="sm" bg="dark.6" radius="sm" withBorder>
+                    {missingEvents.map((event, index) => (
+                      <Text key={index} size="sm" ff="monospace">
                         Key: <Code>{event.key}</Code>, Language: <Code>{event.language}</Code>,
                         Reason: <Code>{event.reason}</Code>
                       </Text>
-                    </Paper>
-                  ))}
+                    ))}
+                  </Paper>
                 </Stack>
               </>
             )}
