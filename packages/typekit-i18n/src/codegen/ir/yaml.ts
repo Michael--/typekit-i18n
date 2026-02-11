@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { parseDocument, stringify } from 'yaml'
+import { isNode, LineCounter, parseDocument, stringify } from 'yaml'
 import {
   TranslationIrEntry,
   TranslationIrEntryStatus,
@@ -18,12 +18,43 @@ const toPath = (path: ReadonlyArray<string | number>): string =>
     .join('.')
     .replace('.[', '[')
 
+type YamlPath = ReadonlyArray<string | number>
+type ResolveYamlLineNumber = (path: YamlPath) => number | undefined
+
 const toCombinedErrorMessage = (scope: string, errors: ReadonlyArray<string>): string => {
   if (errors.length === 1) {
     return errors[0]
   }
   const lines = errors.map((error, index) => `${index + 1}. ${error}`)
   return `${scope} failed with ${errors.length} error(s):\n${lines.join('\n')}`
+}
+
+const withLineNumber = (message: string, lineNumber?: number): string => {
+  if (!lineNumber || message.includes('(line ')) {
+    return message
+  }
+  const normalized = message.endsWith('.') ? message.slice(0, -1) : message
+  return `${normalized} (line ${lineNumber}).`
+}
+
+const toLineNumberFromPath = (
+  document: ReturnType<typeof parseDocument>,
+  lineCounter: LineCounter,
+  path: YamlPath
+): number | undefined => {
+  const documentPath = path[0] === 'root' ? path.slice(1) : path
+  const node = document.getIn(documentPath, true)
+  if (!isNode(node)) {
+    return undefined
+  }
+
+  const offset = node.range?.[0]
+  if (typeof offset !== 'number') {
+    return undefined
+  }
+
+  const linePosition = lineCounter.linePos(offset)
+  return linePosition.line > 0 ? linePosition.line : undefined
 }
 
 const requireString = (value: unknown, path: ReadonlyArray<string | number>): string => {
@@ -163,7 +194,8 @@ const toValues = (
   languages: ReadonlyArray<string>,
   sourceLanguage: string,
   path: ReadonlyArray<string | number>,
-  entryKey: string
+  entryKey: string,
+  resolveLineNumber?: ResolveYamlLineNumber
 ): Record<string, string> => {
   const parsed = requireObject(value, path)
   const values: Record<string, string> = {}
@@ -171,17 +203,31 @@ const toValues = (
 
   languages.forEach((language) => {
     if (!(language in parsed)) {
-      errors.push(`Missing language "${language}" at "${toPath(path)}" for entry "${entryKey}".`)
+      errors.push(
+        withLineNumber(
+          `Missing language "${language}" at "${toPath(path)}" for entry "${entryKey}".`,
+          resolveLineNumber?.(path)
+        )
+      )
       return
     }
     const translated = parsed[language]
     if (typeof translated !== 'string') {
-      errors.push(`Expected string at "${toPath([...path, language])}" for entry "${entryKey}".`)
+      const valuePath = [...path, language]
+      errors.push(
+        withLineNumber(
+          `Expected string at "${toPath(valuePath)}" for entry "${entryKey}".`,
+          resolveLineNumber?.(valuePath)
+        )
+      )
       return
     }
     if (language === sourceLanguage && translated.length === 0) {
       errors.push(
-        `Missing source language value at "${toPath([...path, language])}" for entry "${entryKey}".`
+        withLineNumber(
+          `Missing source language value at "${toPath([...path, language])}" for entry "${entryKey}".`,
+          resolveLineNumber?.([...path, language])
+        )
       )
       return
     }
@@ -199,7 +245,8 @@ const toEntries = (
   value: unknown,
   languages: ReadonlyArray<string>,
   sourceLanguage: string,
-  path: ReadonlyArray<string | number>
+  path: ReadonlyArray<string | number>,
+  resolveLineNumber?: ResolveYamlLineNumber
 ): ReadonlyArray<TranslationIrEntry<string>> => {
   const entries = requireArray(value, path)
   const parsedEntries: TranslationIrEntry<string>[] = []
@@ -212,7 +259,12 @@ const toEntries = (
       const parsed = requireObject(entry, basePath)
       const key = requireString(parsed.key, [...basePath, 'key'])
       if (keys.has(key)) {
-        throw new Error(`Duplicate key "${key}" at "${toPath(basePath)}".`)
+        throw new Error(
+          withLineNumber(
+            `Duplicate key "${key}" at "${toPath(basePath)}".`,
+            resolveLineNumber?.(basePath)
+          )
+        )
       }
       keys.add(key)
 
@@ -222,10 +274,22 @@ const toEntries = (
         status: toStatus(parsed.status, [...basePath, 'status']),
         tags: toTags(parsed.tags, [...basePath, 'tags']),
         placeholders: toPlaceholders(parsed.placeholders, [...basePath, 'placeholders']),
-        values: toValues(parsed.values, languages, sourceLanguage, [...basePath, 'values'], key),
+        values: toValues(
+          parsed.values,
+          languages,
+          sourceLanguage,
+          [...basePath, 'values'],
+          key,
+          resolveLineNumber
+        ),
       })
     } catch (error: unknown) {
-      errors.push(error instanceof Error ? error.message : String(error))
+      errors.push(
+        withLineNumber(
+          error instanceof Error ? error.message : String(error),
+          resolveLineNumber?.(basePath)
+        )
+      )
     }
   })
 
@@ -246,9 +310,15 @@ const toEntries = (
 export const toIrProjectFromYamlContent = <TLanguage extends string = string>(
   content: string
 ): TranslationIrProject<TLanguage> => {
-  const document = parseDocument(content)
+  const lineCounter = new LineCounter()
+  const document = parseDocument(content, { lineCounter })
+  const resolveLineNumber: ResolveYamlLineNumber = (path) =>
+    toLineNumberFromPath(document, lineCounter, path)
+
   if (document.errors.length > 0) {
-    const parseErrors = document.errors.map((error) => error.message)
+    const parseErrors = document.errors.map((error) =>
+      withLineNumber(error.message, error.linePos?.[0]?.line)
+    )
     throw new Error(toCombinedErrorMessage('Invalid YAML', parseErrors))
   }
 
@@ -260,7 +330,13 @@ export const toIrProjectFromYamlContent = <TLanguage extends string = string>(
 
   const sourceLanguage = requireString(root.sourceLanguage, ['root', 'sourceLanguage'])
   const languages = toLanguages(root.languages, sourceLanguage, ['root', 'languages'])
-  const entries = toEntries(root.entries, languages, sourceLanguage, ['root', 'entries'])
+  const entries = toEntries(
+    root.entries,
+    languages,
+    sourceLanguage,
+    ['root', 'entries'],
+    resolveLineNumber
+  )
 
   const project: TranslationIrProject<TLanguage> = {
     version: '1',

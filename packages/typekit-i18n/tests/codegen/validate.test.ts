@@ -82,11 +82,12 @@ entries:
       /YAML validation failed in ".*missing-languages\.yaml":/
     )
     await expect(validateYamlTranslationFile(yamlPath)).rejects.toThrow(
-      /Missing language "dk" at "root.entries\[0\]\.values" for entry "title"\./
+      /Missing language "dk" at "root.entries\[0\]\.values" for entry "title"( \(line \d+\))?\./
     )
     await expect(validateYamlTranslationFile(yamlPath)).rejects.toThrow(
-      /Missing language "dk" at "root.entries\[1\]\.values" for entry "subtitle"\./
+      /Missing language "dk" at "root.entries\[1\]\.values" for entry "subtitle"( \(line \d+\))?\./
     )
+    await expect(validateYamlTranslationFile(yamlPath)).rejects.toThrow(/\(line \d+\)\./)
   })
 })
 
