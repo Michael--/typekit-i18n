@@ -4,8 +4,16 @@
   "description": "VSCode extension for typekit-i18n translation workflows.",
   "version": "0.0.1",
   "publisher": "typekit-i18n",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
+  "files": [
+    "dist/extension.cjs",
+    "media/**",
+    "README.md",
+    "LICENSE",
+    "docs/DIAGNOSTICS.md"
+  ],
+  "icon": "media/typekit-i18n.png",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -88,7 +96,7 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "lint": "eslint \"src/**/*.ts\"",
-    "package:vsix": "pnpm run build && vsce package --allow-missing-repository --no-dependencies --skip-license --allow-package-all-secrets --allow-package-env-file",
+    "package:vsix": "pnpm run build && vsce package --allow-missing-repository --no-dependencies --allow-package-all-secrets --allow-package-env-file",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },

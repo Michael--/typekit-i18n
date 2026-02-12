@@ -1,9 +1,0 @@
-src/**
-tsconfig.json
-vite.config.ts
-PLAN.md
-README.md
-*.tsbuildinfo
-dist/*.map
-node_modules/**
-!node_modules/yaml/**
