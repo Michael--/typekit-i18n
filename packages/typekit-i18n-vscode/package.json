@@ -1,0 +1,69 @@
+{
+  "name": "typekit-i18n-vscode",
+  "displayName": "typekit-i18n",
+  "description": "VSCode extension for typekit-i18n translation workflows.",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:yaml",
+    "onLanguage:csv",
+    "onCommand:typekitI18n.refreshIndex",
+    "onCommand:typekitI18n.runDiagnostics"
+  ],
+  "main": "./dist/extension.cjs",
+  "contributes": {
+    "commands": [
+      {
+        "command": "typekitI18n.refreshIndex",
+        "title": "typekit-i18n: Refresh Translation Index"
+      },
+      {
+        "command": "typekitI18n.runDiagnostics",
+        "title": "typekit-i18n: Run Diagnostics"
+      }
+    ],
+    "configuration": {
+      "title": "typekit-i18n",
+      "properties": {
+        "typekitI18n.translationGlobs": {
+          "type": "array",
+          "description": "Workspace globs used to discover translation source files.",
+          "default": [
+            "**/translations/**/*.{yaml,yml,csv}"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/vscode": "^1.95.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.2.0"
+  }
+}
