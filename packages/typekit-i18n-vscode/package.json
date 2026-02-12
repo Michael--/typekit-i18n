@@ -70,6 +70,11 @@
           "default": 1,
           "minimum": 1,
           "description": "Maximum number of locales shown in completion details and hover preview."
+        },
+        "typekitI18n.enablePlaceholderSnippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "When enabled, completion inserts placeholder object snippets for parameterized translation keys if no argument object exists yet."
         }
       }
     }

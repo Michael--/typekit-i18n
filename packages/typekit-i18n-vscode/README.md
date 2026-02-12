@@ -24,6 +24,7 @@ Implementation details and rollout plan are tracked in `PLAN.md`.
 
 - `typekitI18n.translationGlobs`: translation file discovery globs.
 - `typekitI18n.completionMode`: `fallback`, `always`, or `alwaysPreferExtension` (default, keeps extension suggestions first).
+- `typekitI18n.enablePlaceholderSnippets`: inserts `t("key", { ... })` placeholder snippets on completion when applicable.
 - `typekitI18n.previewLocales`: locales shown in completion/hover previews.
 - `typekitI18n.previewMaxLocales`: max locale count shown in completion/hover previews.
 

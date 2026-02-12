@@ -38,7 +38,7 @@ Ship one extension for users, with modular internals, focused on translation aut
 
 - [x] Context-aware key completion in `t("...")` calls.
 - [x] Completion item preview for primary locales (`de`, `en`).
-- [ ] Placeholder-aware snippet insertion for parameterized messages.
+- [x] Placeholder-aware snippet insertion for parameterized messages.
 - [x] Hover status signals (`missing locale`, `deprecated`, `fuzzy`) when metadata is available.
 
 ## Execution Plan
