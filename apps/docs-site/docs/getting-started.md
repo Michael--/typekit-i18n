@@ -42,10 +42,12 @@ pnpm add typekit-i18n
 Example `translations/ui.csv`:
 
 ```csv
-key;description;en;de
-welcome_title;Main title;Welcome;Willkommen
-welcome_body;Greeting with placeholder;Hello {name};Hallo {name}
+category;key;description;en;de
+home;welcome_title;Main title;Welcome;Willkommen
+;welcome_body;Greeting with placeholder;Hello {name};Hallo {name}
 ```
+
+`category` is optional. Empty category values are treated as `default`.
 
 ### 3. Add `typekit.config.ts`
 
@@ -75,7 +77,11 @@ import { translationTable } from './generated/translationTable'
 
 const t = createTranslator(translationTable)
 
-const text = t('welcome_title', 'de')
+t('welcome_title') // uses "en" by default
+t.setLanguage('de')
+
+const text = t('welcome_title') // uses active language ("de")
+const scopedText = t.translateIn('home', 'welcome_title')
 ```
 
 ## Flow

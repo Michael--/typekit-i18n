@@ -6,6 +6,8 @@ Type-safe internationalization toolkit for TypeScript with runtime APIs, ICU ren
 
 - Typed translation keys and language unions via generated files
 - Runtime translators with fallback or strict missing behavior
+- Optional category-scoped lookup APIs (`translateIn`, `withCategory`)
+- Active language state APIs (`setLanguage`, `getLanguage`)
 - Placeholder replacement and named formatter hooks
 - ICU-capable translator for plural/select/selectordinal/number/date/time
 - Validation and conversion tooling for translation resources

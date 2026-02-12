@@ -18,9 +18,16 @@ Required columns:
 
 Optional metadata columns:
 
+- `category` (optional scoped grouping; empty values map to `default`)
 - `status` (`draft | review | approved`)
 - `tags` (comma-separated)
 - `placeholders` (comma-separated definitions)
+
+Notes:
+
+- `category` can be placed in any column position.
+- `category` values may be empty.
+- default category column name is `category`.
 
 Placeholder column syntax:
 
@@ -39,9 +46,9 @@ Supported placeholder `type` values:
 Example:
 
 ```csv
-key;description;status;tags;placeholders;en;de
-greeting_title;Main greeting;approved;ui,home;name:string;Hello {name};Hallo {name}
-price_label;Price line;review;billing;amount:number:currency;Price {amount|currency};Preis {amount|currency}
+category;key;description;status;tags;placeholders;en;de
+home;greeting_title;Main greeting;approved;ui,home;name:string;Hello {name};Hallo {name}
+;price_label;Price line;review;billing;amount:number:currency;Price {amount|currency};Preis {amount|currency}
 ```
 
 ## YAML
@@ -56,7 +63,12 @@ Root fields:
 Entry fields:
 
 - required: `key`, `description`, `values`
-- optional: `status`, `tags`, `placeholders`
+- optional: `category`, `status`, `tags`, `placeholders`
+
+Category behavior:
+
+- omit `category` for default grouping
+- empty/blank `category` values are normalized to `default`
 
 Example:
 
@@ -68,6 +80,7 @@ languages:
   - de
 entries:
   - key: greeting_title
+    category: home
     description: Main greeting
     status: approved
     tags: [ui, home]
@@ -77,6 +90,11 @@ entries:
     values:
       en: 'Hello {name}'
       de: 'Hallo {name}'
+  - key: price_label
+    description: Price label
+    values:
+      en: 'Price {amount|currency}'
+      de: 'Preis {amount|currency}'
 ```
 
 ## Placeholder Consistency Rules
@@ -98,5 +116,6 @@ Generation guarantees:
 
 - deterministic file ordering
 - deterministic key union output
+- deterministic category union output
 - duplicate key rejection across all files
 - aggregated validation errors with file context

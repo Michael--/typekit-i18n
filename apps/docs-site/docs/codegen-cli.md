@@ -52,6 +52,10 @@ Generated types include:
 
 - `TranslateKey`
 - `TranslateKeys`
+- `TranslationCategories`
+- `TranslateCategory`
+- `TranslateKeysByCategory`
+- `TranslateKeyOf`
 - `LanguageCodes`
 - `TranslateLanguage`
 

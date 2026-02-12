@@ -20,6 +20,7 @@ Creates a typed translator function:
 Options:
 
 - `defaultLanguage?: TLanguage` (`'en'` by default when available in table)
+- `language?: TLanguage` (initial active language, defaults to `defaultLanguage`)
 - `missingStrategy?: 'fallback' | 'strict'`
 - `formatters?: PlaceholderFormatterMap<TKey, TLanguage>`
 - `onMissingTranslation?: (event) => void`
@@ -35,8 +36,37 @@ Behavior summary:
 - uses target language value when non-empty
 - falls back to `defaultLanguage` when target language value is empty
 - `defaultLanguage` falls back to `'en'` when omitted and available in table
+- creating a translator throws when `defaultLanguage` is omitted and table does not contain `'en'`
 - returns key when no value can be resolved
 - throws in strict mode
+
+Category-aware APIs:
+
+- `translateIn(category, key, language?, placeholder?)`
+- `withCategory(category)` (returns a category-bound translate function)
+
+Language state APIs:
+
+- `setLanguage(language)`
+- `getLanguage()`
+
+Example:
+
+```ts
+import { createTranslator } from 'typekit-i18n'
+import { translationTable } from './generated/translationTable'
+
+const t = createTranslator(translationTable)
+
+t('welcome_title') // active language ("en" by default)
+t.setLanguage('de')
+t('welcome_title') // now "de"
+
+t.translateIn('home', 'welcome_title')
+
+const tHome = t.withCategory('home')
+tHome('welcome_title')
+```
 
 ## `createIcuTranslator(table, options?)`
 
@@ -88,6 +118,10 @@ If formatter is missing, fallback is `String(value)`.
 `createTranslationRuntime(table, options?)` returns:
 
 - `translate(key, language?, placeholder?)`
+- `translateIn(category, key, language?, placeholder?)`
+- `withCategory(category)`
+- `setLanguage(language)`
+- `getLanguage()`
 - `configure(options)`
 - `getCollectedMissingTranslations()`
 - `clearCollectedMissingTranslations()`
@@ -95,6 +129,7 @@ If formatter is missing, fallback is `String(value)`.
 `configure` can update:
 
 - `defaultLanguage`
+- `language`
 - `missingStrategy`
 - `onMissingTranslation` (`null` clears)
 - `formatters` (`null` clears)
@@ -105,7 +140,11 @@ If formatter is missing, fallback is `String(value)`.
 Also exported:
 
 - `translate(...)`
+- `translateIn(...)`
+- `withCategory(...)`
 - `configureTranslationRuntime(...)`
+- `setLanguage(...)`
+- `getLanguage()`
 - `getCollectedMissingTranslations()`
 - `clearCollectedMissingTranslations()`
 - `createConsoleMissingTranslationReporter(writer?)`

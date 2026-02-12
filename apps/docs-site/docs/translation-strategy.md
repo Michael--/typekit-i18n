@@ -24,6 +24,23 @@ Benefits:
 - fewer merge conflicts
 - clearer ownership boundaries
 
+## Category Strategy
+
+Use categories as an optional runtime scoping tool, not as a replacement for clear key naming.
+
+Suggested rules:
+
+- keep uncategorized keys in `default`
+- add categories for large, discoverability-heavy areas (`home`, `billing`, `settings`)
+- keep category names stable and domain-oriented
+- avoid highly granular categories that only contain one or two keys
+
+Runtime impact:
+
+- global access remains available via `translate(key, language?, placeholder?)`
+- scoped access is available via `translateIn(category, key, language?, placeholder?)`
+- pre-bound scoped translators are available via `withCategory(category)`
+
 ## Quality Controls
 
 Use validation as a release gate:
