@@ -25,11 +25,15 @@ export const registerCompletionAndHover = (workspace: TranslationWorkspace): vsc
           return undefined
         }
 
-        const preferredLocales = workspace.getKnownLanguages().slice(0, 2)
+        const settings = readCompletionAndPreviewSettings()
+        if (!shouldProvideCompletion(document, settings.completionMode)) {
+          return undefined
+        }
+
         return workspace.getAllKeys().map((key) => {
           const item = new vscode.CompletionItem(key, vscode.CompletionItemKind.Constant)
           item.insertText = key
-          item.detail = toPreviewLine(workspace, key, preferredLocales)
+          item.detail = toPreviewLine(workspace, key, settings)
           item.sortText = key
           return item
         })
@@ -55,9 +59,11 @@ export const registerCompletionAndHover = (workspace: TranslationWorkspace): vsc
       const markdown = new vscode.MarkdownString()
       markdown.appendMarkdown(`**${usage.key}**\n\n`)
 
-      const locales = workspace.getKnownLanguages()
       const firstEntry = entries[0]
-      locales.forEach((locale) => {
+      const settings = readCompletionAndPreviewSettings()
+      const previewLocales = resolvePreviewLocales(workspace, settings)
+
+      previewLocales.forEach((locale) => {
         const value = firstEntry.values.get(locale)
         if (typeof value === 'string' && value.trim().length > 0) {
           markdown.appendMarkdown(`- \`${locale}\`: ${escapeMarkdownInline(value)}\n`)
@@ -65,6 +71,16 @@ export const registerCompletionAndHover = (workspace: TranslationWorkspace): vsc
           markdown.appendMarkdown(`- \`${locale}\`: _(missing)_\n`)
         }
       })
+
+      const remainingLocaleCount = Math.max(
+        0,
+        workspace.getKnownLanguages().length - previewLocales.length
+      )
+      if (remainingLocaleCount > 0) {
+        markdown.appendMarkdown(
+          `\n_+ ${remainingLocaleCount} more locale(s). Configure \`typekitI18n.previewLocales\` or \`typekitI18n.previewMaxLocales\`._\n`
+        )
+      }
 
       if (entries.length > 1) {
         markdown.appendMarkdown('\nDuplicate key definitions detected.\n')
@@ -80,20 +96,19 @@ export const registerCompletionAndHover = (workspace: TranslationWorkspace): vsc
 const toPreviewLine = (
   workspace: TranslationWorkspace,
   key: string,
-  locales: readonly string[]
+  settings: CompletionAndPreviewSettings
 ): string => {
   const entry = workspace.getEntriesForKey(key)[0]
   if (!entry) {
     return 'No preview available'
   }
-  const segments = locales
-    .map((locale) => {
-      const value = entry.values.get(locale)
-      return typeof value === 'string' && value.trim().length > 0
-        ? `${locale}: ${value}`
-        : `${locale}: (missing)`
-    })
-    .slice(0, 2)
+  const locales = resolvePreviewLocales(workspace, settings)
+  const segments = locales.map((locale) => {
+    const value = entry.values.get(locale)
+    return typeof value === 'string' && value.trim().length > 0
+      ? `${locale}: ${value}`
+      : `${locale}: (missing)`
+  })
 
   return segments.join(' | ')
 }
@@ -108,3 +123,62 @@ const isLikelyTranslationCall = (
 
 const escapeMarkdownInline = (value: string): string =>
   value.replace(/([\\`*_{}[\]()#+\-.!|])/g, '\\$1')
+
+interface CompletionAndPreviewSettings {
+  readonly completionMode: 'fallback' | 'always'
+  readonly previewLocales: readonly string[]
+  readonly previewMaxLocales: number
+}
+
+const readCompletionAndPreviewSettings = (): CompletionAndPreviewSettings => {
+  const config = vscode.workspace.getConfiguration('typekitI18n')
+
+  const configuredMode = config.get<string>('completionMode', 'fallback')
+  const completionMode: 'fallback' | 'always' = configuredMode === 'always' ? 'always' : 'fallback'
+
+  const configuredLocales = config.get<readonly string[]>('previewLocales', [])
+  const previewLocales = configuredLocales
+    .map((locale) => locale.trim())
+    .filter((locale) => locale.length > 0)
+
+  const configuredMax = config.get<number>('previewMaxLocales', 1)
+  const previewMaxLocales = Number.isInteger(configuredMax) && configuredMax > 0 ? configuredMax : 1
+
+  return {
+    completionMode,
+    previewLocales,
+    previewMaxLocales,
+  }
+}
+
+const shouldProvideCompletion = (
+  document: vscode.TextDocument,
+  mode: 'fallback' | 'always'
+): boolean => {
+  if (mode === 'always') {
+    return true
+  }
+  return document.languageId !== 'typescript' && document.languageId !== 'typescriptreact'
+}
+
+const resolvePreviewLocales = (
+  workspace: TranslationWorkspace,
+  settings: CompletionAndPreviewSettings
+): readonly string[] => {
+  const knownLocales = workspace.getKnownLanguages()
+  if (knownLocales.length === 0) {
+    return []
+  }
+
+  if (settings.previewLocales.length > 0) {
+    const configuredLocales = settings.previewLocales
+      .filter((locale) => knownLocales.includes(locale))
+      .slice(0, settings.previewMaxLocales)
+    if (configuredLocales.length > 0) {
+      return configuredLocales
+    }
+  }
+
+  const defaultLocale = knownLocales.find((locale) => locale === 'en') ?? knownLocales[0]
+  return [defaultLocale].slice(0, settings.previewMaxLocales)
+}

@@ -46,6 +46,29 @@
           "items": {
             "type": "string"
           }
+        },
+        "typekitI18n.completionMode": {
+          "type": "string",
+          "enum": [
+            "fallback",
+            "always"
+          ],
+          "default": "fallback",
+          "description": "Completion strategy. 'fallback' disables extension key completion in TypeScript/TSX to avoid duplicates with typed key suggestions."
+        },
+        "typekitI18n.previewLocales": {
+          "type": "array",
+          "description": "Locales shown in completion details and hover preview. Empty uses a default locale preview.",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "typekitI18n.previewMaxLocales": {
+          "type": "number",
+          "default": 1,
+          "minimum": 1,
+          "description": "Maximum number of locales shown in completion details and hover preview."
         }
       }
     }

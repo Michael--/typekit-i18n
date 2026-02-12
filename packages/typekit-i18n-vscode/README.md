@@ -20,6 +20,13 @@ VSCode extension workspace for `typekit-i18n` authoring workflows.
 
 Implementation details and rollout plan are tracked in `PLAN.md`.
 
+## Useful Settings
+
+- `typekitI18n.translationGlobs`: translation file discovery globs.
+- `typekitI18n.completionMode`: `fallback` (default, avoids TS duplicate completions) or `always`.
+- `typekitI18n.previewLocales`: locales shown in completion/hover previews.
+- `typekitI18n.previewMaxLocales`: max locale count shown in completion/hover previews.
+
 ## Local Installation
 
 1. Build and package the extension:
