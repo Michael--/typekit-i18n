@@ -9,6 +9,7 @@
     "pregen": "pnpm --filter typekit-i18n run build",
     "gen": "typekit-i18n",
     "build": "pnpm run gen && vite build",
+    "build:analyze": "pnpm run gen && vite build --mode analyze",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
@@ -25,6 +26,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "rollup-plugin-visualizer": "^6.0.5",
     "typescript": "^5.9.3",
     "vite": "^6.2.0"
   }
