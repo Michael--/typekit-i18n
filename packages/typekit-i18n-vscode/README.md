@@ -20,6 +20,7 @@ VSCode extension workspace for `typekit-i18n` authoring workflows.
 - Refresh performance baseline command (`typekitI18n.measureIndexPerformance`).
 
 Implementation details and rollout plan are tracked in `PLAN.md`.
+Diagnostic code coverage is tracked in `docs/DIAGNOSTICS.md`.
 
 ## Useful Settings
 

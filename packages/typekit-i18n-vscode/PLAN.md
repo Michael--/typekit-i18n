@@ -108,5 +108,5 @@ Ship one extension for users, with modular internals, focused on translation aut
 
 - [x] Working VSCode extension package with initial feature behavior.
 - [x] Automated lint, typecheck, and tests in workspace scripts.
-- [ ] Versioned diagnostics and quick-fix matrix.
+- [x] Versioned diagnostics and quick-fix matrix.
 - [x] Developer documentation for extension architecture and contribution flow.
