@@ -8,9 +8,12 @@ import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRe
 import type { TranslatorApi } from './translator.js'
 import {
   createScopedKeyLookup,
+  resolveDefaultLanguage,
   resolveScopedKey,
   resolveTranslateCallArguments,
   TranslationCategoryFromTable,
+  TranslationKeyFromTable,
+  TranslationLanguageFromTable,
   TranslationKeyOfCategoryFromTable,
 } from './scoped.js'
 
@@ -60,24 +63,30 @@ const toPlaceholderValueMap = (
  * @param options Translator behavior options with optional ICU locale overrides.
  * @returns Runtime translate function with typed key/language parameters.
  */
-export const createIcuTranslator = <
-  TLanguage extends string,
-  TKey extends string,
-  TTable extends TranslationTable<TKey, TLanguage>,
->(
+export const createIcuTranslator = <TTable extends TranslationTable<string, string>>(
   table: TTable,
-  options: IcuTranslatorOptions<TKey, TLanguage>
-): TranslatorApi<TLanguage, TKey, TTable> => {
-  const missingStrategy = options.missingStrategy ?? 'fallback'
+  options?: IcuTranslatorOptions<
+    TranslationKeyFromTable<TTable>,
+    TranslationLanguageFromTable<TTable>
+  >
+): TranslatorApi<TranslationLanguageFromTable<TTable>, TranslationKeyFromTable<TTable>, TTable> => {
+  const resolvedOptions: IcuTranslatorOptions<
+    TranslationKeyFromTable<TTable>,
+    TranslationLanguageFromTable<TTable>
+  > = options ?? {}
+  type TKey = TranslationKeyFromTable<TTable>
+  type TLanguage = TranslationLanguageFromTable<TTable>
+  const missingStrategy = resolvedOptions.missingStrategy ?? 'fallback'
+  const defaultLanguage = resolveDefaultLanguage(table, resolvedOptions.defaultLanguage)
   const scopedKeyLookup = createScopedKeyLookup(table)
-  let currentLanguage = options.language ?? options.defaultLanguage
+  let currentLanguage = resolvedOptions.language ?? defaultLanguage
   const pluralRulesCache = new Map<string, Intl.PluralRules>()
   const numberFormatCache = new Map<string, Intl.NumberFormat>()
   const dateTimeFormatCache = new Map<string, Intl.DateTimeFormat>()
   const compiledTemplateCache = new Map<string, CompiledIcuTemplate>()
 
   const handleMissing = (event: MissingTranslationEvent<TKey, TLanguage>): void => {
-    options.onMissingTranslation?.(event)
+    resolvedOptions.onMissingTranslation?.(event)
     if (missingStrategy === 'strict') {
       throw new Error(toMissingTranslationMessage(event))
     }
@@ -89,7 +98,7 @@ export const createIcuTranslator = <
       handleMissing({
         key,
         language,
-        defaultLanguage: options.defaultLanguage,
+        defaultLanguage,
         reason: 'missingKey',
       })
       return key
@@ -100,10 +109,10 @@ export const createIcuTranslator = <
       const context: IcuRenderContext<TKey, TLanguage> = {
         key,
         language,
-        defaultLanguage: options.defaultLanguage,
+        defaultLanguage,
         values: toPlaceholderValueMap(placeholder),
-        formatters: options.formatters,
-        localeByLanguage: options.localeByLanguage,
+        formatters: resolvedOptions.formatters,
+        localeByLanguage: resolvedOptions.localeByLanguage,
         pluralRulesCache,
         numberFormatCache,
         dateTimeFormatCache,
@@ -112,22 +121,25 @@ export const createIcuTranslator = <
       return renderIcuMessage(requestedText, context)
     }
 
-    const fallbackText = translation[options.defaultLanguage]
+    const fallbackText = translation[defaultLanguage]
     handleMissing({
       key,
       language,
-      defaultLanguage: options.defaultLanguage,
-      reason: fallbackText.length > 0 ? 'missingLanguage' : 'missingFallback',
+      defaultLanguage,
+      reason:
+        typeof fallbackText === 'string' && fallbackText.length > 0
+          ? 'missingLanguage'
+          : 'missingFallback',
     })
 
-    if (fallbackText.length > 0) {
+    if (typeof fallbackText === 'string' && fallbackText.length > 0) {
       const context: IcuRenderContext<TKey, TLanguage> = {
         key,
         language,
-        defaultLanguage: options.defaultLanguage,
+        defaultLanguage,
         values: toPlaceholderValueMap(placeholder),
-        formatters: options.formatters,
-        localeByLanguage: options.localeByLanguage,
+        formatters: resolvedOptions.formatters,
+        localeByLanguage: resolvedOptions.localeByLanguage,
         pluralRulesCache,
         numberFormatCache,
         dateTimeFormatCache,
@@ -172,7 +184,7 @@ export const createIcuTranslator = <
     handleMissing({
       key: scopedMissingKey as TKey,
       language: resolved.language,
-      defaultLanguage: options.defaultLanguage,
+      defaultLanguage,
       reason: 'missingKey',
     })
     return scopedMissingKey

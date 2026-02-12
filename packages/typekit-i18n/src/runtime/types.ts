@@ -130,8 +130,9 @@ export type PlaceholderFormatterMap<TKey extends string, TLanguage extends strin
 export interface TranslatorOptions<TKey extends string, TLanguage extends string> {
   /**
    * Default fallback language.
+   * Defaults to `"en"` when omitted and available in the translation table.
    */
-  defaultLanguage: TLanguage
+  defaultLanguage?: TLanguage
   /**
    * Initial active language used when translate calls omit `language`.
    * Defaults to `defaultLanguage`.

@@ -126,6 +126,28 @@ const table: TranslationTable<TestKey, TestLanguage> = {
 }
 
 describe('createIcuTranslator', () => {
+  test('defaults to "en" when defaultLanguage is omitted', () => {
+    const translate = createIcuTranslator(table)
+
+    expect(translate('fallbackOnly', 'de')).toBe('Only English fallback')
+  })
+
+  test('throws when defaultLanguage is omitted and "en" is not available', () => {
+    type LocalLanguage = 'de' | 'fr'
+    type LocalKey = 'greeting'
+    const localTable: TranslationTable<LocalKey, LocalLanguage> = {
+      greeting: {
+        description: 'Greeting text',
+        de: 'Hallo',
+        fr: 'Bonjour',
+      },
+    }
+
+    expect(() => createIcuTranslator(localTable)).toThrow(
+      /Missing "defaultLanguage" option.*does not contain "en"/
+    )
+  })
+
   test('renders select and plural branches', () => {
     const translate = createIcuTranslator(table, {
       defaultLanguage: 'en',

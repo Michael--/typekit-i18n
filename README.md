@@ -138,9 +138,8 @@ Use runtime:
 ```ts
 import { createTranslator } from 'typekit-i18n'
 import { translationTable } from './generated/translationTable'
-import type { TranslateLanguage } from './generated/translationKeys'
 
-const t = createTranslator(translationTable, { defaultLanguage: 'en' as TranslateLanguage })
+const t = createTranslator(translationTable)
 
 const title = t('welcome_title', 'de')
 ```

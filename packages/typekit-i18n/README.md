@@ -81,7 +81,7 @@ const formatters: PlaceholderFormatterMap<TranslateKey, TranslateLanguage> = {
 }
 
 const t = createTranslator(translationTable, {
-  defaultLanguage: 'en' as TranslateLanguage,
+  defaultLanguage: 'en',
   missingStrategy: 'fallback',
   formatters,
 })
@@ -94,17 +94,17 @@ const price = t('price_formatted', 'de', {
 
 ## Runtime API
 
-### `createTranslator(table, options)`
+### `createTranslator(table, options?)`
 
 Creates a typed translator:
 
 ```ts
-;(key, language, placeholder?) => string
+;(key, language?, placeholder?) => string
 ```
 
 Options:
 
-- `defaultLanguage: TLanguage`
+- `defaultLanguage?: TLanguage` (default: `'en'` when available in table)
 - `missingStrategy?: 'fallback' | 'strict'` (default: `'fallback'`)
 - `formatters?: PlaceholderFormatterMap<TKey, TLanguage>`
 - `onMissingTranslation?: (event) => void`
@@ -118,10 +118,10 @@ Missing reasons:
 Behavior summary:
 
 - Requested language value is used when non-empty.
-- Empty requested language falls back to `defaultLanguage`.
+- Empty requested language falls back to `defaultLanguage` (or `'en'` when omitted).
 - If fallback is missing, translator returns the key (or throws in strict mode).
 
-### `createIcuTranslator(table, options)`
+### `createIcuTranslator(table, options?)`
 
 Creates a typed translator with ICU support.
 
@@ -161,7 +161,7 @@ interface Placeholder {
 
 Also exported:
 
-- `createTranslationRuntime(table, options)`
+- `createTranslationRuntime(table, options?)`
 - `createConsoleMissingTranslationReporter(writer?)`
 - `translate(...)`
 - `configureTranslationRuntime(...)`

@@ -1,5 +1,23 @@
 import { Placeholder, TranslationTable } from './types.js'
 
+type TranslationEntryMetaKey = 'description' | 'category'
+
+/**
+ * Key union derived from one translation table type.
+ */
+export type TranslationKeyFromTable<TTable extends TranslationTable<string, string>> = Extract<
+  keyof TTable,
+  string
+>
+
+/**
+ * Language union derived from one translation table type.
+ */
+export type TranslationLanguageFromTable<TTable extends TranslationTable<string, string>> = Extract<
+  Exclude<keyof TTable[TranslationKeyFromTable<TTable>], TranslationEntryMetaKey>,
+  string
+>
+
 /**
  * Default category used when no explicit category is defined on an entry.
  */
@@ -19,8 +37,8 @@ type NormalizedEntryCategory<TEntry> = [EntryCategory<TEntry>] extends [never]
  */
 export type TranslationCategoryFromTable<TTable extends TranslationTable<string, string>> = Extract<
   {
-    [TKey in keyof TTable]: NormalizedEntryCategory<TTable[TKey]>
-  }[keyof TTable],
+    [TKey in TranslationKeyFromTable<TTable>]: NormalizedEntryCategory<TTable[TKey]>
+  }[TranslationKeyFromTable<TTable>],
   string
 >
 
@@ -32,8 +50,12 @@ export type TranslationKeyOfCategoryFromTable<
   TCategory extends TranslationCategoryFromTable<TTable>,
 > = Extract<
   {
-    [TKey in keyof TTable]: NormalizedEntryCategory<TTable[TKey]> extends TCategory ? TKey : never
-  }[keyof TTable],
+    [TKey in TranslationKeyFromTable<TTable>]: NormalizedEntryCategory<
+      TTable[TKey]
+    > extends TCategory
+      ? TKey
+      : never
+  }[TranslationKeyFromTable<TTable>],
   string
 >
 
@@ -102,6 +124,37 @@ const normalizeCategory = (category: string | undefined): string => {
 
   const trimmed = category.trim()
   return trimmed.length > 0 ? trimmed : DEFAULT_TRANSLATION_CATEGORY
+}
+
+/**
+ * Resolves default language for one translator runtime.
+ *
+ * Rules:
+ * - Uses explicitly configured `defaultLanguage` when provided.
+ * - Falls back to `"en"` when omitted and the table appears to support it.
+ * - Throws when omitted and `"en"` is not available on table entries.
+ *
+ * @param table Translation table.
+ * @param defaultLanguage Optional explicit default language.
+ * @returns Resolved default language.
+ * @throws When no explicit default is provided and `"en"` is not available.
+ */
+export const resolveDefaultLanguage = <TTable extends TranslationTable<string, string>>(
+  table: TTable,
+  defaultLanguage?: TranslationLanguageFromTable<TTable>
+): TranslationLanguageFromTable<TTable> => {
+  if (defaultLanguage) {
+    return defaultLanguage
+  }
+
+  const firstEntry = Object.values(table)[0] as Record<string, unknown> | undefined
+  if (!firstEntry || Object.prototype.hasOwnProperty.call(firstEntry, 'en')) {
+    return 'en' as TranslationLanguageFromTable<TTable>
+  }
+
+  throw new Error(
+    'Missing "defaultLanguage" option. Provide it explicitly because translation table does not contain "en".'
+  )
 }
 
 /**

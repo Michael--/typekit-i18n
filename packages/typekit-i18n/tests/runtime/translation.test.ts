@@ -28,6 +28,40 @@ beforeEach(() => {
 })
 
 describe('translate', () => {
+  test('createTranslationRuntime defaults to "en" when defaultLanguage is omitted', () => {
+    type LocalLanguage = 'en' | 'de'
+    type LocalKey = 'greeting'
+
+    const localTable: TranslationTable<LocalKey, LocalLanguage> = {
+      greeting: {
+        description: 'Greeting text',
+        en: 'Hello',
+        de: 'Hallo',
+      },
+    }
+
+    const runtime = createTranslationRuntime(localTable)
+    expect(runtime.translate('greeting')).toBe('Hello')
+    expect(runtime.translate('greeting', 'de')).toBe('Hallo')
+  })
+
+  test('createTranslationRuntime throws when "en" is unavailable and defaultLanguage is omitted', () => {
+    type LocalLanguage = 'de' | 'fr'
+    type LocalKey = 'greeting'
+
+    const localTable: TranslationTable<LocalKey, LocalLanguage> = {
+      greeting: {
+        description: 'Greeting text',
+        de: 'Hallo',
+        fr: 'Bonjour',
+      },
+    }
+
+    expect(() => createTranslationRuntime(localTable)).toThrow(
+      /Missing "defaultLanguage" option.*does not contain "en"/
+    )
+  })
+
   test('returns existing translations for supported languages', () => {
     expect(translate('Settings', 'en')).toBe('Settings')
     expect(translate('Settings', 'de')).toBe('Einstellungen')

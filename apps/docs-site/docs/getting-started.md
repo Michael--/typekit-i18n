@@ -73,7 +73,7 @@ npx typekit-i18n
 import { createTranslator } from 'typekit-i18n'
 import { translationTable } from './generated/translationTable'
 
-const t = createTranslator(translationTable, { defaultLanguage: 'en' })
+const t = createTranslator(translationTable)
 
 const text = t('welcome_title', 'de')
 ```

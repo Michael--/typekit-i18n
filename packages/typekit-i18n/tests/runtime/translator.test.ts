@@ -56,6 +56,28 @@ const table: TranslationTable<string, TestLanguage> = {
 }
 
 describe('createTranslator', () => {
+  test('defaults to "en" when defaultLanguage is omitted', () => {
+    const translate = createTranslator(table)
+
+    expect(translate('greeting', 'de')).toBe('Hallo')
+    expect(translate('fallbackOnly', 'de')).toBe('Only English')
+  })
+
+  test('throws when defaultLanguage is omitted and "en" is not available', () => {
+    type LocalLanguage = 'de' | 'fr'
+    const localTable: TranslationTable<string, LocalLanguage> = {
+      greeting: {
+        description: 'Greeting text',
+        de: 'Hallo',
+        fr: 'Bonjour',
+      },
+    }
+
+    expect(() => createTranslator(localTable)).toThrow(
+      /Missing "defaultLanguage" option.*does not contain "en"/
+    )
+  })
+
   test('returns the key and reports when a key is missing', () => {
     const onMissingTranslation = vi.fn()
     const translate = createTranslator(table, {

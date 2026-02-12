@@ -7,9 +7,12 @@ import {
 } from './types.js'
 import {
   createScopedKeyLookup,
+  resolveDefaultLanguage,
   resolveScopedKey,
   resolveTranslateCallArguments,
   TranslationCategoryFromTable,
+  TranslationKeyFromTable,
+  TranslationLanguageFromTable,
   TranslationKeyOfCategoryFromTable,
 } from './scoped.js'
 
@@ -127,17 +130,19 @@ export interface TranslatorApi<
  * @param options Translator behavior options.
  * @returns Runtime translate function with typed key/language parameters.
  */
-export const createTranslator = <
-  TLanguage extends string,
-  TKey extends string,
-  TTable extends TranslationTable<TKey, TLanguage>,
->(
+export const createTranslator = <TTable extends TranslationTable<string, string>>(
   table: TTable,
-  options: TranslatorOptions<TKey, TLanguage>
-): TranslatorApi<TLanguage, TKey, TTable> => {
+  options: TranslatorOptions<
+    TranslationKeyFromTable<TTable>,
+    TranslationLanguageFromTable<TTable>
+  > = {}
+): TranslatorApi<TranslationLanguageFromTable<TTable>, TranslationKeyFromTable<TTable>, TTable> => {
+  type TKey = TranslationKeyFromTable<TTable>
+  type TLanguage = TranslationLanguageFromTable<TTable>
   const missingStrategy = options.missingStrategy ?? 'fallback'
+  const defaultLanguage = resolveDefaultLanguage(table, options.defaultLanguage)
   const scopedKeyLookup = createScopedKeyLookup(table)
-  let currentLanguage = options.language ?? options.defaultLanguage
+  let currentLanguage = options.language ?? defaultLanguage
 
   const handleMissing = (event: MissingTranslationEvent<TKey, TLanguage>): void => {
     options.onMissingTranslation?.(event)
@@ -152,7 +157,7 @@ export const createTranslator = <
       handleMissing({
         key,
         language,
-        defaultLanguage: options.defaultLanguage,
+        defaultLanguage,
         reason: 'missingKey',
       })
       return key
@@ -165,26 +170,29 @@ export const createTranslator = <
         placeholder,
         key,
         language,
-        options.defaultLanguage,
+        defaultLanguage,
         options.formatters
       )
     }
 
-    const fallbackText = translation[options.defaultLanguage]
+    const fallbackText = translation[defaultLanguage]
     handleMissing({
       key,
       language,
-      defaultLanguage: options.defaultLanguage,
-      reason: fallbackText.length > 0 ? 'missingLanguage' : 'missingFallback',
+      defaultLanguage,
+      reason:
+        typeof fallbackText === 'string' && fallbackText.length > 0
+          ? 'missingLanguage'
+          : 'missingFallback',
     })
 
-    if (fallbackText.length > 0) {
+    if (typeof fallbackText === 'string' && fallbackText.length > 0) {
       return applyPlaceholders(
         fallbackText,
         placeholder,
         key,
         language,
-        options.defaultLanguage,
+        defaultLanguage,
         options.formatters
       )
     }
@@ -225,7 +233,7 @@ export const createTranslator = <
     handleMissing({
       key: scopedMissingKey as TKey,
       language: resolved.language,
-      defaultLanguage: options.defaultLanguage,
+      defaultLanguage,
       reason: 'missingKey',
     })
     return scopedMissingKey

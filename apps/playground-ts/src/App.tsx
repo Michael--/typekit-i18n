@@ -121,16 +121,6 @@ const currencyByLanguage: Record<TranslateLanguage, 'USD' | 'EUR' | 'SAR' | 'PLN
   pl: 'PLN',
 }
 
-type IcuDemoKey =
-  | 'inbox_summary'
-  | 'invoice_total'
-  | 'icu_argument_style_demo'
-  | 'icu_argument_skeleton_demo'
-  | 'ranking_place'
-  | 'group_invite'
-  | 'icu_escape_demo'
-  | 'plural_categories_demo'
-
 /**
  * Custom formatters for demonstrating placeholder formatting feature.
  */
@@ -189,7 +179,7 @@ export const App = (): JSX.Element => {
   const t = useMemo(
     () =>
       createTranslator(translationTable, {
-        defaultLanguage: 'en' as TranslateLanguage,
+        defaultLanguage: 'en',
         missingStrategy: mode,
         formatters,
         onMissingTranslation,
@@ -199,15 +189,12 @@ export const App = (): JSX.Element => {
 
   const icuTranslate = useMemo(
     () =>
-      createIcuTranslator<TranslateLanguage, IcuDemoKey, typeof translationTable>(
-        translationTable,
-        {
-          defaultLanguage: 'en',
-          missingStrategy: mode,
-          formatters,
-          onMissingTranslation,
-        }
-      ),
+      createIcuTranslator(translationTable, {
+        defaultLanguage: 'en',
+        missingStrategy: mode,
+        formatters,
+        onMissingTranslation,
+      }),
     [mode, onMissingTranslation]
   )
 

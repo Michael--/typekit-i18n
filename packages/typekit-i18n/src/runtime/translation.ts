@@ -1,5 +1,11 @@
 import { createTranslator } from './translator.js'
-import { TranslationCategoryFromTable, TranslationKeyOfCategoryFromTable } from './scoped.js'
+import {
+  resolveDefaultLanguage,
+  TranslationCategoryFromTable,
+  TranslationKeyFromTable,
+  TranslationKeyOfCategoryFromTable,
+  TranslationLanguageFromTable,
+} from './scoped.js'
 import {
   MissingTranslationEvent,
   MissingTranslationStrategy,
@@ -164,8 +170,9 @@ export interface TranslationRuntime<
 export interface CreateTranslationRuntimeOptions<TLanguage extends string, TKey extends string> {
   /**
    * Default fallback language.
+   * Defaults to `"en"` when omitted and available in the translation table.
    */
-  defaultLanguage: TLanguage
+  defaultLanguage?: TLanguage
   /**
    * Active language used when translate calls omit `language`.
    * Defaults to `defaultLanguage`.
@@ -224,17 +231,24 @@ export const createConsoleMissingTranslationReporter = <
  * @param options Initial runtime options.
  * @returns Runtime API object.
  */
-export const createTranslationRuntime = <
-  TLanguage extends string,
-  TKey extends string,
-  TTable extends TranslationTable<TKey, TLanguage>,
->(
+export const createTranslationRuntime = <TTable extends TranslationTable<string, string>>(
   table: TTable,
-  options: CreateTranslationRuntimeOptions<TLanguage, TKey>
-): TranslationRuntime<TLanguage, TKey, TTable> => {
+  options: CreateTranslationRuntimeOptions<
+    TranslationLanguageFromTable<TTable>,
+    TranslationKeyFromTable<TTable>
+  > = {}
+): TranslationRuntime<
+  TranslationLanguageFromTable<TTable>,
+  TranslationKeyFromTable<TTable>,
+  TTable
+> => {
+  type TLanguage = TranslationLanguageFromTable<TTable>
+  type TKey = TranslationKeyFromTable<TTable>
+  const defaultLanguage = resolveDefaultLanguage(table, options.defaultLanguage)
+
   const runtimeState: TranslationRuntimeState<TLanguage, TKey> = {
-    defaultLanguage: options.defaultLanguage,
-    language: options.language ?? options.defaultLanguage,
+    defaultLanguage,
+    language: options.language ?? defaultLanguage,
     missingStrategy: options.missingStrategy ?? 'fallback',
     onMissingTranslation: options.onMissingTranslation,
     formatters: options.formatters,
@@ -252,7 +266,7 @@ export const createTranslationRuntime = <
     runtimeState.onMissingTranslation?.(event)
   }
 
-  let runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
+  let runtimeTranslator = createTranslator(table, {
     defaultLanguage: runtimeState.defaultLanguage,
     language: runtimeState.language,
     missingStrategy: runtimeState.missingStrategy,
@@ -261,7 +275,7 @@ export const createTranslationRuntime = <
   })
 
   const rebuildRuntimeTranslator = (): void => {
-    runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
+    runtimeTranslator = createTranslator(table, {
       defaultLanguage: runtimeState.defaultLanguage,
       language: runtimeState.language,
       missingStrategy: runtimeState.missingStrategy,
@@ -361,13 +375,16 @@ export type TranslationRuntimeOptions = TranslationRuntimeConfiguration<
   RuntimeTranslationKey
 >
 
-const defaultRuntime = createTranslationRuntime<
+const defaultRuntime: TranslationRuntime<
   RuntimeTranslationLanguage,
   RuntimeTranslationKey,
   TranslationTable<RuntimeTranslationKey, RuntimeTranslationLanguage>
->(translationTable, {
-  defaultLanguage: 'en',
-})
+> = createTranslationRuntime(
+  translationTable as TranslationTable<RuntimeTranslationKey, RuntimeTranslationLanguage>,
+  {
+    defaultLanguage: 'en',
+  }
+)
 
 /**
  * Updates runtime behavior for the default `translate` API.

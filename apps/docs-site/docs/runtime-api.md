@@ -9,17 +9,17 @@ Runtime imports come from `typekit-i18n`.
 - `MissingTranslationEvent`
 - `PlaceholderFormatterMap`
 
-## `createTranslator(table, options)`
+## `createTranslator(table, options?)`
 
 Creates a typed translator function:
 
 ```ts
-;(key, language, placeholder?) => string
+;(key, language?, placeholder?) => string
 ```
 
 Options:
 
-- `defaultLanguage: TLanguage`
+- `defaultLanguage?: TLanguage` (`'en'` by default when available in table)
 - `missingStrategy?: 'fallback' | 'strict'`
 - `formatters?: PlaceholderFormatterMap<TKey, TLanguage>`
 - `onMissingTranslation?: (event) => void`
@@ -34,10 +34,11 @@ Behavior summary:
 
 - uses target language value when non-empty
 - falls back to `defaultLanguage` when target language value is empty
+- `defaultLanguage` falls back to `'en'` when omitted and available in table
 - returns key when no value can be resolved
 - throws in strict mode
 
-## `createIcuTranslator(table, options)`
+## `createIcuTranslator(table, options?)`
 
 Same base behavior as `createTranslator`, plus ICU rendering.
 
@@ -84,9 +85,9 @@ If formatter is missing, fallback is `String(value)`.
 
 ## Translation Runtime Object
 
-`createTranslationRuntime(table, options)` returns:
+`createTranslationRuntime(table, options?)` returns:
 
-- `translate(key, language, placeholder?)`
+- `translate(key, language?, placeholder?)`
 - `configure(options)`
 - `getCollectedMissingTranslations()`
 - `clearCollectedMissingTranslations()`
