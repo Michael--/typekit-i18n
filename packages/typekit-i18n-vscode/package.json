@@ -2,14 +2,24 @@
   "name": "typekit-i18n-vscode",
   "displayName": "typekit-i18n",
   "description": "VSCode extension for typekit-i18n translation workflows.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "typekit-i18n",
+  "homepage": "https://github.com/Michael--/typekit-i18n/tree/main/packages/typekit-i18n-vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Michael--/typekit-i18n.git",
+    "directory": "packages/typekit-i18n-vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/Michael--/typekit-i18n/issues"
+  },
   "license": "MIT",
   "type": "module",
   "files": [
     "dist/extension.cjs",
     "media/**",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE",
     "docs/DIAGNOSTICS.md"
   ],
