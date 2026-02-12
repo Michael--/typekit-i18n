@@ -10,6 +10,7 @@ languages:
 
 entries:
   - key: greeting_title
+    category: playground
     description: Headline text for the playground
     status: approved
     tags: [demo, greeting]

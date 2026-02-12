@@ -80,14 +80,11 @@ const formatters: PlaceholderFormatterMap<TranslateKey, TranslateLanguage> = {
   currency: (value) => `EUR ${value}`,
 }
 
-const t = createTranslator<TranslateLanguage, TranslateKey, typeof translationTable>(
-  translationTable,
-  {
-    defaultLanguage: 'en',
-    missingStrategy: 'fallback',
-    formatters,
-  }
-)
+const t = createTranslator(translationTable, {
+  defaultLanguage: 'en' as TranslateLanguage,
+  missingStrategy: 'fallback',
+  formatters,
+})
 
 const title = t('greeting_title', 'de')
 const price = t('price_formatted', 'de', {

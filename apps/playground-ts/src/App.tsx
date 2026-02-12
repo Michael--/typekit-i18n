@@ -186,10 +186,10 @@ export const App = (): JSX.Element => {
     }
   }, [activeCase, language, mode])
 
-  const translate = useMemo(
+  const t = useMemo(
     () =>
-      createTranslator<TranslateLanguage, TranslateKey, typeof translationTable>(translationTable, {
-        defaultLanguage: 'en',
+      createTranslator(translationTable, {
+        defaultLanguage: 'en' as TranslateLanguage,
         missingStrategy: mode,
         formatters,
         onMissingTranslation,
@@ -242,7 +242,7 @@ export const App = (): JSX.Element => {
 
   const renderFallbackCaseResult = (): JSX.Element => {
     try {
-      return <Text>{translate('fallback_demo', language)}</Text>
+      return <Text>{t('fallback_demo', language)}</Text>
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error)
       return (
@@ -276,10 +276,13 @@ export const App = (): JSX.Element => {
           <Text size="sm" c="dimmed">
             Use the left sidebar to isolate one runtime behavior at a time.
           </Text>
-          {renderDemoCard('greeting_title', translate('greeting_title', language))}
+          {renderDemoCard(
+            'greeting_title',
+            t.translateIn('playground', 'greeting_title', language)
+          )}
           {renderDemoCard(
             'greeting_body with name="Developer"',
-            translate('greeting_body', language, {
+            t('greeting_body', language, {
               data: [{ key: 'name', value: 'Developer' }],
             })
           )}
@@ -293,7 +296,7 @@ export const App = (): JSX.Element => {
           <Title order={2} size="h4" c="blue">
             Basic Translation
           </Title>
-          {renderDemoCard('greeting_title', translate('greeting_title', language))}
+          {renderDemoCard('greeting_title', t('greeting_title', language))}
         </Stack>
       )
     }
@@ -306,13 +309,13 @@ export const App = (): JSX.Element => {
           </Title>
           {renderDemoCard(
             'greeting_body with name="Mara"',
-            translate('greeting_body', language, {
+            t('greeting_body', language, {
               data: [{ key: 'name', value: 'Mara' }],
             })
           )}
           {renderDemoCard(
             'item_count with count=42',
-            translate('item_count', language, {
+            t('item_count', language, {
               data: [{ key: 'count', value: 42 }],
             })
           )}
@@ -328,13 +331,13 @@ export const App = (): JSX.Element => {
           </Title>
           {renderDemoCard(
             'price_formatted with amount=99.99',
-            translate('price_formatted', language, {
+            t('price_formatted', language, {
               data: [{ key: 'amount', value: 99.99 }],
             })
           )}
           {renderDemoCard(
             'date_formatted with date=now',
-            translate('date_formatted', language, {
+            t('date_formatted', language, {
               data: [{ key: 'date', value: new Date() }],
             })
           )}
@@ -591,7 +594,7 @@ export const App = (): JSX.Element => {
           <Divider label="Complete Translation" labelPosition="left" />
           {renderDemoCard(
             'greeting_title (available in all languages)',
-            translate('greeting_title', language)
+            t('greeting_title', language)
           )}
           <Divider label="Partial Translation" labelPosition="left" />
           <Paper p="md" bg="dark.6" radius="sm">
@@ -607,16 +610,16 @@ export const App = (): JSX.Element => {
     return (
       <Stack gap="sm">
         <Title order={2} size="h4" c="orange">
-          {translate('diagnostics_title', language)}
+          {t('diagnostics_title', language)}
         </Title>
 
         {missingEvents.length === 0 ? (
-          <Alert variant="light" color="green" title={translate('no_issues', language)}>
+          <Alert variant="light" color="green" title={t('no_issues', language)}>
             <Group gap="xs">
               <Badge color="green" variant="filled">
                 ✓
               </Badge>
-              <Text size="sm">{translate('no_issues', language)}</Text>
+              <Text size="sm">{t('no_issues', language)}</Text>
             </Group>
           </Alert>
         ) : (
@@ -627,7 +630,7 @@ export const App = (): JSX.Element => {
                   !
                 </Badge>
                 <Text size="sm">
-                  {translate('missing_count', language, {
+                  {t('missing_count', language, {
                     data: [{ key: 'count', value: missingEvents.length }],
                   })}
                 </Text>
@@ -664,10 +667,10 @@ export const App = (): JSX.Element => {
               backgroundClip: 'text',
             }}
           >
-            {translate('greeting_title', language)}
+            {t('greeting_title', language)}
           </Title>
           <Text size="lg" c="dimmed">
-            {translate('greeting_body', language, {
+            {t('greeting_body', language, {
               data: [{ key: 'name', value: 'Developer' }],
             })}
           </Text>
@@ -677,7 +680,7 @@ export const App = (): JSX.Element => {
         <Paper shadow="sm" p="md" radius="md" withBorder>
           <Group gap="lg" grow>
             <Select
-              label={translate('language_label', language)}
+              label={t('language_label', language)}
               value={language}
               onChange={handleLanguageChange}
               data={languages.map((lang) => ({
@@ -686,12 +689,12 @@ export const App = (): JSX.Element => {
               }))}
             />
             <Select
-              label={translate('mode_label', language)}
+              label={t('mode_label', language)}
               value={mode}
               onChange={handleModeChange}
               data={[
-                { value: 'fallback', label: translate('mode_fallback', language) },
-                { value: 'strict', label: translate('mode_strict', language) },
+                { value: 'fallback', label: t('mode_fallback', language) },
+                { value: 'strict', label: t('mode_strict', language) },
               ]}
             />
           </Group>
