@@ -28,6 +28,12 @@ import {
  * - `{var, time[, style-or-skeleton]}`
  * - `#` replacement inside plural branches
  * - Apostrophe escaping: `''` for literal `'`, `'{...}'` for literal text
+ *
+ * Decision context:
+ * - The project intentionally keeps a proprietary ICU subset for predictable API behavior
+ *   and small runtime footprint.
+ * - External ICU engines remain a valid option for full ICU compatibility.
+ * - See: `/packages/typekit-i18n/docs/icu-implementation-decision.md`
  */
 
 const toMissingTranslationMessage = <TKey extends string, TLanguage extends string>(
