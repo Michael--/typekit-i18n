@@ -32,6 +32,10 @@
       {
         "command": "typekitI18n.runDiagnostics",
         "title": "typekit-i18n: Run Diagnostics"
+      },
+      {
+        "command": "typekitI18n.measureIndexPerformance",
+        "title": "typekit-i18n: Measure Index Performance"
       }
     ],
     "configuration": {

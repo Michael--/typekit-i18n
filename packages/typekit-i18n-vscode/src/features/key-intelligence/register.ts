@@ -17,13 +17,62 @@ const codeSelector: vscode.DocumentSelector = [
  * @returns Disposable that unregisters all key-intelligence providers.
  */
 export const registerKeyIntelligence = (workspace: TranslationWorkspace): vscode.Disposable => {
+  const output = vscode.window.createOutputChannel('typekit-i18n')
+
   const refreshIndexCommand = vscode.commands.registerCommand(
     'typekitI18n.refreshIndex',
     async () => {
+      const startTime = performance.now()
       await workspace.refresh()
+      const elapsedMs = performance.now() - startTime
       const indexedCount = workspace.documents.length
+      output.appendLine(
+        `[refresh] ${new Date().toISOString()} files=${indexedCount} duration=${elapsedMs.toFixed(1)}ms`
+      )
       void vscode.window.showInformationMessage(
-        `typekit-i18n indexed ${indexedCount} translation files.`
+        `typekit-i18n indexed ${indexedCount} translation files in ${elapsedMs.toFixed(1)} ms.`
+      )
+    }
+  )
+
+  const measureIndexPerformanceCommand = vscode.commands.registerCommand(
+    'typekitI18n.measureIndexPerformance',
+    async () => {
+      const runs = 3
+      const durationsMs: number[] = []
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'typekit-i18n: measuring refresh performance',
+        },
+        async (progress) => {
+          for (let runIndex = 0; runIndex < runs; runIndex += 1) {
+            progress.report({ message: `Run ${runIndex + 1}/${runs}` })
+            const startTime = performance.now()
+            await workspace.refresh()
+            const elapsedMs = performance.now() - startTime
+            durationsMs.push(elapsedMs)
+          }
+        }
+      )
+
+      const sortedDurations = [...durationsMs].sort((left, right) => left - right)
+      const averageMs = durationsMs.reduce((sum, value) => sum + value, 0) / durationsMs.length
+      const medianMs = sortedDurations[Math.floor(sortedDurations.length / 2)] ?? averageMs
+      const indexedCount = workspace.documents.length
+      output.appendLine(
+        `[perf] ${new Date().toISOString()} files=${indexedCount} runs=${runs} avg=${averageMs.toFixed(
+          1
+        )}ms median=${medianMs.toFixed(1)}ms samples=[${durationsMs
+          .map((duration) => duration.toFixed(1))
+          .join(', ')}]`
+      )
+      output.show(true)
+      void vscode.window.showInformationMessage(
+        `typekit-i18n refresh baseline: avg ${averageMs.toFixed(1)} ms, median ${medianMs.toFixed(
+          1
+        )} ms (${runs} runs).`
       )
     }
   )
@@ -87,7 +136,9 @@ export const registerKeyIntelligence = (workspace: TranslationWorkspace): vscode
   })
 
   return vscode.Disposable.from(
+    output,
     refreshIndexCommand,
+    measureIndexPerformanceCommand,
     definitionDisposable,
     referenceDisposable,
     renameDisposable

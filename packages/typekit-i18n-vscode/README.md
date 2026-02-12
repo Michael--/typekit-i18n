@@ -17,6 +17,7 @@ VSCode extension workspace for `typekit-i18n` authoring workflows.
 - Diagnostics command and refresh hooks.
 - YAML/CSV schema validation hooks.
 - Completion and hover provider scaffolding.
+- Refresh performance baseline command (`typekitI18n.measureIndexPerformance`).
 
 Implementation details and rollout plan are tracked in `PLAN.md`.
 

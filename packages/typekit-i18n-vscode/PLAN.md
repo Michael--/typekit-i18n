@@ -55,7 +55,7 @@ Ship one extension for users, with modular internals, focused on translation aut
 - [x] Define canonical translation key model shared by YAML and CSV.
 - [x] Implement YAML/CSV parsers and normalization pipeline.
 - [x] Add incremental refresh with file watchers and debounce.
-- [ ] Add baseline performance measurements for medium workspaces.
+- [x] Add baseline performance measurements for medium workspaces.
 
 ### Phase 2 - Language Features
 
