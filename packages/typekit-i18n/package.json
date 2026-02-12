@@ -6,11 +6,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/src/index.d.ts",
+  "sideEffects": false,
   "files": [
-    "dist/index.js",
-    "dist/runtime.js",
-    "dist/codegen.js",
-    "dist/cli.js",
+    "dist/*.js",
     "dist/src",
     "README.md"
   ],
@@ -25,6 +23,14 @@
     "./runtime": {
       "types": "./dist/src/runtime/index.d.ts",
       "import": "./dist/runtime.js"
+    },
+    "./runtime/basic": {
+      "types": "./dist/src/runtime/basic.d.ts",
+      "import": "./dist/runtime-basic.js"
+    },
+    "./runtime/icu": {
+      "types": "./dist/src/runtime/icu.d.ts",
+      "import": "./dist/runtime-icu.js"
     },
     "./codegen": {
       "types": "./dist/src/codegen/index.d.ts",

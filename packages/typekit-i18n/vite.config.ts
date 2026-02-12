@@ -21,6 +21,8 @@ export default defineConfig({
       entry: {
         index: resolve(thisDirPath, 'src/index.ts'),
         runtime: resolve(thisDirPath, 'src/runtime/index.ts'),
+        'runtime-basic': resolve(thisDirPath, 'src/runtime/basic.ts'),
+        'runtime-icu': resolve(thisDirPath, 'src/runtime/icu.ts'),
         codegen: resolve(thisDirPath, 'src/codegen/index.ts'),
       },
       formats: ['es'],
