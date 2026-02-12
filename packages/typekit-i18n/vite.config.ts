@@ -38,6 +38,9 @@ export default defineConfig({
         /^tsx(\/.*)?$/,
         /^yaml$/,
       ],
+      output: {
+        chunkFileNames: '[name].js',
+      },
     },
   },
 })
