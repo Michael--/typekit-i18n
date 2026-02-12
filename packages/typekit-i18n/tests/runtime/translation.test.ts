@@ -5,8 +5,11 @@ import {
   configureTranslationRuntime,
   createTranslationRuntime,
   createConsoleMissingTranslationReporter,
+  getLanguage,
   getCollectedMissingTranslations,
+  setLanguage,
   translate,
+  translateIn,
 } from '../../src/runtime/translation.js'
 import type { TranslationTable } from '../../src/runtime/types.js'
 
@@ -16,16 +19,30 @@ beforeEach(() => {
   clearCollectedMissingTranslations()
   configureTranslationRuntime({
     defaultLanguage: 'en',
+    language: 'en',
     missingStrategy: 'fallback',
     collectMissingTranslations: false,
     onMissingTranslation: null,
   })
+  setLanguage('en')
 })
 
 describe('translate', () => {
   test('returns existing translations for supported languages', () => {
     expect(translate('Settings', 'en')).toBe('Settings')
     expect(translate('Settings', 'de')).toBe('Einstellungen')
+  })
+
+  test('uses configured active language when language argument is omitted', () => {
+    setLanguage('de')
+
+    expect(getLanguage()).toBe('de')
+    expect(translate('Settings')).toBe('Einstellungen')
+  })
+
+  test('supports category scoped lookups via translateIn', () => {
+    expect(translateIn('default', 'Settings', 'de')).toBe('Einstellungen')
+    expect(translateIn('common', 'Settings', 'de')).toBe('common.Settings')
   })
 
   test('collects missing events when collection is enabled', () => {
@@ -87,10 +104,14 @@ describe('translate', () => {
 
     const customRuntime = createTranslationRuntime(customTable, {
       defaultLanguage: 'en',
+      language: 'fr',
       missingStrategy: 'strict',
     })
 
-    expect(customRuntime.translate('hello', 'fr')).toBe('Bonjour')
+    expect(customRuntime.getLanguage()).toBe('fr')
+    expect(customRuntime.translate('hello')).toBe('Bonjour')
+    customRuntime.setLanguage('en')
+    expect(customRuntime.translate('hello')).toBe('Hello')
 
     customRuntime.configure({
       formatters: {

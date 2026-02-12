@@ -274,6 +274,22 @@ const validateEntryValues = <TLanguage extends string>(
   }
 }
 
+const validateCategory = <TLanguage extends string>(
+  entry: TranslationIrEntry<TLanguage>,
+  entryIndex: number,
+  locationResolver?: (entryIndex: number) => string
+): void => {
+  const location = toEntryLocation(entryIndex, locationResolver)
+  if (entry.category === undefined) {
+    return
+  }
+
+  const normalized = entry.category.trim()
+  if (normalized.length === 0) {
+    throw new Error(`Category must be non-empty at ${location}.`)
+  }
+}
+
 const validatePlaceholderDeclarations = <TLanguage extends string>(
   entry: TranslationIrEntry<TLanguage>,
   entryIndex: number,
@@ -396,6 +412,11 @@ export const validateIrProject = <TLanguage extends string>(
     }
     keys.add(entry.key)
 
+    try {
+      validateCategory(entry, entryIndex, options.entryLocation)
+    } catch (error: unknown) {
+      errors.push(error instanceof Error ? error.message : String(error))
+    }
     try {
       validateEntryValues(project, entry, entryIndex, options.entryLocation)
     } catch (error: unknown) {

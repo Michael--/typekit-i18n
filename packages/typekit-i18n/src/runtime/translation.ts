@@ -1,4 +1,5 @@
 import { createTranslator } from './translator.js'
+import { TranslationCategoryFromTable, TranslationKeyOfCategoryFromTable } from './scoped.js'
 import {
   MissingTranslationEvent,
   MissingTranslationStrategy,
@@ -49,6 +50,10 @@ export interface TranslationRuntimeConfiguration<TLanguage extends string, TKey 
    */
   defaultLanguage?: TLanguage
   /**
+   * Active language used when translate calls omit `language`.
+   */
+  language?: TLanguage
+  /**
    * Missing translation behavior strategy.
    */
   missingStrategy?: MissingTranslationStrategy
@@ -71,17 +76,67 @@ export interface TranslationRuntimeConfiguration<TLanguage extends string, TKey 
 /**
  * Runtime API object.
  */
-export interface TranslationRuntime<TKey extends string, TLanguage extends string> {
+export interface TranslationRuntime<
+  TLanguage extends string,
+  TKey extends string,
+  TTable extends TranslationTable<TKey, TLanguage>,
+> {
   /**
-   * Translates one key for one language.
+   * Translates one key in the active or explicitly provided language.
    *
    * @param key Translation key.
-   * @param language Target language.
+   * @param languageOrPlaceholder Optional language or placeholder replacements.
    * @param placeholder Optional placeholder replacements.
    * @returns Translated string or key fallback.
    * @throws When `missingStrategy` is `strict` and a translation cannot be resolved.
    */
-  translate: (key: TKey, language: TLanguage, placeholder?: Placeholder) => string
+  translate: (
+    key: TKey,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ) => string
+  /**
+   * Translates one key inside one category.
+   *
+   * @param category Translation category.
+   * @param key Category-scoped translation key.
+   * @param languageOrPlaceholder Optional language or placeholder replacements.
+   * @param placeholder Optional placeholder replacements.
+   * @returns Translated string or key fallback.
+   * @throws When `missingStrategy` is `strict` and a translation cannot be resolved.
+   */
+  translateIn: <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory,
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ) => string
+  /**
+   * Creates one translator bound to a fixed category.
+   *
+   * @param category Translation category.
+   * @returns Category scoped translate function.
+   */
+  withCategory: <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory
+  ) => (
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ) => string
+  /**
+   * Sets the active language used when translate calls omit `language`.
+   *
+   * @param language Active language.
+   * @returns Nothing.
+   */
+  setLanguage: (language: TLanguage) => void
+  /**
+   * Returns the active language used by translate calls without language argument.
+   *
+   * @returns Active language.
+   */
+  getLanguage: () => TLanguage
   /**
    * Updates runtime behavior.
    *
@@ -112,6 +167,11 @@ export interface CreateTranslationRuntimeOptions<TLanguage extends string, TKey 
    */
   defaultLanguage: TLanguage
   /**
+   * Active language used when translate calls omit `language`.
+   * Defaults to `defaultLanguage`.
+   */
+  language?: TLanguage
+  /**
    * Missing translation behavior strategy.
    */
   missingStrategy?: MissingTranslationStrategy
@@ -131,6 +191,7 @@ export interface CreateTranslationRuntimeOptions<TLanguage extends string, TKey 
 
 interface TranslationRuntimeState<TLanguage extends string, TKey extends string> {
   defaultLanguage: TLanguage
+  language: TLanguage
   missingStrategy: MissingTranslationStrategy
   onMissingTranslation?: (event: MissingTranslationEvent<TKey, TLanguage>) => void
   formatters?: PlaceholderFormatterMap<TKey, TLanguage>
@@ -170,9 +231,10 @@ export const createTranslationRuntime = <
 >(
   table: TTable,
   options: CreateTranslationRuntimeOptions<TLanguage, TKey>
-): TranslationRuntime<TKey, TLanguage> => {
+): TranslationRuntime<TLanguage, TKey, TTable> => {
   const runtimeState: TranslationRuntimeState<TLanguage, TKey> = {
     defaultLanguage: options.defaultLanguage,
+    language: options.language ?? options.defaultLanguage,
     missingStrategy: options.missingStrategy ?? 'fallback',
     onMissingTranslation: options.onMissingTranslation,
     formatters: options.formatters,
@@ -192,6 +254,7 @@ export const createTranslationRuntime = <
 
   let runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
     defaultLanguage: runtimeState.defaultLanguage,
+    language: runtimeState.language,
     missingStrategy: runtimeState.missingStrategy,
     formatters: runtimeState.formatters,
     onMissingTranslation: runtimeMissingTranslationHandler,
@@ -200,6 +263,7 @@ export const createTranslationRuntime = <
   const rebuildRuntimeTranslator = (): void => {
     runtimeTranslator = createTranslator<TLanguage, TKey, TTable>(table, {
       defaultLanguage: runtimeState.defaultLanguage,
+      language: runtimeState.language,
       missingStrategy: runtimeState.missingStrategy,
       formatters: runtimeState.formatters,
       onMissingTranslation: runtimeMissingTranslationHandler,
@@ -209,6 +273,9 @@ export const createTranslationRuntime = <
   const configure = (nextOptions: TranslationRuntimeConfiguration<TLanguage, TKey>): void => {
     if (nextOptions.defaultLanguage) {
       runtimeState.defaultLanguage = nextOptions.defaultLanguage
+    }
+    if (nextOptions.language) {
+      runtimeState.language = nextOptions.language
     }
     if (nextOptions.missingStrategy) {
       runtimeState.missingStrategy = nextOptions.missingStrategy
@@ -234,14 +301,36 @@ export const createTranslationRuntime = <
     missingTranslationEvents.length = 0
   }
 
+  const setLanguage = (language: TLanguage): void => {
+    runtimeState.language = language
+    runtimeTranslator.setLanguage(language)
+  }
+
+  const getLanguage = (): TLanguage => runtimeTranslator.getLanguage()
+
   const translateWithRuntime = (
     key: TKey,
-    language: TLanguage,
+    languageOrPlaceholder?: TLanguage | Placeholder,
     placeholder?: Placeholder
-  ): string => runtimeTranslator(key, language, placeholder)
+  ): string => runtimeTranslator(key, languageOrPlaceholder, placeholder)
+
+  const translateInWithRuntime = <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory,
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ): string => runtimeTranslator.translateIn(category, key, languageOrPlaceholder, placeholder)
+
+  const withCategory = <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory
+  ) => runtimeTranslator.withCategory(category)
 
   return {
     translate: translateWithRuntime,
+    translateIn: translateInWithRuntime,
+    withCategory,
+    setLanguage,
+    getLanguage,
     configure,
     getCollectedMissingTranslations,
     clearCollectedMissingTranslations,
@@ -275,7 +364,7 @@ export type TranslationRuntimeOptions = TranslationRuntimeConfiguration<
 const defaultRuntime = createTranslationRuntime<
   RuntimeTranslationLanguage,
   RuntimeTranslationKey,
-  typeof translationTable
+  TranslationTable<RuntimeTranslationKey, RuntimeTranslationLanguage>
 >(translationTable, {
   defaultLanguage: 'en',
 })
@@ -308,6 +397,23 @@ export const clearCollectedMissingTranslations = (): void => {
 }
 
 /**
+ * Sets the active language for the default `translate` API.
+ *
+ * @param language Active language.
+ * @returns Nothing.
+ */
+export const setLanguage = (language: RuntimeTranslationLanguage): void => {
+  defaultRuntime.setLanguage(language)
+}
+
+/**
+ * Returns the active language for the default `translate` API.
+ *
+ * @returns Active language.
+ */
+export const getLanguage = (): RuntimeTranslationLanguage => defaultRuntime.getLanguage()
+
+/**
  * Translates a key using the generated default translation table.
  *
  * @param key Translation key.
@@ -318,8 +424,43 @@ export const clearCollectedMissingTranslations = (): void => {
  */
 export const translate = (
   key: RuntimeTranslationKey,
-  language: Iso639CodeType,
+  languageOrPlaceholder?: Iso639CodeType | Placeholder,
   placeholder?: Placeholder
 ): string => {
-  return defaultRuntime.translate(key, language, placeholder)
+  return defaultRuntime.translate(key, languageOrPlaceholder, placeholder)
+}
+
+/**
+ * Translates a key using the generated default translation table and category scoping.
+ *
+ * @param category Translation category.
+ * @param key Category-scoped translation key.
+ * @param languageOrPlaceholder Optional target language or placeholder replacements.
+ * @param placeholder Optional placeholder replacements.
+ * @returns Translated string or key fallback.
+ * @throws When `missingStrategy` is `strict` and a translation cannot be resolved.
+ */
+export const translateIn = (
+  category: string,
+  key: string,
+  languageOrPlaceholder?: Iso639CodeType | Placeholder,
+  placeholder?: Placeholder
+): string => {
+  return defaultRuntime.translateIn(category, key, languageOrPlaceholder, placeholder)
+}
+
+/**
+ * Creates a category-scoped translate function for the default runtime.
+ *
+ * @param category Translation category.
+ * @returns Category-scoped translate function.
+ */
+export const withCategory = (
+  category: string
+): ((
+  key: string,
+  languageOrPlaceholder?: Iso639CodeType | Placeholder,
+  placeholder?: Placeholder
+) => string) => {
+  return defaultRuntime.withCategory(category)
 }

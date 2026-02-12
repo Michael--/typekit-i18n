@@ -14,6 +14,7 @@ languages:
   - de
 entries:
   - key: greeting
+    category: common
     description: Greeting text
     status: approved
     tags: [ui, home]
@@ -34,6 +35,7 @@ entries:
       entries: [
         {
           key: 'greeting',
+          category: 'common',
           description: 'Greeting text',
           status: 'approved',
           tags: ['ui', 'home'],
@@ -208,6 +210,7 @@ entries:
       entries: [
         {
           key: 'item_count',
+          category: 'dashboard',
           description: 'Summary line with count placeholder',
           status: 'approved',
           tags: ['ui', 'summary'],

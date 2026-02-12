@@ -32,6 +32,11 @@ export interface Placeholder {
  */
 export type TranslationEntry<TLanguage extends string> = {
   /**
+   * Optional category for scoped key access.
+   * Empty/undefined values are treated as `default` at runtime.
+   */
+  category?: string
+  /**
    * Human-readable context of the translation key.
    */
   description: string
@@ -127,6 +132,11 @@ export interface TranslatorOptions<TKey extends string, TLanguage extends string
    * Default fallback language.
    */
   defaultLanguage: TLanguage
+  /**
+   * Initial active language used when translate calls omit `language`.
+   * Defaults to `defaultLanguage`.
+   */
+  language?: TLanguage
   /**
    * Missing translation behavior strategy.
    */

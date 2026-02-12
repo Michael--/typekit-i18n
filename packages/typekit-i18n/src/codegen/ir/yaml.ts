@@ -97,6 +97,18 @@ const toStatus = (
   return value
 }
 
+const toCategory = (value: unknown, path: ReadonlyArray<string | number>): string | undefined => {
+  if (value === undefined) {
+    return undefined
+  }
+  if (typeof value !== 'string') {
+    throw new Error(`Expected string at "${toPath(path)}".`)
+  }
+
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : undefined
+}
+
 const toPlaceholderType = (
   value: unknown,
   path: ReadonlyArray<string | number>
@@ -269,6 +281,7 @@ const toEntries = (
       keys.add(key)
 
       parsedEntries.push({
+        category: toCategory(parsed.category, [...basePath, 'category']),
         key,
         description: requireString(parsed.description, [...basePath, 'description']),
         status: toStatus(parsed.status, [...basePath, 'status']),
@@ -392,6 +405,7 @@ export const toYamlContentFromIrProject = <TLanguage extends string = string>(
     sourceLanguage: project.sourceLanguage,
     languages: project.languages,
     entries: project.entries.map((entry) => ({
+      ...(entry.category && entry.category.length > 0 ? { category: entry.category } : {}),
       key: entry.key,
       description: entry.description,
       ...(entry.status ? { status: entry.status } : {}),

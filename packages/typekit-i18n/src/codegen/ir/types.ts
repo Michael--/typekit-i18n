@@ -36,6 +36,10 @@ export interface TranslationIrPlaceholder {
  */
 export interface TranslationIrEntry<TLanguage extends string = string> {
   /**
+   * Optional category used for scoped key access.
+   */
+  category?: string
+  /**
    * Stable translation key.
    */
   key: string

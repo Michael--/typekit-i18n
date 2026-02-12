@@ -5,6 +5,13 @@ import {
   TranslationTable,
   TranslatorOptions,
 } from './types.js'
+import {
+  createScopedKeyLookup,
+  resolveScopedKey,
+  resolveTranslateCallArguments,
+  TranslationCategoryFromTable,
+  TranslationKeyOfCategoryFromTable,
+} from './scoped.js'
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -51,6 +58,68 @@ const toMissingTranslationMessage = <TKey extends string, TLanguage extends stri
 ): string =>
   `Missing translation for key "${event.key}" in "${event.language}" (default "${event.defaultLanguage}", reason "${event.reason}").`
 
+const toScopedMissingKey = (category: string, key: string): string => `${category}.${key}`
+
+/**
+ * Translate API returned by `createTranslator`.
+ */
+export interface TranslatorApi<
+  TLanguage extends string,
+  TKey extends string,
+  TTable extends TranslationTable<TKey, TLanguage>,
+> {
+  /**
+   * Translates one key in the active or explicitly provided language.
+   *
+   * @param key Global translation key.
+   * @param languageOrPlaceholder Optional language or placeholder payload.
+   * @param placeholder Optional placeholder payload.
+   * @returns Translated string or key fallback.
+   */
+  (key: TKey, languageOrPlaceholder?: TLanguage | Placeholder, placeholder?: Placeholder): string
+  /**
+   * Translates one key scoped by category.
+   *
+   * @param category Translation category.
+   * @param key Category-scoped translation key.
+   * @param languageOrPlaceholder Optional language or placeholder payload.
+   * @param placeholder Optional placeholder payload.
+   * @returns Translated string or key fallback.
+   */
+  translateIn: <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory,
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ) => string
+  /**
+   * Creates a translate function pre-bound to one category.
+   *
+   * @param category Translation category.
+   * @returns Category-scoped translate function.
+   */
+  withCategory: <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory
+  ) => (
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ) => string
+  /**
+   * Sets the active language used when translate calls omit `language`.
+   *
+   * @param language Active language.
+   * @returns Nothing.
+   */
+  setLanguage: (language: TLanguage) => void
+  /**
+   * Returns the currently active language.
+   *
+   * @returns Active language.
+   */
+  getLanguage: () => TLanguage
+}
+
 /**
  * Creates a typed translator bound to a translation table.
  *
@@ -65,8 +134,10 @@ export const createTranslator = <
 >(
   table: TTable,
   options: TranslatorOptions<TKey, TLanguage>
-): ((key: TKey, language: TLanguage, placeholder?: Placeholder) => string) => {
+): TranslatorApi<TLanguage, TKey, TTable> => {
   const missingStrategy = options.missingStrategy ?? 'fallback'
+  const scopedKeyLookup = createScopedKeyLookup(table)
+  let currentLanguage = options.language ?? options.defaultLanguage
 
   const handleMissing = (event: MissingTranslationEvent<TKey, TLanguage>): void => {
     options.onMissingTranslation?.(event)
@@ -75,7 +146,7 @@ export const createTranslator = <
     }
   }
 
-  return (key: TKey, language: TLanguage, placeholder?: Placeholder): string => {
+  const translateByKey = (key: TKey, language: TLanguage, placeholder?: Placeholder): string => {
     const translation = table[key]
     if (!translation) {
       handleMissing({
@@ -120,4 +191,61 @@ export const createTranslator = <
 
     return key
   }
+
+  const translate = ((
+    key: TKey,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ): string => {
+    const resolved = resolveTranslateCallArguments(
+      currentLanguage,
+      languageOrPlaceholder,
+      placeholder
+    )
+    return translateByKey(key, resolved.language, resolved.placeholder)
+  }) as TranslatorApi<TLanguage, TKey, TTable>
+
+  translate.translateIn = <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory,
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ): string => {
+    const resolved = resolveTranslateCallArguments(
+      currentLanguage,
+      languageOrPlaceholder,
+      placeholder
+    )
+    const fullKey = resolveScopedKey(scopedKeyLookup, category, key)
+    if (fullKey) {
+      return translateByKey(fullKey as TKey, resolved.language, resolved.placeholder)
+    }
+
+    const scopedMissingKey = toScopedMissingKey(category, key)
+    handleMissing({
+      key: scopedMissingKey as TKey,
+      language: resolved.language,
+      defaultLanguage: options.defaultLanguage,
+      reason: 'missingKey',
+    })
+    return scopedMissingKey
+  }
+
+  translate.withCategory = <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory
+  ) => {
+    return (
+      key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+      languageOrPlaceholder?: TLanguage | Placeholder,
+      placeholder?: Placeholder
+    ): string => translate.translateIn(category, key, languageOrPlaceholder, placeholder)
+  }
+
+  translate.setLanguage = (language: TLanguage): void => {
+    currentLanguage = language
+  }
+
+  translate.getLanguage = (): TLanguage => currentLanguage
+
+  return translate
 }

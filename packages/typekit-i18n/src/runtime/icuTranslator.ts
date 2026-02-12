@@ -5,6 +5,14 @@ import {
   TranslationTable,
 } from './types.js'
 import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRenderer.js'
+import type { TranslatorApi } from './translator.js'
+import {
+  createScopedKeyLookup,
+  resolveScopedKey,
+  resolveTranslateCallArguments,
+  TranslationCategoryFromTable,
+  TranslationKeyOfCategoryFromTable,
+} from './scoped.js'
 
 /**
  * Supported ICU subset:
@@ -23,6 +31,8 @@ const toMissingTranslationMessage = <TKey extends string, TLanguage extends stri
   event: MissingTranslationEvent<TKey, TLanguage>
 ): string =>
   `Missing translation for key "${event.key}" in "${event.language}" (default "${event.defaultLanguage}", reason "${event.reason}").`
+
+const toScopedMissingKey = (category: string, key: string): string => `${category}.${key}`
 
 const toPlaceholderValueMap = (
   placeholder?: Placeholder
@@ -57,8 +67,10 @@ export const createIcuTranslator = <
 >(
   table: TTable,
   options: IcuTranslatorOptions<TKey, TLanguage>
-): ((key: TKey, language: TLanguage, placeholder?: Placeholder) => string) => {
+): TranslatorApi<TLanguage, TKey, TTable> => {
   const missingStrategy = options.missingStrategy ?? 'fallback'
+  const scopedKeyLookup = createScopedKeyLookup(table)
+  let currentLanguage = options.language ?? options.defaultLanguage
   const pluralRulesCache = new Map<string, Intl.PluralRules>()
   const numberFormatCache = new Map<string, Intl.NumberFormat>()
   const dateTimeFormatCache = new Map<string, Intl.DateTimeFormat>()
@@ -71,7 +83,7 @@ export const createIcuTranslator = <
     }
   }
 
-  return (key: TKey, language: TLanguage, placeholder?: Placeholder): string => {
+  const translateByKey = (key: TKey, language: TLanguage, placeholder?: Placeholder): string => {
     const translation = table[key]
     if (!translation) {
       handleMissing({
@@ -126,4 +138,61 @@ export const createIcuTranslator = <
 
     return key
   }
+
+  const translate = ((
+    key: TKey,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ): string => {
+    const resolved = resolveTranslateCallArguments(
+      currentLanguage,
+      languageOrPlaceholder,
+      placeholder
+    )
+    return translateByKey(key, resolved.language, resolved.placeholder)
+  }) as TranslatorApi<TLanguage, TKey, TTable>
+
+  translate.translateIn = <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory,
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ): string => {
+    const resolved = resolveTranslateCallArguments(
+      currentLanguage,
+      languageOrPlaceholder,
+      placeholder
+    )
+    const fullKey = resolveScopedKey(scopedKeyLookup, category, key)
+    if (fullKey) {
+      return translateByKey(fullKey as TKey, resolved.language, resolved.placeholder)
+    }
+
+    const scopedMissingKey = toScopedMissingKey(category, key)
+    handleMissing({
+      key: scopedMissingKey as TKey,
+      language: resolved.language,
+      defaultLanguage: options.defaultLanguage,
+      reason: 'missingKey',
+    })
+    return scopedMissingKey
+  }
+
+  translate.withCategory = <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory
+  ) => {
+    return (
+      key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+      languageOrPlaceholder?: TLanguage | Placeholder,
+      placeholder?: Placeholder
+    ): string => translate.translateIn(category, key, languageOrPlaceholder, placeholder)
+  }
+
+  translate.setLanguage = (language: TLanguage): void => {
+    currentLanguage = language
+  }
+
+  translate.getLanguage = (): TLanguage => currentLanguage
+
+  return translate
 }

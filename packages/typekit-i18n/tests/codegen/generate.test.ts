@@ -69,18 +69,27 @@ a_key;Text A;A english;A deutsch
 
       export const translationTable = {
         "a_key": {
+          category: "default",
           description: "Text A",
           en: "A english",
           de: "A deutsch",
         },
         "b_key": {
+          category: "default",
           description: "Text B",
           en: "B english",
           de: "B deutsch",
         },
       } as const
 
-      export type { TranslateKey, TranslateKeys, TranslateLanguage } from "./translationKeys.js"
+      export type {
+        TranslateCategory,
+        TranslateKey,
+        TranslateKeyOf,
+        TranslateKeys,
+        TranslateKeysByCategory,
+        TranslateLanguage
+      } from "./translationKeys.js"
       "
     `)
 
@@ -95,6 +104,12 @@ a_key;Text A;A english;A deutsch
 
       export type TranslateKey = "a_key" | "b_key"
       export type TranslateKeys = TranslateKey
+      export const TranslationCategories = ["default"] as const
+      export type TranslateCategory = "default"
+      export interface TranslateKeysByCategory {
+        "default": "a_key" | "b_key"
+      }
+      export type TranslateKeyOf<C extends TranslateCategory> = TranslateKeysByCategory[C]
       export const LanguageCodes = ["en", "de"] as const
       export type TranslateLanguage = (typeof LanguageCodes)[number]
       "
@@ -190,18 +205,27 @@ entries:
 
       export const translationTable = {
         "title": {
+          category: "default",
           description: "Main title",
           en: "Welcome",
           de: "Willkommen",
         },
         "subtitle": {
+          category: "default",
           description: "Main subtitle",
           en: "Hello world",
           de: "Hallo Welt",
         },
       } as const
 
-      export type { TranslateKey, TranslateKeys, TranslateLanguage } from "./translationKeys.js"
+      export type {
+        TranslateCategory,
+        TranslateKey,
+        TranslateKeyOf,
+        TranslateKeys,
+        TranslateKeysByCategory,
+        TranslateLanguage
+      } from "./translationKeys.js"
       "
     `)
 
@@ -216,6 +240,12 @@ entries:
 
       export type TranslateKey = "title" | "subtitle"
       export type TranslateKeys = TranslateKey
+      export const TranslationCategories = ["default"] as const
+      export type TranslateCategory = "default"
+      export interface TranslateKeysByCategory {
+        "default": "title" | "subtitle"
+      }
+      export type TranslateKeyOf<C extends TranslateCategory> = TranslateKeysByCategory[C]
       export const LanguageCodes = ["en", "de"] as const
       export type TranslateLanguage = (typeof LanguageCodes)[number]
       "
@@ -407,18 +437,27 @@ entries:
 
       export const translationTable = {
         "title": {
+          category: "default",
           description: "Main title",
           en: "Welcome",
           de: "Willkommen",
         },
         "subtitle": {
+          category: "default",
           description: "Main subtitle",
           en: "Hello world",
           de: "Hallo Welt",
         },
       } as const
 
-      export type { TranslateKey, TranslateKeys, TranslateLanguage } from "./translationKeys.js"
+      export type {
+        TranslateCategory,
+        TranslateKey,
+        TranslateKeyOf,
+        TranslateKeys,
+        TranslateKeysByCategory,
+        TranslateLanguage
+      } from "./translationKeys.js"
       "
     `)
 
@@ -432,6 +471,12 @@ entries:
 
       export type TranslateKey = "title" | "subtitle"
       export type TranslateKeys = TranslateKey
+      export const TranslationCategories = ["default"] as const
+      export type TranslateCategory = "default"
+      export interface TranslateKeysByCategory {
+        "default": "title" | "subtitle"
+      }
+      export type TranslateKeyOf<C extends TranslateCategory> = TranslateKeysByCategory[C]
       export const LanguageCodes = ["en", "de"] as const
       export type TranslateLanguage = (typeof LanguageCodes)[number]
       "

@@ -27,11 +27,13 @@ type TestKey =
 
 const table: TranslationTable<TestKey, TestLanguage> = {
   inboxSummary: {
+    category: 'messages',
     description: 'ICU plural and select demo',
     en: '{gender, select, male {He} female {She} other {They}} has {count, plural, =0 {no messages} one {# message} other {# messages}}.',
     de: '{gender, select, male {Er} female {Sie} other {Sie}} hat {count, plural, =0 {keine Nachrichten} one {# Nachricht} other {# Nachrichten}}.',
   },
   invoiceTotal: {
+    category: 'billing',
     description: 'Simple placeholder formatter in ICU translator',
     en: 'Invoice total: {amount|currency}',
     de: 'Rechnungsbetrag: {amount|currency}',
@@ -255,6 +257,35 @@ describe('createIcuTranslator', () => {
     expect(() => translate('unknown' as TestKey, 'de')).toThrow(
       /Missing translation for key "unknown".*reason "missingKey"/
     )
+  })
+
+  test('uses the active language when language argument is omitted', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+      language: 'de',
+    })
+
+    expect(translate.getLanguage()).toBe('de')
+    expect(translate('invoiceTotal', { data: [{ key: 'amount', value: 12.5 }] })).toBe(
+      'Rechnungsbetrag: 12.5'
+    )
+  })
+
+  test('supports scoped category translation', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+      language: 'de',
+      formatters: {
+        currency: (value) => `EUR ${value}`,
+      },
+    })
+
+    expect(
+      translate.translateIn('billing', 'invoiceTotal', {
+        data: [{ key: 'amount', value: 12.5 }],
+      })
+    ).toBe('Rechnungsbetrag: EUR 12.5')
+    expect(translate.translateIn('messages', 'invoiceTotal')).toBe('messages.invoiceTotal')
   })
 
   test('supports locale categories zero/two/few/many/other', () => {

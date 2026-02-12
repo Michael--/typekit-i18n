@@ -72,6 +72,11 @@ export type TranslationCsvRow = Record<string, string>
  */
 export interface TranslationRecord<TLanguage extends string = string> {
   /**
+   * Optional category used for scoped key access.
+   * Empty source values are normalized to `default`.
+   */
+  category: string
+  /**
    * Translation key used in source code.
    */
   key: string

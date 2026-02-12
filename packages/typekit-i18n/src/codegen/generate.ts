@@ -11,7 +11,13 @@ import { parse as parseYaml } from 'yaml'
 
 const quote = (value: string): string => JSON.stringify(value)
 const CSV_BASE_COLUMNS: ReadonlySet<string> = new Set(['key', 'description'])
-const CSV_METADATA_COLUMNS: ReadonlySet<string> = new Set(['status', 'tags', 'placeholders'])
+const CSV_METADATA_COLUMNS: ReadonlySet<string> = new Set([
+  'category',
+  'status',
+  'tags',
+  'placeholders',
+])
+const DEFAULT_CATEGORY = 'default'
 
 const toTypeUnion = (values: ReadonlyArray<string>): string =>
   values.length === 0 ? 'never' : values.map((value) => quote(value)).join(' | ')
@@ -28,6 +34,15 @@ const normalizeLanguageList = (languages: ReadonlyArray<string>): ReadonlyArray<
   Array.from(
     new Set(languages.map((language) => language.trim()).filter((language) => language.length > 0))
   )
+
+const normalizeCategory = (category: string | undefined): string => {
+  if (typeof category !== 'string') {
+    return DEFAULT_CATEGORY
+  }
+
+  const normalized = category.trim()
+  return normalized.length > 0 ? normalized : DEFAULT_CATEGORY
+}
 
 const isLikelyLanguageCode = (value: string): boolean =>
   /^[A-Za-z]{2}(?:-[A-Za-z0-9_]+)?$/.test(value)
@@ -239,10 +254,39 @@ const toKeysModuleSource = <TLanguage extends string>(
 ): string => {
   const keyUnion = toTypeUnion(records.map((record) => record.key))
   const languageTuple = `[${languages.map((language) => quote(language)).join(', ')}]`
+  const categoryMap = new Map<string, string[]>()
+
+  records.forEach((record) => {
+    const category = normalizeCategory(record.category)
+    const keys = categoryMap.get(category) ?? []
+    keys.push(record.key)
+    categoryMap.set(category, keys)
+  })
+
+  const categories = Array.from(categoryMap.keys()).sort((left, right) => {
+    if (left === DEFAULT_CATEGORY) {
+      return -1
+    }
+    if (right === DEFAULT_CATEGORY) {
+      return 1
+    }
+    return left.localeCompare(right)
+  })
+  const categoryUnion = toTypeUnion(categories)
+  const categoryTuple = `[${categories.map((category) => quote(category)).join(', ')}]`
+  const categoryLines = categories
+    .map((category) => `  ${quote(category)}: ${toTypeUnion(categoryMap.get(category) ?? [])}`)
+    .join('\n')
 
   return `${toHeaderComment(files)}
 export type TranslateKey = ${keyUnion}
 export type TranslateKeys = TranslateKey
+export const TranslationCategories = ${categoryTuple} as const
+export type TranslateCategory = ${categoryUnion}
+export interface TranslateKeysByCategory {
+${categoryLines}
+}
+export type TranslateKeyOf<C extends TranslateCategory> = TranslateKeysByCategory[C]
 export const LanguageCodes = ${languageTuple} as const
 export type TranslateLanguage = (typeof LanguageCodes)[number]
 `
@@ -271,6 +315,7 @@ const toTableModuleSource = <TLanguage extends string>(
         .join('\n')
 
       return `  ${quote(record.key)}: {
+    category: ${quote(record.category)},
     description: ${quote(record.description)},
 ${languageLines}
   },`
@@ -282,7 +327,14 @@ export const translationTable = {
 ${recordSource}
 } as const
 
-export type { TranslateKey, TranslateKeys, TranslateLanguage } from ${quote(typeImportPath)}
+export type {
+  TranslateCategory,
+  TranslateKey,
+  TranslateKeyOf,
+  TranslateKeys,
+  TranslateKeysByCategory,
+  TranslateLanguage
+} from ${quote(typeImportPath)}
 `
 }
 
@@ -355,6 +407,7 @@ export const generateTranslationTable = async <TLanguage extends string>(
         return
       }
       records.push({
+        category: normalizeCategory(entry.category),
         key: entry.key,
         description: entry.description,
         values,

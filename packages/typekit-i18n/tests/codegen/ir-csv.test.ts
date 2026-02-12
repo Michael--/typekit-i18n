@@ -9,6 +9,7 @@ describe('toIrProjectFromCsvRows', () => {
     const rows: ReadonlyArray<TranslationCsvRow> = [
       {
         key: 'item_count',
+        category: 'dashboard',
         description: 'Summary line with count placeholder',
         status: 'approved',
         tags: 'ui, summary',
@@ -31,6 +32,7 @@ describe('toIrProjectFromCsvRows', () => {
       entries: [
         {
           key: 'item_count',
+          category: 'dashboard',
           description: 'Summary line with count placeholder',
           status: 'approved',
           tags: ['ui', 'summary'],
@@ -167,6 +169,7 @@ describe('toIrProjectFromCsvRows', () => {
       entries: [
         {
           key: 'item_count',
+          category: 'dashboard',
           description: 'Summary line with count placeholder',
           status: 'review',
           tags: ['ui', 'summary'],
@@ -209,5 +212,28 @@ describe('toIrProjectFromCsvRows', () => {
     const content = toCsvContentFromIrProject(project)
     const header = content.trim().split('\n')[0]
     expect(header).toBe('key;description;en;de')
+  })
+
+  test('writes category column when at least one entry has category', () => {
+    const project: TranslationIrProject<'en' | 'de'> = {
+      version: '1',
+      sourceLanguage: 'en',
+      languages: ['en', 'de'],
+      entries: [
+        {
+          key: 'title',
+          category: 'common',
+          description: 'Simple title',
+          values: {
+            en: 'Title',
+            de: 'Titel',
+          },
+        },
+      ],
+    }
+
+    const content = toCsvContentFromIrProject(project)
+    const header = content.trim().split('\n')[0]
+    expect(header).toBe('key;description;category;en;de')
   })
 })

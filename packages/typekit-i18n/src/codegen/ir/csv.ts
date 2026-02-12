@@ -13,6 +13,7 @@ import { validateIrProject } from './validation.js'
 const STATUS_COLUMN = 'status'
 const TAGS_COLUMN = 'tags'
 const PLACEHOLDERS_COLUMN = 'placeholders'
+const CATEGORY_COLUMN = 'category'
 const CSV_DELIMITER = ';'
 const CSV_NEWLINE = '\n'
 
@@ -46,6 +47,11 @@ export interface CsvToIrOptions<TLanguage extends string = string> {
    * Optional source file path used in validation messages.
    */
   filePath?: string
+  /**
+   * Optional category column name.
+   * Defaults to `category`.
+   */
+  categoryColumn?: string
   /**
    * Optional status column name.
    * Defaults to `status`.
@@ -93,6 +99,16 @@ const parseStatus = (
   }
 
   return normalized
+}
+
+const parseCategory = (row: TranslationCsvRow, categoryColumn: string): string | undefined => {
+  const categoryValue = row[categoryColumn]
+  if (typeof categoryValue !== 'string') {
+    return undefined
+  }
+
+  const normalized = categoryValue.trim()
+  return normalized.length > 0 ? normalized : undefined
 }
 
 const parseTags = (
@@ -224,9 +240,11 @@ const toEntryFromRow = <TLanguage extends string>(
   const statusColumn = options.statusColumn ?? STATUS_COLUMN
   const tagsColumn = options.tagsColumn ?? TAGS_COLUMN
   const placeholdersColumn = options.placeholdersColumn ?? PLACEHOLDERS_COLUMN
+  const categoryColumn = options.categoryColumn ?? CATEGORY_COLUMN
 
   return {
     key,
+    category: parseCategory(row, categoryColumn),
     description,
     status: parseStatus(row, rowIndex, locationPath, statusColumn),
     tags: parseTags(row, tagsColumn),
@@ -299,6 +317,11 @@ export const toIrProjectFromCsvFile = async <TLanguage extends string>(
  */
 export interface IrToCsvOptions {
   /**
+   * Optional category column name.
+   * Defaults to `category`.
+   */
+  categoryColumn?: string
+  /**
    * Optional status column name.
    * Defaults to `status`.
    */
@@ -313,6 +336,11 @@ export interface IrToCsvOptions {
    * Defaults to `placeholders`.
    */
   placeholdersColumn?: string
+  /**
+   * Includes category column when undefined values exist.
+   * Defaults to `true` when at least one entry has a category value.
+   */
+  includeCategoryColumn?: boolean
   /**
    * Includes status column when undefined values exist.
    * Defaults to `true` when at least one entry has a status value.
@@ -377,6 +405,13 @@ const shouldIncludeStatusColumn = <TLanguage extends string>(
   options.includeStatusColumn ??
   project.entries.some((entry) => typeof entry.status === 'string' && entry.status.length > 0)
 
+const shouldIncludeCategoryColumn = <TLanguage extends string>(
+  project: TranslationIrProject<TLanguage>,
+  options: IrToCsvOptions
+): boolean =>
+  options.includeCategoryColumn ??
+  project.entries.some((entry) => typeof entry.category === 'string' && entry.category.length > 0)
+
 const shouldIncludeTagsColumn = <TLanguage extends string>(
   project: TranslationIrProject<TLanguage>,
   options: IrToCsvOptions
@@ -423,7 +458,9 @@ export const toCsvRowsFromIrProject = <TLanguage extends string>(
   const statusColumn = options.statusColumn ?? STATUS_COLUMN
   const tagsColumn = options.tagsColumn ?? TAGS_COLUMN
   const placeholdersColumn = options.placeholdersColumn ?? PLACEHOLDERS_COLUMN
+  const categoryColumn = options.categoryColumn ?? CATEGORY_COLUMN
 
+  const includeCategoryColumn = shouldIncludeCategoryColumn(project, options)
   const includeStatusColumn = shouldIncludeStatusColumn(project, options)
   const includeTagsColumn = shouldIncludeTagsColumn(project, options)
   const includePlaceholdersColumn = shouldIncludePlaceholdersColumn(project, options)
@@ -434,6 +471,9 @@ export const toCsvRowsFromIrProject = <TLanguage extends string>(
       description: entry.description,
     }
 
+    if (includeCategoryColumn) {
+      row[categoryColumn] = entry.category ?? ''
+    }
     if (includeStatusColumn) {
       row[statusColumn] = entry.status ?? ''
     }
@@ -469,12 +509,17 @@ export const toCsvContentFromIrProject = <TLanguage extends string>(
   const statusColumn = options.statusColumn ?? STATUS_COLUMN
   const tagsColumn = options.tagsColumn ?? TAGS_COLUMN
   const placeholdersColumn = options.placeholdersColumn ?? PLACEHOLDERS_COLUMN
+  const categoryColumn = options.categoryColumn ?? CATEGORY_COLUMN
 
+  const includeCategoryColumn = shouldIncludeCategoryColumn(project, options)
   const includeStatusColumn = shouldIncludeStatusColumn(project, options)
   const includeTagsColumn = shouldIncludeTagsColumn(project, options)
   const includePlaceholdersColumn = shouldIncludePlaceholdersColumn(project, options)
 
   const headers: string[] = ['key', 'description']
+  if (includeCategoryColumn) {
+    headers.push(categoryColumn)
+  }
   if (includeStatusColumn) {
     headers.push(statusColumn)
   }
@@ -488,6 +533,7 @@ export const toCsvContentFromIrProject = <TLanguage extends string>(
 
   const rows = toCsvRowsFromIrProject(project, {
     ...options,
+    includeCategoryColumn,
     includeStatusColumn,
     includeTagsColumn,
     includePlaceholdersColumn,
