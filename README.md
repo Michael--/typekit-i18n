@@ -10,6 +10,7 @@ Type-safe internationalization toolkit for TypeScript with:
 This repository is a `pnpm` workspace with three targets:
 
 - `packages/typekit-i18n`: publishable npm package (runtime + codegen + CLI)
+- `packages/typekit-i18n-vscode`: VSCode extension for translation authoring
 - `apps/playground-ts`: React playground for feature demos
 - `apps/docs-site`: VitePress documentation site (GitHub Pages target)
 
@@ -148,6 +149,7 @@ const title = t('welcome_title', 'de')
 
 - GitHub root documentation: this file (`README.md`)
 - npm package documentation: `packages/typekit-i18n/README.md`
+- VSCode extension documentation: `packages/typekit-i18n-vscode/README.md`
 - full docs site source: `apps/docs-site/docs`
 
 Build docs for local preview:
@@ -169,7 +171,21 @@ The repository includes a Pages workflow at `.github/workflows/pages.yml` that p
 
 - Root overview: `README.md`
 - Package/npm reference: `packages/typekit-i18n/README.md`
+- VSCode extension reference: `packages/typekit-i18n-vscode/README.md`
 - Docs site overview: `apps/docs-site/docs/index.md`
+- Docs site extension page: `apps/docs-site/docs/vscode-extension.md`
 - Runtime API docs: `apps/docs-site/docs/runtime-api.md`
 - CLI and codegen docs: `apps/docs-site/docs/codegen-cli.md`
 - Resource format docs: `apps/docs-site/docs/resource-formats.md`
+
+## VSCode Extension
+
+The repository includes a first `typekit-i18n` VSCode extension release (`0.1.0`) in:
+
+- `packages/typekit-i18n-vscode`
+
+Marketplace link is pending first publish. Until then, install from local VSIX:
+
+```bash
+pnpm --filter typekit-i18n-vscode package:vsix
+```

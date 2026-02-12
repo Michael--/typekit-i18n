@@ -16,6 +16,19 @@ npm install typekit-i18n
 yarn add typekit-i18n
 ```
 
+## VSCode Extension
+
+For translation authoring, the repository also ships a dedicated VSCode extension:
+
+- Source: `packages/typekit-i18n-vscode`
+- Marketplace link: pending first publish
+
+Local VSIX build:
+
+```bash
+pnpm --filter typekit-i18n-vscode package:vsix
+```
+
 ## Exports
 
 Runtime APIs:

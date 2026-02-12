@@ -1,6 +1,34 @@
 # typekit-i18n VSCode Extension
 
-VSCode extension workspace for `typekit-i18n` authoring workflows.
+VSCode extension for `typekit-i18n` authoring workflows.
+
+## Status
+
+- Initial release: `0.1.0`
+- Marketplace link: pending first publish
+
+## Features
+
+- Key intelligence:
+  - Go to definition (`F12`)
+  - Find references (`Shift+F12`)
+  - Rename symbol (`F2`)
+  - Safe delete warning for still-referenced keys
+- Diagnostics and quick fixes:
+  - Unknown key usage in code
+  - Missing locale values
+  - Duplicate keys
+  - Placeholder mismatch
+  - CSV/YAML schema and value type checks
+  - ICU plural/selectordinal `other` branch check
+- Completion and hover:
+  - Translation-aware key completion
+  - Locale preview in completion and hover
+  - Placeholder snippet insertion in `data` array format
+- Utility:
+  - Refresh translation index
+  - Run diagnostics manually
+  - Measure index refresh baseline (`typekitI18n.measureIndexPerformance`)
 
 ## Scripts
 
@@ -12,12 +40,6 @@ VSCode extension workspace for `typekit-i18n` authoring workflows.
 - `pnpm --filter typekit-i18n-vscode test`
 
 ## Current Scope
-
-- Key intelligence scaffolding (definition/reference/rename).
-- Diagnostics command and refresh hooks.
-- YAML/CSV schema validation hooks.
-- Completion and hover provider scaffolding.
-- Refresh performance baseline command (`typekitI18n.measureIndexPerformance`).
 
 Implementation details and rollout plan are tracked in `PLAN.md`.
 Diagnostic code coverage is tracked in `docs/DIAGNOSTICS.md`.

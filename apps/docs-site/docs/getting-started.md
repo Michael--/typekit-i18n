@@ -29,6 +29,19 @@ Run docs site:
 pnpm run dev:docs
 ```
 
+## VSCode Extension (Optional)
+
+The repository includes a VSCode extension for translation authoring:
+
+- docs: [VSCode Extension](./vscode-extension)
+- package: `packages/typekit-i18n-vscode`
+
+Build local VSIX:
+
+```bash
+pnpm --filter typekit-i18n-vscode package:vsix
+```
+
 ## Minimal Package Setup
 
 ### 1. Install package

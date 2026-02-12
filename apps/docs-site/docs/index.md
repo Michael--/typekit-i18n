@@ -21,6 +21,7 @@ Type-safe internationalization toolkit for TypeScript with runtime APIs, ICU ren
 ## Documentation Map
 
 - [Getting Started](./getting-started)
+- [VSCode Extension](./vscode-extension)
 - [Runtime API](./runtime-api)
 - [Codegen + CLI](./codegen-cli)
 - [Resource Formats](./resource-formats)

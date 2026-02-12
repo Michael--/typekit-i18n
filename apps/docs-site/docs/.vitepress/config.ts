@@ -29,6 +29,7 @@ export default withMermaid(
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/getting-started' },
+        { text: 'VSCode Extension', link: '/vscode-extension' },
         { text: 'Runtime API', link: '/runtime-api' },
         { text: 'Codegen + CLI', link: '/codegen-cli' },
         { text: 'Resource Formats', link: '/resource-formats' },
@@ -40,6 +41,7 @@ export default withMermaid(
           items: [
             { text: 'Overview', link: '/' },
             { text: 'Getting Started', link: '/getting-started' },
+            { text: 'VSCode Extension', link: '/vscode-extension' },
             { text: 'Translation Strategy', link: '/translation-strategy' },
             { text: 'GitHub Pages', link: '/github-pages' },
           ],
