@@ -310,6 +310,23 @@ describe('createIcuTranslator', () => {
     expect(translate.translateIn('messages', 'invoiceTotal')).toBe('messages.invoiceTotal')
   })
 
+  test('supports scoped category translation via "in" alias', () => {
+    const translate = createIcuTranslator(table, {
+      defaultLanguage: 'en',
+      language: 'de',
+      formatters: {
+        currency: (value) => `EUR ${value}`,
+      },
+    })
+
+    expect(
+      translate.in('billing', 'invoiceTotal', {
+        data: [{ key: 'amount', value: 12.5 }],
+      })
+    ).toBe('Rechnungsbetrag: EUR 12.5')
+    expect(translate.in('messages', 'invoiceTotal')).toBe('messages.invoiceTotal')
+  })
+
   test('supports locale categories zero/two/few/many/other', () => {
     type CategoryLanguage = 'ar'
     type CategoryKey = 'pluralCategories'

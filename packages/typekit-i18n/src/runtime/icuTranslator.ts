@@ -189,6 +189,7 @@ export const createIcuTranslator = <TTable extends TranslationTable<string, stri
     })
     return scopedMissingKey
   }
+  translate.in = translate.translateIn
 
   translate.withCategory = <TCategory extends TranslationCategoryFromTable<TTable>>(
     category: TCategory

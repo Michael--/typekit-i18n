@@ -242,4 +242,13 @@ describe('createTranslator', () => {
       reason: 'missingKey',
     })
   })
+
+  test('supports scoped category translation via "in" alias', () => {
+    const translate = createTranslator(table, {
+      defaultLanguage: 'en',
+    })
+
+    expect(translate.in('developers', 'developerHint', 'de')).toBe('Debug-Modus aktivieren')
+    expect(translate.in('default', 'greeting', 'de')).toBe('Hallo')
+  })
 })

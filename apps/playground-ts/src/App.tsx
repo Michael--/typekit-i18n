@@ -274,7 +274,7 @@ export const App = (): JSX.Element => {
           <Text size="sm" c="dimmed">
             Use the left sidebar to isolate one runtime behavior at a time.
           </Text>
-          {renderDemoCard('greeting_title', t.translateIn('playground', 'greeting_title'))}
+          {renderDemoCard('greeting_title', t.in('playground', 'greeting_title'))}
           {renderDemoCard(
             'greeting_body with name="Developer"',
             t('greeting_body', {

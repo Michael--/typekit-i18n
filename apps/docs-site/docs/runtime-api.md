@@ -43,6 +43,7 @@ Behavior summary:
 Category-aware APIs:
 
 - `translateIn(category, key, language?, placeholder?)`
+- `in(category, key, language?, placeholder?)` (alias of `translateIn`)
 - `withCategory(category)` (returns a category-bound translate function)
 
 Language state APIs:
@@ -62,7 +63,7 @@ t('welcome_title') // active language ("en" by default)
 t.setLanguage('de')
 t('welcome_title') // now "de"
 
-t.translateIn('home', 'welcome_title')
+t.in('home', 'welcome_title')
 
 const tHome = t.withCategory('home')
 tHome('welcome_title')

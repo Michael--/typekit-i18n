@@ -96,6 +96,21 @@ export interface TranslatorApi<
     placeholder?: Placeholder
   ) => string
   /**
+   * Alias of `translateIn` for concise category-scoped translation calls.
+   *
+   * @param category Translation category.
+   * @param key Category-scoped translation key.
+   * @param languageOrPlaceholder Optional language or placeholder payload.
+   * @param placeholder Optional placeholder payload.
+   * @returns Translated string or key fallback.
+   */
+  in: <TCategory extends TranslationCategoryFromTable<TTable>>(
+    category: TCategory,
+    key: TranslationKeyOfCategoryFromTable<TTable, TCategory>,
+    languageOrPlaceholder?: TLanguage | Placeholder,
+    placeholder?: Placeholder
+  ) => string
+  /**
    * Creates a translate function pre-bound to one category.
    *
    * @param category Translation category.
@@ -238,6 +253,7 @@ export const createTranslator = <TTable extends TranslationTable<string, string>
     })
     return scopedMissingKey
   }
+  translate.in = translate.translateIn
 
   translate.withCategory = <TCategory extends TranslationCategoryFromTable<TTable>>(
     category: TCategory

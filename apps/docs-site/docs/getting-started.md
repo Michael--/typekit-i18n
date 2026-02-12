@@ -82,6 +82,7 @@ t.setLanguage('de')
 
 const text = t('welcome_title') // uses active language ("de")
 const scopedText = t.translateIn('home', 'welcome_title')
+const scopedTextAlias = t.in('home', 'welcome_title')
 ```
 
 ## Flow
