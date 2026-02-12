@@ -321,12 +321,14 @@ const buildCompletionInsertion = (
     }
   }
 
-  const placeholderAssignments = placeholders
-    .map((placeholder, index) => `${placeholder}: \${${index + 1}:${placeholder}}`)
+  const dataEntries = placeholders
+    .map(
+      (placeholder, index) => `{ key: '${placeholder}', value: \${${index + 1}:${placeholder}} }`
+    )
     .join(', ')
 
   return {
-    text: `${key}${callContext.quote}, { ${placeholderAssignments} }`,
+    text: `${key}${callContext.quote}, { data: [${dataEntries}] }`,
     range: callContext.literalWithClosingQuoteRange,
     isSnippet: true,
   }
