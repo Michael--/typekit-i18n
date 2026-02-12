@@ -69,7 +69,7 @@ Ship one extension for users, with modular internals, focused on translation aut
 - [x] Implement diagnostics rules and stable diagnostic codes.
 - [x] Implement code actions and quick fixes for actionable diagnostic codes.
 - [x] Implement YAML/CSV schema validators with precise spans.
-- [ ] Add diagnostics integration tests with fixture workspaces.
+- [x] Add diagnostics integration tests with fixture workspaces.
 
 ### Phase 4 - UX and Hardening
 
