@@ -34,7 +34,7 @@ export const registerCompletionAndHover = (workspace: TranslationWorkspace): vsc
           const item = new vscode.CompletionItem(key, vscode.CompletionItemKind.Constant)
           item.insertText = key
           item.detail = toPreviewLine(workspace, key, settings)
-          item.sortText = key
+          item.sortText = toSortTextForMode(key, settings.completionMode)
           return item
         })
       },
@@ -125,7 +125,7 @@ const escapeMarkdownInline = (value: string): string =>
   value.replace(/([\\`*_{}[\]()#+\-.!|])/g, '\\$1')
 
 interface CompletionAndPreviewSettings {
-  readonly completionMode: 'fallback' | 'always'
+  readonly completionMode: 'fallback' | 'always' | 'alwaysPreferExtension'
   readonly previewLocales: readonly string[]
   readonly previewMaxLocales: number
 }
@@ -134,7 +134,10 @@ const readCompletionAndPreviewSettings = (): CompletionAndPreviewSettings => {
   const config = vscode.workspace.getConfiguration('typekitI18n')
 
   const configuredMode = config.get<string>('completionMode', 'fallback')
-  const completionMode: 'fallback' | 'always' = configuredMode === 'always' ? 'always' : 'fallback'
+  const completionMode: 'fallback' | 'always' | 'alwaysPreferExtension' =
+    configuredMode === 'always' || configuredMode === 'alwaysPreferExtension'
+      ? configuredMode
+      : 'fallback'
 
   const configuredLocales = config.get<readonly string[]>('previewLocales', [])
   const previewLocales = configuredLocales
@@ -153,12 +156,22 @@ const readCompletionAndPreviewSettings = (): CompletionAndPreviewSettings => {
 
 const shouldProvideCompletion = (
   document: vscode.TextDocument,
-  mode: 'fallback' | 'always'
+  mode: 'fallback' | 'always' | 'alwaysPreferExtension'
 ): boolean => {
-  if (mode === 'always') {
+  if (mode === 'always' || mode === 'alwaysPreferExtension') {
     return true
   }
   return document.languageId !== 'typescript' && document.languageId !== 'typescriptreact'
+}
+
+const toSortTextForMode = (
+  key: string,
+  mode: 'fallback' | 'always' | 'alwaysPreferExtension'
+): string => {
+  if (mode === 'alwaysPreferExtension') {
+    return `!${key}`
+  }
+  return key
 }
 
 const resolvePreviewLocales = (

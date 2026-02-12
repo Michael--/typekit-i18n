@@ -51,10 +51,11 @@
           "type": "string",
           "enum": [
             "fallback",
-            "always"
+            "always",
+            "alwaysPreferExtension"
           ],
-          "default": "fallback",
-          "description": "Completion strategy. 'fallback' disables extension key completion in TypeScript/TSX to avoid duplicates with typed key suggestions."
+          "default": "alwaysPreferExtension",
+          "description": "Completion strategy. 'fallback' disables extension key completion in TypeScript/TSX to avoid duplicates with typed key suggestions. 'alwaysPreferExtension' keeps extension completions active and prioritizes them."
         },
         "typekitI18n.previewLocales": {
           "type": "array",
