@@ -54,7 +54,7 @@ Ship one extension for users, with modular internals, focused on translation aut
 
 - [x] Define canonical translation key model shared by YAML and CSV.
 - [x] Implement YAML/CSV parsers and normalization pipeline.
-- [ ] Add incremental refresh with file watchers and debounce.
+- [x] Add incremental refresh with file watchers and debounce.
 - [ ] Add baseline performance measurements for medium workspaces.
 
 ### Phase 2 - Language Features
@@ -75,8 +75,8 @@ Ship one extension for users, with modular internals, focused on translation aut
 
 - [ ] Add progress/status reporting and long-running task cancellation.
 - [ ] Add telemetry/event hooks (opt-in) for performance and failures.
-- [ ] Add packaging and release flow for VSIX.
-- [ ] Add docs for setup, limits, and troubleshooting.
+- [x] Add packaging and release flow for VSIX.
+- [x] Add docs for setup, limits, and troubleshooting.
 
 ## Options and Tradeoffs
 
@@ -109,4 +109,4 @@ Ship one extension for users, with modular internals, focused on translation aut
 - [x] Working VSCode extension package with initial feature behavior.
 - [x] Automated lint, typecheck, and tests in workspace scripts.
 - [ ] Versioned diagnostics and quick-fix matrix.
-- [ ] Developer documentation for extension architecture and contribution flow.
+- [x] Developer documentation for extension architecture and contribution flow.

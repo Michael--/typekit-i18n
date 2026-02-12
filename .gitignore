@@ -11,3 +11,4 @@ AGENTS.md
 **/.vitepress/dist/
 **/generated
 typekit-i18n-*.tgz
+*.vsix
