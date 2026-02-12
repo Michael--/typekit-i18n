@@ -31,6 +31,10 @@ export interface TranslationEntry {
    */
   readonly keyRange: vscode.Range
   /**
+   * Range of the full entry block/row for safe delete operations.
+   */
+  readonly entryRange: vscode.Range
+  /**
    * Per-locale translated values.
    */
   readonly values: ReadonlyMap<string, string>
@@ -88,6 +92,10 @@ export interface TranslationDocument {
    * Locale column names when this document is CSV.
    */
   readonly csvLocaleHeaders?: readonly string[]
+  /**
+   * Detected CSV delimiter when this document is CSV.
+   */
+  readonly csvDelimiter?: ',' | ';'
 }
 
 /**
@@ -163,6 +171,34 @@ export interface TranslationWorkspace extends vscode.Disposable {
    * @returns Workspace edit or null when no safe edit can be generated.
    */
   createMissingLocaleEdit(entry: TranslationEntry, locale: string): vscode.WorkspaceEdit | null
+  /**
+   * Builds an edit to align locale placeholders with a base locale by copying the base value.
+   *
+   * @param entry Translation entry requiring placeholder alignment.
+   * @param locale Locale to update.
+   * @param baseLocale Baseline locale to copy from.
+   * @returns Workspace edit or null when no safe edit can be generated.
+   */
+  createPlaceholderAlignmentEdit(
+    entry: TranslationEntry,
+    locale: string,
+    baseLocale: string
+  ): vscode.WorkspaceEdit | null
+  /**
+   * Builds an edit to rename one duplicate key definition.
+   *
+   * @param entry Translation entry to rename.
+   * @param newKey Replacement key value.
+   * @returns Workspace edit for the key range.
+   */
+  createDuplicateKeyRenameEdit(entry: TranslationEntry, newKey: string): vscode.WorkspaceEdit
+  /**
+   * Builds an edit to delete one translation entry.
+   *
+   * @param entry Translation entry to delete.
+   * @returns Workspace edit for entry removal.
+   */
+  createDeleteEntryEdit(entry: TranslationEntry): vscode.WorkspaceEdit
 }
 
 class DefaultTranslationWorkspace implements TranslationWorkspace {
@@ -273,6 +309,7 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
 
     const headers = target.csvHeaders ?? ['key']
     const localeHeaders = target.csvLocaleHeaders ?? []
+    const delimiter = target.csvDelimiter ?? ','
     const rowValues = headers.map((header) => {
       if (header === 'key') {
         return key
@@ -285,7 +322,7 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
       }
       return ''
     })
-    const csvRow = rowValues.map(toCsvCell).join(',')
+    const csvRow = rowValues.map(toCsvCell).join(delimiter)
     const prefix = target.appendPosition.character === 0 ? '' : '\n'
     edit.insert(target.uri, target.appendPosition, `${prefix}${csvRow}\n`)
     return edit
@@ -314,6 +351,55 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
     }
 
     return null
+  }
+
+  public createPlaceholderAlignmentEdit(
+    entry: TranslationEntry,
+    locale: string,
+    baseLocale: string
+  ): vscode.WorkspaceEdit | null {
+    const baseValue = entry.values.get(baseLocale)
+    if (typeof baseValue !== 'string') {
+      return null
+    }
+
+    const localeRange = entry.valueRanges.get(locale)
+    if (!localeRange) {
+      if (entry.format !== 'csv' && entry.valueInsertPosition) {
+        const edit = new vscode.WorkspaceEdit()
+        edit.insert(
+          entry.uri,
+          entry.valueInsertPosition,
+          `\n      ${locale}: '${escapeYamlSingleQuoted(baseValue)}'`
+        )
+        return edit
+      }
+      return null
+    }
+
+    const edit = new vscode.WorkspaceEdit()
+    if (entry.format === 'csv') {
+      edit.replace(entry.uri, localeRange, toCsvCell(baseValue))
+      return edit
+    }
+
+    edit.replace(entry.uri, localeRange, `'${escapeYamlSingleQuoted(baseValue)}'`)
+    return edit
+  }
+
+  public createDuplicateKeyRenameEdit(
+    entry: TranslationEntry,
+    newKey: string
+  ): vscode.WorkspaceEdit {
+    const edit = new vscode.WorkspaceEdit()
+    edit.replace(entry.uri, entry.keyRange, newKey)
+    return edit
+  }
+
+  public createDeleteEntryEdit(entry: TranslationEntry): vscode.WorkspaceEdit {
+    const edit = new vscode.WorkspaceEdit()
+    edit.delete(entry.uri, entry.entryRange)
+    return edit
   }
 
   public dispose(): void {
@@ -360,7 +446,9 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
             entry.keyRange,
             `Duplicate translation key "${entry.key}" found in multiple files.`,
             vscode.DiagnosticSeverity.Error,
-            DIAGNOSTIC_CODES.duplicateKey
+            encodeDiagnosticCode(DIAGNOSTIC_CODES.duplicateKey, {
+              key: entry.key,
+            })
           )
         )
       })
@@ -419,7 +507,31 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
               entry.keyRange,
               `Placeholder mismatch for key "${entry.key}" in locale "${locale}" compared with "${baseLocale}".`,
               vscode.DiagnosticSeverity.Warning,
-              DIAGNOSTIC_CODES.placeholderMismatch
+              encodeDiagnosticCode(DIAGNOSTIC_CODES.placeholderMismatch, {
+                key: entry.key,
+                locale,
+                baseLocale,
+              })
+            )
+          )
+        })
+
+        entry.values.forEach((value, locale) => {
+          if (!requiresIcuOtherBranch(value)) {
+            return
+          }
+          if (hasIcuOtherBranch(value)) {
+            return
+          }
+
+          this.pushDiagnostic(
+            diagnosticsByUri,
+            entry.uri,
+            createDiagnostic(
+              entry.valueRanges.get(locale) ?? entry.keyRange,
+              `ICU "${entry.key}" in locale "${locale}" must define an "other" branch for plural/selectordinal.`,
+              vscode.DiagnosticSeverity.Warning,
+              DIAGNOSTIC_CODES.invalidIcuPluralShape
             )
           )
         })
@@ -601,13 +713,28 @@ const parseYamlTranslationDocument = (
             key: unknown
             value: unknown
           }
-          if (!isScalar(typedPair.key) || typeof typedPair.key.value !== 'string') {
+          if (!isScalar(typedPair.key)) {
             return
           }
-          const locale = typedPair.key.value
+          const localeValue = typedPair.key.value
+          if (typeof localeValue !== 'string') {
+            return
+          }
+          const locale = localeValue
           const valueNode = typedPair.value
-          const valueText =
-            isScalar(valueNode) && typeof valueNode.value === 'string' ? valueNode.value : ''
+          let valueText = ''
+          if (isScalar(valueNode) && typeof valueNode.value === 'string') {
+            valueText = valueNode.value
+          } else {
+            diagnostics.push(
+              createDiagnostic(
+                toRangeFromNode(valueNode ?? typedPair.key, lineCounter),
+                `Translation value for locale "${locale}" must be a string.`,
+                vscode.DiagnosticSeverity.Error,
+                DIAGNOSTIC_CODES.invalidValueType
+              )
+            )
+          }
           valueMap.set(locale, valueText)
           valueRanges.set(locale, toRangeFromNode(valueNode ?? typedPair.key, lineCounter))
           placeholdersByLocale.set(locale, extractPlaceholderNames(valueText))
@@ -618,6 +745,7 @@ const parseYamlTranslationDocument = (
           uri: document.uri,
           format,
           keyRange: toRangeFromNode(keyNode, lineCounter),
+          entryRange: toDeleteRangeFromNode(entryNode, lineCounter, document),
           values: valueMap,
           valueRanges,
           placeholdersByLocale,
@@ -735,6 +863,7 @@ const parseCsvTranslationDocument = (
       uri: document.uri,
       format: 'csv',
       keyRange: keyCell?.range ?? new vscode.Range(row.line - 1, 0, row.line - 1, key.length),
+      entryRange: document.lineAt(row.line - 1).rangeIncludingLineBreak,
       values: valueMap,
       valueRanges,
       placeholdersByLocale,
@@ -752,6 +881,7 @@ const parseCsvTranslationDocument = (
       appendPosition: document.positionAt(content.length),
       csvHeaders: headers,
       csvLocaleHeaders: localeColumns,
+      csvDelimiter: parsedCsv.delimiter,
     },
     diagnostics,
   }
@@ -808,6 +938,22 @@ const isLocaleColumn = (
   return headers.indexOf(header) >= 0
 }
 
+const toDeleteRangeFromNode = (
+  node: unknown,
+  lineCounter: LineCounter,
+  document: vscode.TextDocument
+): vscode.Range => {
+  const nodeRange = toRangeFromNode(node, lineCounter)
+  const startLine = Math.max(0, nodeRange.start.line)
+  const endLine = Math.max(startLine, nodeRange.end.line)
+
+  if (endLine + 1 < document.lineCount) {
+    return new vscode.Range(startLine, 0, endLine + 1, 0)
+  }
+
+  return new vscode.Range(startLine, 0, endLine, document.lineAt(endLine).text.length)
+}
+
 const toRangeFromNode = (node: unknown, lineCounter: LineCounter): vscode.Range => {
   if (!node || typeof node !== 'object' || !('range' in node)) {
     return new vscode.Range(0, 0, 0, 1)
@@ -835,6 +981,194 @@ const toPositionFromOffset = (offset: number, lineCounter: LineCounter): vscode.
   const safeOffset = Math.max(0, offset)
   const position = lineCounter.linePos(safeOffset)
   return new vscode.Position(Math.max(0, position.line - 1), Math.max(0, position.col - 1))
+}
+
+const escapeYamlSingleQuoted = (value: string): string => value.replace(/'/g, "''")
+
+const requiresIcuOtherBranch = (value: string): boolean =>
+  collectIcuBranchOptionSources(value).length > 0
+
+const hasIcuOtherBranch = (value: string): boolean => {
+  const branches = collectIcuBranchOptionSources(value)
+  if (branches.length === 0) {
+    return true
+  }
+
+  return branches.every((branch) => branch.hasOther)
+}
+
+interface IcuBranchOptions {
+  readonly hasOther: boolean
+}
+
+const collectIcuBranchOptionSources = (value: string): readonly IcuBranchOptions[] => {
+  const branches: IcuBranchOptions[] = []
+  let index = 0
+
+  while (index < value.length) {
+    const char = value[index]
+    if (char !== '{' || isQuotedPosition(value, index)) {
+      index += 1
+      continue
+    }
+
+    const blockEnd = findMatchingBrace(value, index)
+    if (blockEnd < 0) {
+      index += 1
+      continue
+    }
+
+    const rawExpression = value.slice(index + 1, blockEnd)
+    const firstCommaIndex = findTopLevelComma(rawExpression, 0)
+    if (firstCommaIndex < 0) {
+      index = blockEnd + 1
+      continue
+    }
+
+    const secondCommaIndex = findTopLevelComma(rawExpression, firstCommaIndex + 1)
+    if (secondCommaIndex < 0) {
+      index = blockEnd + 1
+      continue
+    }
+
+    const expressionType = rawExpression.slice(firstCommaIndex + 1, secondCommaIndex).trim()
+    if (expressionType !== 'plural' && expressionType !== 'selectordinal') {
+      index = blockEnd + 1
+      continue
+    }
+
+    const optionsSource = rawExpression.slice(secondCommaIndex + 1).trim()
+    const parsedSelectors = parseIcuSelectors(
+      optionsSource,
+      expressionType === 'plural' || expressionType === 'selectordinal'
+    )
+    if (parsedSelectors) {
+      branches.push({
+        hasOther: parsedSelectors.includes('other'),
+      })
+    } else {
+      branches.push({
+        hasOther: false,
+      })
+    }
+
+    index = blockEnd + 1
+  }
+
+  return branches
+}
+
+const parseIcuSelectors = (
+  optionsSource: string,
+  allowOffset: boolean
+): readonly string[] | null => {
+  const selectors: string[] = []
+  let index = 0
+
+  if (allowOffset) {
+    const offsetMatch = /^\s*offset\s*:\s*(-?\d+(?:\.\d+)?)\s*/u.exec(optionsSource)
+    if (offsetMatch) {
+      index = offsetMatch[0].length
+    }
+  }
+
+  while (index < optionsSource.length) {
+    while (index < optionsSource.length && /\s/u.test(optionsSource[index])) {
+      index += 1
+    }
+    if (index >= optionsSource.length) {
+      break
+    }
+
+    const selectorStart = index
+    while (index < optionsSource.length && !/\s|\{/u.test(optionsSource[index])) {
+      index += 1
+    }
+    const selector = optionsSource.slice(selectorStart, index).trim()
+    if (selector.length === 0) {
+      return null
+    }
+    selectors.push(selector)
+
+    while (index < optionsSource.length && /\s/u.test(optionsSource[index])) {
+      index += 1
+    }
+    if (optionsSource[index] !== '{') {
+      return null
+    }
+
+    const blockEnd = findMatchingBrace(optionsSource, index)
+    if (blockEnd < 0) {
+      return null
+    }
+    index = blockEnd + 1
+  }
+
+  return selectors
+}
+
+const isQuotedPosition = (text: string, position: number): boolean => {
+  let inQuoted = false
+  for (let index = 0; index <= position && index < text.length; index += 1) {
+    const character = text[index]
+    if (character !== "'") {
+      continue
+    }
+
+    const nextCharacter = text[index + 1]
+    if (nextCharacter === "'") {
+      index += 1
+      continue
+    }
+    if (index === position) {
+      return false
+    }
+    inQuoted = !inQuoted
+  }
+  return inQuoted
+}
+
+const findMatchingBrace = (value: string, startIndex: number): number => {
+  let depth = 0
+  for (let index = startIndex; index < value.length; index += 1) {
+    if (isQuotedPosition(value, index)) {
+      continue
+    }
+    const character = value[index]
+    if (character === '{') {
+      depth += 1
+      continue
+    }
+    if (character === '}') {
+      depth -= 1
+      if (depth === 0) {
+        return index
+      }
+    }
+  }
+  return -1
+}
+
+const findTopLevelComma = (value: string, startIndex: number): number => {
+  let depth = 0
+  for (let index = startIndex; index < value.length; index += 1) {
+    if (isQuotedPosition(value, index)) {
+      continue
+    }
+    const character = value[index]
+    if (character === '{') {
+      depth += 1
+      continue
+    }
+    if (character === '}') {
+      depth = Math.max(0, depth - 1)
+      continue
+    }
+    if (character === ',' && depth === 0) {
+      return index
+    }
+  }
+  return -1
 }
 
 const createDiagnostic = (

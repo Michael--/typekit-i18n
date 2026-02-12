@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { extractKeyUsages, isCodeDocument } from '../../core/keyUsage'
+import { extractKeyUsages, findWorkspaceUsages, isCodeDocument } from '../../core/keyUsage'
 import { DIAGNOSTIC_CODES } from '../../core/diagnosticCodes'
 import type { TranslationEntry, TranslationWorkspace } from '../../core/translationWorkspace'
 
@@ -117,10 +117,106 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
     }
   )
 
+  const alignPlaceholderCommand = vscode.commands.registerCommand(
+    'typekitI18n.alignPlaceholdersWithBaseLocale',
+    async (uriString: string, key: string, locale: string, baseLocale: string) => {
+      const entry = findEntry(workspace, uriString, key)
+      if (!entry) {
+        return
+      }
+
+      const edit = workspace.createPlaceholderAlignmentEdit(entry, locale, baseLocale)
+      if (!edit) {
+        return
+      }
+
+      const applied = await vscode.workspace.applyEdit(edit)
+      if (!applied) {
+        return
+      }
+
+      await workspace.refresh()
+      await runWorkspaceCodeDiagnostics()
+    }
+  )
+
+  const renameDuplicateCommand = vscode.commands.registerCommand(
+    'typekitI18n.renameDuplicateKey',
+    async (uriString: string, key: string) => {
+      const entry = findEntry(workspace, uriString, key)
+      if (!entry) {
+        return
+      }
+
+      const proposed = await vscode.window.showInputBox({
+        prompt: `Rename duplicate key "${key}"`,
+        value: `${key}_copy`,
+        validateInput: (candidate) => {
+          const trimmed = candidate.trim()
+          if (trimmed.length === 0) {
+            return 'Key must not be empty.'
+          }
+          if (trimmed !== key && workspace.hasKey(trimmed)) {
+            return `Key "${trimmed}" already exists.`
+          }
+          return null
+        },
+      })
+      if (!proposed) {
+        return
+      }
+
+      const newKey = proposed.trim()
+      if (newKey.length === 0 || newKey === key) {
+        return
+      }
+
+      const edit = workspace.createDuplicateKeyRenameEdit(entry, newKey)
+      const applied = await vscode.workspace.applyEdit(edit)
+      if (!applied) {
+        return
+      }
+
+      await workspace.refresh()
+      await runWorkspaceCodeDiagnostics()
+    }
+  )
+
+  const deleteEntryCommand = vscode.commands.registerCommand(
+    'typekitI18n.deleteTranslationEntry',
+    async (uriString: string, key: string) => {
+      const entry = findEntry(workspace, uriString, key)
+      if (!entry) {
+        return
+      }
+
+      const references = await findWorkspaceUsages(key)
+      if (references.length > 0) {
+        const choice = await vscode.window.showWarningMessage(
+          `Key "${key}" is still referenced ${references.length} time(s). Delete anyway?`,
+          { modal: true },
+          'Delete anyway'
+        )
+        if (choice !== 'Delete anyway') {
+          return
+        }
+      }
+
+      const edit = workspace.createDeleteEntryEdit(entry)
+      const applied = await vscode.workspace.applyEdit(edit)
+      if (!applied) {
+        return
+      }
+
+      await workspace.refresh()
+      await runWorkspaceCodeDiagnostics()
+    }
+  )
+
   const codeActionsDisposable = vscode.languages.registerCodeActionsProvider(
     [...codeSelector, ...translationSelector],
     {
-      provideCodeActions: (document, _range, context) => {
+      provideCodeActions: (document, range, context) => {
         const actions: vscode.CodeAction[] = []
 
         context.diagnostics.forEach((diagnostic) => {
@@ -166,14 +262,73 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
             }
             action.diagnostics = [diagnostic]
             actions.push(action)
+            return
+          }
+
+          if (isDiagnosticCode(diagnostic.code, DIAGNOSTIC_CODES.placeholderMismatch)) {
+            const payload = decodeDiagnosticPayload(diagnostic.code)
+            const key = payload?.key
+            const locale = payload?.locale
+            const baseLocale = payload?.baseLocale
+            if (!key || !locale || !baseLocale) {
+              return
+            }
+            const action = new vscode.CodeAction(
+              `Align "${locale}" placeholders with "${baseLocale}"`,
+              vscode.CodeActionKind.QuickFix
+            )
+            action.command = {
+              title: `Align placeholders for "${key}"`,
+              command: 'typekitI18n.alignPlaceholdersWithBaseLocale',
+              arguments: [document.uri.toString(), key, locale, baseLocale],
+            }
+            action.diagnostics = [diagnostic]
+            actions.push(action)
+            return
+          }
+
+          if (isDiagnosticCode(diagnostic.code, DIAGNOSTIC_CODES.duplicateKey)) {
+            const payload = decodeDiagnosticPayload(diagnostic.code)
+            const key = payload?.key
+            if (!key) {
+              return
+            }
+            const action = new vscode.CodeAction(
+              `Rename duplicate key "${key}"`,
+              vscode.CodeActionKind.QuickFix
+            )
+            action.command = {
+              title: `Rename duplicate key "${key}"`,
+              command: 'typekitI18n.renameDuplicateKey',
+              arguments: [document.uri.toString(), key],
+            }
+            action.diagnostics = [diagnostic]
+            actions.push(action)
           }
         })
+
+        const entry = workspace.findEntryAtPosition(document.uri, range.start)
+        if (entry) {
+          const action = new vscode.CodeAction(
+            `Delete translation key "${entry.key}"`,
+            vscode.CodeActionKind.RefactorRewrite
+          )
+          action.command = {
+            title: `Delete translation key "${entry.key}"`,
+            command: 'typekitI18n.deleteTranslationEntry',
+            arguments: [document.uri.toString(), entry.key],
+          }
+          actions.push(action)
+        }
 
         return actions
       },
     },
     {
-      providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
+      providedCodeActionKinds: [
+        vscode.CodeActionKind.QuickFix,
+        vscode.CodeActionKind.RefactorRewrite,
+      ],
     }
   )
 
@@ -212,6 +367,9 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
     runDiagnosticsCommand,
     createMissingKeyCommand,
     fillMissingLocaleCommand,
+    alignPlaceholderCommand,
+    renameDuplicateCommand,
+    deleteEntryCommand,
     codeActionsDisposable,
     openDocumentSubscription,
     changeDocumentSubscription,

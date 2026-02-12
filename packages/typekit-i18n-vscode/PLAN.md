@@ -3,7 +3,7 @@
 ## MVP First (Top Priority)
 
 - [x] Key intelligence: definition, references, rename across TS/TSX + YAML/CSV.
-- [ ] Live diagnostics + quick fixes for missing keys, missing locales, duplicates, placeholder mismatches.
+- [x] Live diagnostics + quick fixes for missing keys, missing locales, duplicates, placeholder mismatches.
 - [x] YAML/CSV schema validation for raw translation data quality.
 - [x] Completion + hover preview with translation-aware context.
 
@@ -18,20 +18,20 @@ Ship one extension for users, with modular internals, focused on translation aut
 - [x] `F12` on `t("greeting_title")` opens the source key in translation raw data.
 - [x] `Shift+F12` shows all key usages in code and raw data.
 - [x] `F2` rename updates code + YAML/CSV references consistently.
-- [ ] Safe delete warning when a key still has references.
+- [x] Safe delete warning when a key still has references.
 
 ### 2) Diagnostics + Quick Fixes
 
 - [x] Missing key usage in code gets a diagnostic and quick fix to create key.
 - [x] Missing locale value gets a warning and quick fix to add entry.
-- [ ] Placeholder mismatch (for example `{name}` vs `{username}`) gets a diagnostic and fix suggestion.
-- [ ] Duplicate key definitions get diagnostics and merge/rename quick fixes.
+- [x] Placeholder mismatch (for example `{name}` vs `{username}`) gets a diagnostic and fix suggestion.
+- [x] Duplicate key definitions get diagnostics and rename quick fixes.
 
 ### 3) YAML/CSV Schema Validation
 
 - [x] Validate required columns/fields (`key`, `locale`, `value`).
-- [ ] Validate value type constraints (`string` values).
-- [ ] Validate ICU/plural shape (`one`, `other`, and required forms).
+- [x] Validate value type constraints (`string` values).
+- [x] Validate ICU/plural shape baseline (`other` branch required for plural/selectordinal).
 - [x] Validate parser-level errors with precise file locations.
 
 ### 4) Completion + Hover
