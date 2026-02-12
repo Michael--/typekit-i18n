@@ -531,7 +531,11 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
               entry.valueRanges.get(locale) ?? entry.keyRange,
               `ICU "${entry.key}" in locale "${locale}" must define an "other" branch for plural/selectordinal.`,
               vscode.DiagnosticSeverity.Warning,
-              DIAGNOSTIC_CODES.invalidIcuPluralShape
+              encodeDiagnosticCode(DIAGNOSTIC_CODES.invalidIcuPluralShape, {
+                key: entry.key,
+                locale,
+                ...(baseLocale ? { baseLocale } : {}),
+              })
             )
           )
         })
@@ -685,6 +689,7 @@ const parseYamlTranslationDocument = (
           )
           return
         }
+        const key = keyNode.value
 
         const valuesNode = entryNode.get('values', true)
         if (!valuesNode || !isMap(valuesNode)) {
@@ -731,7 +736,10 @@ const parseYamlTranslationDocument = (
                 toRangeFromNode(valueNode ?? typedPair.key, lineCounter),
                 `Translation value for locale "${locale}" must be a string.`,
                 vscode.DiagnosticSeverity.Error,
-                DIAGNOSTIC_CODES.invalidValueType
+                encodeDiagnosticCode(DIAGNOSTIC_CODES.invalidValueType, {
+                  key,
+                  locale,
+                })
               )
             )
           }
@@ -741,7 +749,7 @@ const parseYamlTranslationDocument = (
         })
 
         entries.push({
-          key: keyNode.value,
+          key,
           uri: document.uri,
           format,
           keyRange: toRangeFromNode(keyNode, lineCounter),

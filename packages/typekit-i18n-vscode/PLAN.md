@@ -25,7 +25,7 @@ Ship one extension for users, with modular internals, focused on translation aut
 - [x] Missing key usage in code gets a diagnostic and quick fix to create key.
 - [x] Missing locale value gets a warning and quick fix to add entry.
 - [x] Placeholder mismatch (for example `{name}` vs `{username}`) gets a diagnostic and fix suggestion.
-- [x] Duplicate key definitions get diagnostics and rename quick fixes.
+- [x] Duplicate key definitions get diagnostics and rename/delete quick fixes.
 
 ### 3) YAML/CSV Schema Validation
 
@@ -67,7 +67,7 @@ Ship one extension for users, with modular internals, focused on translation aut
 ### Phase 3 - Validation and Fixes
 
 - [x] Implement diagnostics rules and stable diagnostic codes.
-- [ ] Implement code actions and quick fixes for each diagnostic code.
+- [x] Implement code actions and quick fixes for actionable diagnostic codes.
 - [x] Implement YAML/CSV schema validators with precise spans.
 - [ ] Add diagnostics integration tests with fixture workspaces.
 

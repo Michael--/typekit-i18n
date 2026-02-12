@@ -96,8 +96,8 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
 
   const fillMissingLocaleCommand = vscode.commands.registerCommand(
     'typekitI18n.fillMissingLocale',
-    async (uriString: string, key: string, locale: string) => {
-      const entry = findEntry(workspace, uriString, key)
+    async (uriString: string, key: string, locale: string, line?: number, character?: number) => {
+      const entry = findEntryByContext(workspace, uriString, key, line, character)
       if (!entry) {
         return
       }
@@ -119,8 +119,15 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
 
   const alignPlaceholderCommand = vscode.commands.registerCommand(
     'typekitI18n.alignPlaceholdersWithBaseLocale',
-    async (uriString: string, key: string, locale: string, baseLocale: string) => {
-      const entry = findEntry(workspace, uriString, key)
+    async (
+      uriString: string,
+      key: string,
+      locale: string,
+      baseLocale: string,
+      line?: number,
+      character?: number
+    ) => {
+      const entry = findEntryByContext(workspace, uriString, key, line, character)
       if (!entry) {
         return
       }
@@ -142,8 +149,8 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
 
   const renameDuplicateCommand = vscode.commands.registerCommand(
     'typekitI18n.renameDuplicateKey',
-    async (uriString: string, key: string) => {
-      const entry = findEntry(workspace, uriString, key)
+    async (uriString: string, key: string, line?: number, character?: number) => {
+      const entry = findEntryByContext(workspace, uriString, key, line, character)
       if (!entry) {
         return
       }
@@ -184,8 +191,8 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
 
   const deleteEntryCommand = vscode.commands.registerCommand(
     'typekitI18n.deleteTranslationEntry',
-    async (uriString: string, key: string) => {
-      const entry = findEntry(workspace, uriString, key)
+    async (uriString: string, key: string, line?: number, character?: number) => {
+      const entry = findEntryByContext(workspace, uriString, key, line, character)
       if (!entry) {
         return
       }
@@ -258,7 +265,40 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
             action.command = {
               title: `Add missing locale "${locale}"`,
               command: 'typekitI18n.fillMissingLocale',
-              arguments: [document.uri.toString(), key, locale],
+              arguments: [
+                document.uri.toString(),
+                key,
+                locale,
+                diagnostic.range.start.line,
+                diagnostic.range.start.character,
+              ],
+            }
+            action.diagnostics = [diagnostic]
+            actions.push(action)
+            return
+          }
+
+          if (isDiagnosticCode(diagnostic.code, DIAGNOSTIC_CODES.invalidValueType)) {
+            const payload = decodeDiagnosticPayload(diagnostic.code)
+            const key = payload?.key
+            const locale = payload?.locale
+            if (!key || !locale) {
+              return
+            }
+            const action = new vscode.CodeAction(
+              `Replace "${locale}" value with empty string`,
+              vscode.CodeActionKind.QuickFix
+            )
+            action.command = {
+              title: `Replace "${locale}" value with empty string`,
+              command: 'typekitI18n.fillMissingLocale',
+              arguments: [
+                document.uri.toString(),
+                key,
+                locale,
+                diagnostic.range.start.line,
+                diagnostic.range.start.character,
+              ],
             }
             action.diagnostics = [diagnostic]
             actions.push(action)
@@ -280,7 +320,44 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
             action.command = {
               title: `Align placeholders for "${key}"`,
               command: 'typekitI18n.alignPlaceholdersWithBaseLocale',
-              arguments: [document.uri.toString(), key, locale, baseLocale],
+              arguments: [
+                document.uri.toString(),
+                key,
+                locale,
+                baseLocale,
+                diagnostic.range.start.line,
+                diagnostic.range.start.character,
+              ],
+            }
+            action.diagnostics = [diagnostic]
+            actions.push(action)
+            return
+          }
+
+          if (isDiagnosticCode(diagnostic.code, DIAGNOSTIC_CODES.invalidIcuPluralShape)) {
+            const payload = decodeDiagnosticPayload(diagnostic.code)
+            const key = payload?.key
+            const locale = payload?.locale
+            const baseLocale = payload?.baseLocale
+            if (!key || !locale || !baseLocale) {
+              return
+            }
+
+            const action = new vscode.CodeAction(
+              `Copy ICU template from "${baseLocale}"`,
+              vscode.CodeActionKind.QuickFix
+            )
+            action.command = {
+              title: `Copy ICU template from "${baseLocale}"`,
+              command: 'typekitI18n.alignPlaceholdersWithBaseLocale',
+              arguments: [
+                document.uri.toString(),
+                key,
+                locale,
+                baseLocale,
+                diagnostic.range.start.line,
+                diagnostic.range.start.character,
+              ],
             }
             action.diagnostics = [diagnostic]
             actions.push(action)
@@ -300,10 +377,32 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
             action.command = {
               title: `Rename duplicate key "${key}"`,
               command: 'typekitI18n.renameDuplicateKey',
-              arguments: [document.uri.toString(), key],
+              arguments: [
+                document.uri.toString(),
+                key,
+                diagnostic.range.start.line,
+                diagnostic.range.start.character,
+              ],
             }
             action.diagnostics = [diagnostic]
             actions.push(action)
+
+            const deleteAction = new vscode.CodeAction(
+              `Delete duplicate key "${key}"`,
+              vscode.CodeActionKind.QuickFix
+            )
+            deleteAction.command = {
+              title: `Delete duplicate key "${key}"`,
+              command: 'typekitI18n.deleteTranslationEntry',
+              arguments: [
+                document.uri.toString(),
+                key,
+                diagnostic.range.start.line,
+                diagnostic.range.start.character,
+              ],
+            }
+            deleteAction.diagnostics = [diagnostic]
+            actions.push(deleteAction)
           }
         })
 
@@ -387,6 +486,28 @@ const findEntry = (
     workspace.getEntriesForKey(key).find((candidate) => candidate.uri.toString() === uriString) ??
     null
   return entry
+}
+
+const findEntryByContext = (
+  workspace: TranslationWorkspace,
+  uriString: string,
+  key: string,
+  line?: number,
+  character?: number
+): TranslationEntry | null => {
+  if (typeof line === 'number' && typeof character === 'number') {
+    try {
+      const uri = vscode.Uri.parse(uriString)
+      const atPosition = workspace.findEntryAtPosition(uri, new vscode.Position(line, character))
+      if (atPosition && atPosition.key === key) {
+        return atPosition
+      }
+    } catch {
+      // Fall back to key-based lookup when URI parsing fails.
+    }
+  }
+
+  return findEntry(workspace, uriString, key)
 }
 
 const readMissingKeyFromMessage = (message: string): string | null => {
