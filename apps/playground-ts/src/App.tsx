@@ -15,7 +15,7 @@ import {
   NavLink,
 } from '@mantine/core'
 import { createIcuTranslator, createTranslator } from 'typekit-i18n'
-import { type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
+import { LanguageCodes, type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
 import { translationTable } from '@gen/translationTable'
 import type { MissingTranslationEvent, PlaceholderFormatterMap } from 'typekit-i18n'
 
@@ -44,7 +44,7 @@ const demoCases: ReadonlyArray<DemoCaseDefinition> = [
   {
     id: 'overview',
     title: 'Overview',
-    description: 'Runtime state, language and mode',
+    description: 'Runtime state and mode',
   },
   {
     id: 'basic',
@@ -146,7 +146,6 @@ const formatters: PlaceholderFormatterMap<string, TranslateLanguage> = {
 }
 
 export const App = (): JSX.Element => {
-  const [language, setLanguage] = useState<TranslateLanguage>('en')
   const [mode, setMode] = useState<TranslationMode>('fallback')
   const [activeCase, setActiveCase] = useState<DemoCase>('overview')
   const [missingEvents, setMissingEvents] = useState<
@@ -174,12 +173,11 @@ export const App = (): JSX.Element => {
     if (missingEventsRef.current.length > 0) {
       setMissingEvents([...missingEventsRef.current])
     }
-  }, [activeCase, language, mode])
+  }, [activeCase, mode])
 
   const t = useMemo(
     () =>
       createTranslator(translationTable, {
-        defaultLanguage: 'en',
         missingStrategy: mode,
         formatters,
         onMissingTranslation,
@@ -187,16 +185,29 @@ export const App = (): JSX.Element => {
     [mode, onMissingTranslation]
   )
 
-  const icuTranslate = useMemo(
+  const icu = useMemo(
     () =>
       createIcuTranslator(translationTable, {
-        defaultLanguage: 'en',
         missingStrategy: mode,
         formatters,
         onMissingTranslation,
       }),
     [mode, onMissingTranslation]
   )
+
+  // Derive language from active case for demonstration purposes
+  const setLanguage = useCallback(
+    (newLanguage: TranslateLanguage) => {
+      t.setLanguage(newLanguage)
+      icu.setLanguage(newLanguage)
+    },
+    [t, icu]
+  )
+
+  // Get current language from translator (they are kept in sync)
+  const language = useMemo(() => {
+    return t.getLanguage()
+  }, [t])
 
   const clearDiagnostics = (): void => {
     missingEventsRef.current = []
@@ -215,7 +226,7 @@ export const App = (): JSX.Element => {
     setMode(newMode as TranslationMode)
   }
 
-  const languages: ReadonlyArray<TranslateLanguage> = ['en', 'de', 'es', 'fr', 'ar', 'pl']
+  const languages = LanguageCodes
   const activeCaseDefinition = demoCases.find((item) => item.id === activeCase) ?? demoCases[0]
 
   const renderDemoCard = (label: string, value: string): JSX.Element => (
@@ -229,7 +240,7 @@ export const App = (): JSX.Element => {
 
   const renderFallbackCaseResult = (): JSX.Element => {
     try {
-      return <Text>{t('fallback_demo', language)}</Text>
+      return <Text>{t('fallback_demo')}</Text>
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error)
       return (
@@ -263,13 +274,10 @@ export const App = (): JSX.Element => {
           <Text size="sm" c="dimmed">
             Use the left sidebar to isolate one runtime behavior at a time.
           </Text>
-          {renderDemoCard(
-            'greeting_title',
-            t.translateIn('playground', 'greeting_title', language)
-          )}
+          {renderDemoCard('greeting_title', t.translateIn('playground', 'greeting_title'))}
           {renderDemoCard(
             'greeting_body with name="Developer"',
-            t('greeting_body', language, {
+            t('greeting_body', {
               data: [{ key: 'name', value: 'Developer' }],
             })
           )}
@@ -283,7 +291,7 @@ export const App = (): JSX.Element => {
           <Title order={2} size="h4" c="blue">
             Basic Translation
           </Title>
-          {renderDemoCard('greeting_title', t('greeting_title', language))}
+          {renderDemoCard('greeting_title', t('greeting_title'))}
         </Stack>
       )
     }
@@ -296,13 +304,13 @@ export const App = (): JSX.Element => {
           </Title>
           {renderDemoCard(
             'greeting_body with name="Mara"',
-            t('greeting_body', language, {
+            t('greeting_body', {
               data: [{ key: 'name', value: 'Mara' }],
             })
           )}
           {renderDemoCard(
             'item_count with count=42',
-            t('item_count', language, {
+            t('item_count', {
               data: [{ key: 'count', value: 42 }],
             })
           )}
@@ -318,13 +326,13 @@ export const App = (): JSX.Element => {
           </Title>
           {renderDemoCard(
             'price_formatted with amount=99.99',
-            t('price_formatted', language, {
+            t('price_formatted', {
               data: [{ key: 'amount', value: 99.99 }],
             })
           )}
           {renderDemoCard(
             'date_formatted with date=now',
-            t('date_formatted', language, {
+            t('date_formatted', {
               data: [{ key: 'date', value: new Date() }],
             })
           )}
@@ -343,7 +351,7 @@ export const App = (): JSX.Element => {
           </Text>
           {renderDemoCard(
             'icu_argument_style_demo',
-            icuTranslate('icu_argument_style_demo', language, {
+            icu('icu_argument_style_demo', {
               data: [
                 { key: 'amount', value: 1234.56 },
                 { key: 'ratio', value: 0.42 },
@@ -353,7 +361,7 @@ export const App = (): JSX.Element => {
           )}
           {renderDemoCard(
             'icu_argument_skeleton_demo',
-            icuTranslate('icu_argument_skeleton_demo', language, {
+            icu('icu_argument_skeleton_demo', {
               data: [
                 { key: 'amount', value: 1234567 },
                 { key: 'when', value: new Date('2025-01-15T12:34:56.000Z') },
@@ -375,7 +383,7 @@ export const App = (): JSX.Element => {
           </Text>
           {renderDemoCard(
             'inbox_summary with gender="female"',
-            icuTranslate('inbox_summary', language, {
+            icu('inbox_summary', {
               data: [
                 { key: 'gender', value: 'female' },
                 { key: 'count', value: 1 },
@@ -384,7 +392,7 @@ export const App = (): JSX.Element => {
           )}
           {renderDemoCard(
             'inbox_summary with gender="male"',
-            icuTranslate('inbox_summary', language, {
+            icu('inbox_summary', {
               data: [
                 { key: 'gender', value: 'male' },
                 { key: 'count', value: 1 },
@@ -393,7 +401,7 @@ export const App = (): JSX.Element => {
           )}
           {renderDemoCard(
             'inbox_summary with gender="other"',
-            icuTranslate('inbox_summary', language, {
+            icu('inbox_summary', {
               data: [
                 { key: 'gender', value: 'other' },
                 { key: 'count', value: 5 },
@@ -416,7 +424,7 @@ export const App = (): JSX.Element => {
           <Divider label="Basic Plural" labelPosition="left" />
           {renderDemoCard(
             'inbox_summary with count=0',
-            icuTranslate('inbox_summary', language, {
+            icu('inbox_summary', {
               data: [
                 { key: 'gender', value: 'other' },
                 { key: 'count', value: 0 },
@@ -425,7 +433,7 @@ export const App = (): JSX.Element => {
           )}
           {renderDemoCard(
             'inbox_summary with count=1',
-            icuTranslate('inbox_summary', language, {
+            icu('inbox_summary', {
               data: [
                 { key: 'gender', value: 'other' },
                 { key: 'count', value: 1 },
@@ -434,7 +442,7 @@ export const App = (): JSX.Element => {
           )}
           {renderDemoCard(
             'inbox_summary with count=5',
-            icuTranslate('inbox_summary', language, {
+            icu('inbox_summary', {
               data: [
                 { key: 'gender', value: 'other' },
                 { key: 'count', value: 5 },
@@ -447,31 +455,31 @@ export const App = (): JSX.Element => {
           </Text>
           {renderDemoCard(
             'plural_categories_demo with count=0',
-            icuTranslate('plural_categories_demo', language, {
+            icu('plural_categories_demo', {
               data: [{ key: 'count', value: 0 }],
             })
           )}
           {renderDemoCard(
             'plural_categories_demo with count=2',
-            icuTranslate('plural_categories_demo', language, {
+            icu('plural_categories_demo', {
               data: [{ key: 'count', value: 2 }],
             })
           )}
           {renderDemoCard(
             'plural_categories_demo with count=3',
-            icuTranslate('plural_categories_demo', language, {
+            icu('plural_categories_demo', {
               data: [{ key: 'count', value: 3 }],
             })
           )}
           {renderDemoCard(
             'plural_categories_demo with count=11',
-            icuTranslate('plural_categories_demo', language, {
+            icu('plural_categories_demo', {
               data: [{ key: 'count', value: 11 }],
             })
           )}
           {renderDemoCard(
             'plural_categories_demo with count=100',
-            icuTranslate('plural_categories_demo', language, {
+            icu('plural_categories_demo', {
               data: [{ key: 'count', value: 100 }],
             })
           )}
@@ -490,25 +498,25 @@ export const App = (): JSX.Element => {
           </Text>
           {renderDemoCard(
             'ranking_place with place=1',
-            icuTranslate('ranking_place', language, {
+            icu('ranking_place', {
               data: [{ key: 'place', value: 1 }],
             })
           )}
           {renderDemoCard(
             'ranking_place with place=2',
-            icuTranslate('ranking_place', language, {
+            icu('ranking_place', {
               data: [{ key: 'place', value: 2 }],
             })
           )}
           {renderDemoCard(
             'ranking_place with place=3',
-            icuTranslate('ranking_place', language, {
+            icu('ranking_place', {
               data: [{ key: 'place', value: 3 }],
             })
           )}
           {renderDemoCard(
             'ranking_place with place=11',
-            icuTranslate('ranking_place', language, {
+            icu('ranking_place', {
               data: [{ key: 'place', value: 11 }],
             })
           )}
@@ -527,25 +535,25 @@ export const App = (): JSX.Element => {
           </Text>
           {renderDemoCard(
             'group_invite with count=0',
-            icuTranslate('group_invite', language, {
+            icu('group_invite', {
               data: [{ key: 'count', value: 0 }],
             })
           )}
           {renderDemoCard(
             'group_invite with count=1',
-            icuTranslate('group_invite', language, {
+            icu('group_invite', {
               data: [{ key: 'count', value: 1 }],
             })
           )}
           {renderDemoCard(
             'group_invite with count=2',
-            icuTranslate('group_invite', language, {
+            icu('group_invite', {
               data: [{ key: 'count', value: 2 }],
             })
           )}
           {renderDemoCard(
             'group_invite with count=5',
-            icuTranslate('group_invite', language, {
+            icu('group_invite', {
               data: [{ key: 'count', value: 5 }],
             })
           )}
@@ -564,7 +572,7 @@ export const App = (): JSX.Element => {
           </Text>
           {renderDemoCard(
             'icu_escape_demo',
-            icuTranslate('icu_escape_demo', language, {
+            icu('icu_escape_demo', {
               data: [{ key: 'name', value: 'Alice' }],
             })
           )}
@@ -579,10 +587,7 @@ export const App = (): JSX.Element => {
             Fallback Behavior
           </Title>
           <Divider label="Complete Translation" labelPosition="left" />
-          {renderDemoCard(
-            'greeting_title (available in all languages)',
-            t('greeting_title', language)
-          )}
+          {renderDemoCard('greeting_title (available in all languages)', t('greeting_title'))}
           <Divider label="Partial Translation" labelPosition="left" />
           <Paper p="md" bg="dark.6" radius="sm">
             <Text size="xs" c="dimmed" mb={4}>
@@ -597,16 +602,16 @@ export const App = (): JSX.Element => {
     return (
       <Stack gap="sm">
         <Title order={2} size="h4" c="orange">
-          {t('diagnostics_title', language)}
+          {t('diagnostics_title')}
         </Title>
 
         {missingEvents.length === 0 ? (
-          <Alert variant="light" color="green" title={t('no_issues', language)}>
+          <Alert variant="light" color="green" title={t('no_issues')}>
             <Group gap="xs">
               <Badge color="green" variant="filled">
                 ✓
               </Badge>
-              <Text size="sm">{t('no_issues', language)}</Text>
+              <Text size="sm">{t('no_issues')}</Text>
             </Group>
           </Alert>
         ) : (
@@ -617,7 +622,7 @@ export const App = (): JSX.Element => {
                   !
                 </Badge>
                 <Text size="sm">
-                  {t('missing_count', language, {
+                  {t('missing_count', {
                     data: [{ key: 'count', value: missingEvents.length }],
                   })}
                 </Text>
@@ -627,7 +632,7 @@ export const App = (): JSX.Element => {
             <Paper p="sm" bg="dark.6" radius="sm" withBorder>
               {missingEvents.map((event, index) => (
                 <Text key={index} size="sm" ff="monospace">
-                  Key: <Code>{event.key}</Code>, Language: <Code>{event.language}</Code>, Reason:{' '}
+                  Key: <Code>{event.key}</Code>: <Code>{event.language}</Code>, Reason:{' '}
                   <Code>{event.reason}</Code>
                 </Text>
               ))}
@@ -654,10 +659,10 @@ export const App = (): JSX.Element => {
               backgroundClip: 'text',
             }}
           >
-            {t('greeting_title', language)}
+            {t('greeting_title')}
           </Title>
           <Text size="lg" c="dimmed">
-            {t('greeting_body', language, {
+            {t('greeting_body', {
               data: [{ key: 'name', value: 'Developer' }],
             })}
           </Text>
@@ -667,7 +672,7 @@ export const App = (): JSX.Element => {
         <Paper shadow="sm" p="md" radius="md" withBorder>
           <Group gap="lg" grow>
             <Select
-              label={t('language_label', language)}
+              label={t('language_label')}
               value={language}
               onChange={handleLanguageChange}
               data={languages.map((lang) => ({
@@ -676,12 +681,12 @@ export const App = (): JSX.Element => {
               }))}
             />
             <Select
-              label={t('mode_label', language)}
+              label={t('mode_label')}
               value={mode}
               onChange={handleModeChange}
               data={[
-                { value: 'fallback', label: t('mode_fallback', language) },
-                { value: 'strict', label: t('mode_strict', language) },
+                { value: 'fallback', label: t('mode_fallback') },
+                { value: 'strict', label: t('mode_strict') },
               ]}
             />
           </Group>
