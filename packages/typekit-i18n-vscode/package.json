@@ -20,9 +20,7 @@
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
     "onLanguage:yaml",
-    "onLanguage:csv",
-    "onCommand:typekitI18n.refreshIndex",
-    "onCommand:typekitI18n.runDiagnostics"
+    "onLanguage:csv"
   ],
   "main": "./dist/extension.cjs",
   "contributes": {

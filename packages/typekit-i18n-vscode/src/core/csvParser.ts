@@ -18,6 +18,7 @@ export interface CsvParseError {
 export interface ParsedCsvDocument {
   readonly rows: readonly ParsedCsvRow[]
   readonly errors: readonly CsvParseError[]
+  readonly delimiter: ',' | ';'
 }
 
 interface MutableCsvCell {
@@ -36,6 +37,7 @@ export const parseCsvDocument = (content: string): ParsedCsvDocument => {
   const lines = content.split(/\r?\n/)
   const rows: ParsedCsvRow[] = []
   const errors: CsvParseError[] = []
+  const delimiter = detectDelimiter(lines)
 
   lines.forEach((lineContent, index) => {
     const lineNumber = index + 1
@@ -43,7 +45,7 @@ export const parseCsvDocument = (content: string): ParsedCsvDocument => {
       return
     }
 
-    const parsed = parseCsvLine(lineContent)
+    const parsed = parseCsvLine(lineContent, delimiter)
     if (typeof parsed === 'string') {
       errors.push({
         line: lineNumber,
@@ -64,10 +66,11 @@ export const parseCsvDocument = (content: string): ParsedCsvDocument => {
   return {
     rows,
     errors,
+    delimiter,
   }
 }
 
-const parseCsvLine = (line: string): readonly MutableCsvCell[] | string => {
+const parseCsvLine = (line: string, delimiter: ',' | ';'): readonly MutableCsvCell[] | string => {
   const cells: MutableCsvCell[] = []
   let index = 0
 
@@ -100,7 +103,7 @@ const parseCsvLine = (line: string): readonly MutableCsvCell[] | string => {
         continue
       }
 
-      if (character === ',') {
+      if (character === delimiter) {
         break
       }
 
@@ -123,11 +126,53 @@ const parseCsvLine = (line: string): readonly MutableCsvCell[] | string => {
       break
     }
 
-    if (line[index] !== ',') {
+    if (line[index] !== delimiter) {
       return 'Invalid delimiter sequence.'
     }
     index += 1
   }
 
   return cells
+}
+
+const detectDelimiter = (lines: readonly string[]): ',' | ';' => {
+  const firstNonEmptyLine = lines.find((line) => line.trim().length > 0)
+  if (!firstNonEmptyLine) {
+    return ','
+  }
+
+  const commaScore = countDelimiterCandidates(firstNonEmptyLine, ',')
+  const semicolonScore = countDelimiterCandidates(firstNonEmptyLine, ';')
+
+  if (semicolonScore > commaScore) {
+    return ';'
+  }
+  return ','
+}
+
+const countDelimiterCandidates = (line: string, delimiter: ',' | ';'): number => {
+  let count = 0
+  let index = 0
+  let quoted = false
+
+  while (index < line.length) {
+    const character = line[index]
+    if (character === '"') {
+      const nextCharacter = line[index + 1]
+      if (quoted && nextCharacter === '"') {
+        index += 2
+        continue
+      }
+      quoted = !quoted
+      index += 1
+      continue
+    }
+
+    if (!quoted && character === delimiter) {
+      count += 1
+    }
+    index += 1
+  }
+
+  return count
 }
