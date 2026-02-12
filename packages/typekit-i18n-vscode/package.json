@@ -60,6 +60,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },
+  "dependencies": {
+    "yaml": "^2.8.2"
+  },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@types/vscode": "^1.95.0",

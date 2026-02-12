@@ -18,8 +18,15 @@ export const activate = async (context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(registerKeyIntelligence(translationWorkspace))
   context.subscriptions.push(registerDiagnostics(translationWorkspace))
-  context.subscriptions.push(registerSchemaValidation())
+  context.subscriptions.push(registerSchemaValidation(translationWorkspace))
   context.subscriptions.push(registerCompletionAndHover(translationWorkspace))
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(async (event) => {
+      if (event.affectsConfiguration('typekitI18n.translationGlobs')) {
+        await translationWorkspace.refresh()
+      }
+    })
+  )
 
   await translationWorkspace.refresh()
 }

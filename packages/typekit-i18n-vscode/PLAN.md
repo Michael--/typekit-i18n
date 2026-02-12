@@ -2,10 +2,10 @@
 
 ## MVP First (Top Priority)
 
-- [ ] Key intelligence: definition, references, rename across TS/TSX + YAML/CSV.
+- [x] Key intelligence: definition, references, rename across TS/TSX + YAML/CSV.
 - [ ] Live diagnostics + quick fixes for missing keys, missing locales, duplicates, placeholder mismatches.
-- [ ] YAML/CSV schema validation for raw translation data quality.
-- [ ] Completion + hover preview with translation-aware context.
+- [x] YAML/CSV schema validation for raw translation data quality.
+- [x] Completion + hover preview with translation-aware context.
 
 ## Goal
 
@@ -15,31 +15,31 @@ Ship one extension for users, with modular internals, focused on translation aut
 
 ### 1) Key Intelligence
 
-- [ ] `F12` on `t("greeting_title")` opens the source key in translation raw data.
-- [ ] `Shift+F12` shows all key usages in code and raw data.
-- [ ] `F2` rename updates code + YAML/CSV references consistently.
+- [x] `F12` on `t("greeting_title")` opens the source key in translation raw data.
+- [x] `Shift+F12` shows all key usages in code and raw data.
+- [x] `F2` rename updates code + YAML/CSV references consistently.
 - [ ] Safe delete warning when a key still has references.
 
 ### 2) Diagnostics + Quick Fixes
 
-- [ ] Missing key usage in code gets a diagnostic and quick fix to create key.
-- [ ] Missing locale value gets a warning and quick fix to add entry.
+- [x] Missing key usage in code gets a diagnostic and quick fix to create key.
+- [x] Missing locale value gets a warning and quick fix to add entry.
 - [ ] Placeholder mismatch (for example `{name}` vs `{username}`) gets a diagnostic and fix suggestion.
 - [ ] Duplicate key definitions get diagnostics and merge/rename quick fixes.
 
 ### 3) YAML/CSV Schema Validation
 
-- [ ] Validate required columns/fields (`key`, `locale`, `value`).
+- [x] Validate required columns/fields (`key`, `locale`, `value`).
 - [ ] Validate value type constraints (`string` values).
 - [ ] Validate ICU/plural shape (`one`, `other`, and required forms).
-- [ ] Validate parser-level errors with precise file locations.
+- [x] Validate parser-level errors with precise file locations.
 
 ### 4) Completion + Hover
 
-- [ ] Context-aware key completion in `t("...")` calls.
-- [ ] Completion item preview for primary locales (`de`, `en`).
+- [x] Context-aware key completion in `t("...")` calls.
+- [x] Completion item preview for primary locales (`de`, `en`).
 - [ ] Placeholder-aware snippet insertion for parameterized messages.
-- [ ] Hover status signals (`missing locale`, `deprecated`, `fuzzy`) when metadata is available.
+- [x] Hover status signals (`missing locale`, `deprecated`, `fuzzy`) when metadata is available.
 
 ## Execution Plan
 
@@ -52,23 +52,23 @@ Ship one extension for users, with modular internals, focused on translation aut
 
 ### Phase 1 - Read Model and Index
 
-- [ ] Define canonical translation key model shared by YAML and CSV.
-- [ ] Implement YAML/CSV parsers and normalization pipeline.
+- [x] Define canonical translation key model shared by YAML and CSV.
+- [x] Implement YAML/CSV parsers and normalization pipeline.
 - [ ] Add incremental refresh with file watchers and debounce.
 - [ ] Add baseline performance measurements for medium workspaces.
 
 ### Phase 2 - Language Features
 
-- [ ] Implement key extraction from TS/TSX call sites.
-- [ ] Implement definition/reference provider backed by index.
-- [ ] Implement rename provider with workspace edits.
-- [ ] Implement completion + hover using indexed translations.
+- [x] Implement key extraction from TS/TSX call sites.
+- [x] Implement definition/reference provider backed by index.
+- [x] Implement rename provider with workspace edits.
+- [x] Implement completion + hover using indexed translations.
 
 ### Phase 3 - Validation and Fixes
 
-- [ ] Implement diagnostics rules and stable diagnostic codes.
+- [x] Implement diagnostics rules and stable diagnostic codes.
 - [ ] Implement code actions and quick fixes for each diagnostic code.
-- [ ] Implement YAML/CSV schema validators with precise spans.
+- [x] Implement YAML/CSV schema validators with precise spans.
 - [ ] Add diagnostics integration tests with fixture workspaces.
 
 ### Phase 4 - UX and Hardening
@@ -106,7 +106,7 @@ Ship one extension for users, with modular internals, focused on translation aut
 
 ## Deliverables
 
-- [ ] Working VSCode extension package with initial feature behavior.
-- [ ] Automated lint, typecheck, and tests in workspace scripts.
+- [x] Working VSCode extension package with initial feature behavior.
+- [x] Automated lint, typecheck, and tests in workspace scripts.
 - [ ] Versioned diagnostics and quick-fix matrix.
 - [ ] Developer documentation for extension architecture and contribution flow.
