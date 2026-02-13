@@ -34,6 +34,8 @@ export default withMermaid(
         { text: 'Codegen + CLI', link: '/codegen-cli' },
         { text: 'Resource Formats', link: '/resource-formats' },
         { text: 'GitHub Pages', link: '/github-pages' },
+        { text: 'GitHub', link: 'https://github.com/Michael--/typekit-i18n' },
+        { text: 'npm', link: 'https://www.npmjs.com/package/@number10/typekit-i18n' },
       ],
       sidebar: [
         {

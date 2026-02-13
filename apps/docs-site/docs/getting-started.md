@@ -47,7 +47,7 @@ pnpm --filter typekit-i18n-vscode package:vsix
 ### 1. Install package
 
 ```bash
-pnpm add typekit-i18n
+pnpm add @number10/typekit-i18n
 ```
 
 ### 2. Add translation resources
@@ -65,7 +65,7 @@ home;welcome_title;Main title;Welcome;Willkommen
 ### 3. Add `typekit.config.ts`
 
 ```ts
-import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
+import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 
 export default defineTypekitI18nConfig({
   input: ['./translations/*.csv', './translations/*.yaml'],
@@ -85,7 +85,7 @@ npx typekit-i18n
 ### 5. Use translator in runtime
 
 ```ts
-import { createTranslator } from 'typekit-i18n'
+import { createTranslator } from '@number10/typekit-i18n'
 import { translationTable } from './generated/translationTable'
 
 const t = createTranslator(translationTable)

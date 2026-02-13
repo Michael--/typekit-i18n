@@ -1,13 +1,13 @@
 # Codegen + CLI
 
-Codegen imports come from `typekit-i18n/codegen`.
+Codegen imports come from `@number10/typekit-i18n/codegen`.
 
 ## Config Helper
 
 Use `defineTypekitI18nConfig` for language inference:
 
 ```ts
-import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
+import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 
 export default defineTypekitI18nConfig({
   input: ['./translations/*.csv', './translations/*.yaml'],

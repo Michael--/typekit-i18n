@@ -1,4 +1,4 @@
-import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
+import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 
 const config = defineTypekitI18nConfig({
   input: [

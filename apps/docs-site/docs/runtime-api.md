@@ -1,6 +1,6 @@
 # Runtime API
 
-Runtime imports come from `typekit-i18n`.
+Runtime imports come from `@number10/typekit-i18n`.
 
 ## Core Types
 
@@ -54,7 +54,7 @@ Language state APIs:
 Example:
 
 ```ts
-import { createTranslator } from 'typekit-i18n'
+import { createTranslator } from '@number10/typekit-i18n'
 import { translationTable } from './generated/translationTable'
 
 const t = createTranslator(translationTable)

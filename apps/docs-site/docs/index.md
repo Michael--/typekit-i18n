@@ -27,3 +27,8 @@ Type-safe internationalization toolkit for TypeScript with runtime APIs, ICU ren
 - [Resource Formats](./resource-formats)
 - [Translation Strategy](./translation-strategy)
 - [GitHub Pages](./github-pages)
+
+## Project Links
+
+- GitHub: https://github.com/Michael--/typekit-i18n
+- npm: https://www.npmjs.com/package/@number10/typekit-i18n

@@ -14,10 +14,10 @@ import {
   Divider,
   NavLink,
 } from '@mantine/core'
-import { createIcuTranslator, createTranslator } from 'typekit-i18n'
+import { createIcuTranslator, createTranslator } from '@number10/typekit-i18n'
 import { LanguageCodes, type TranslateKey, type TranslateLanguage } from '@gen/translationKeys'
 import { translationTable } from '@gen/translationTable'
-import type { MissingTranslationEvent, PlaceholderFormatterMap } from 'typekit-i18n'
+import type { MissingTranslationEvent, PlaceholderFormatterMap } from '@number10/typekit-i18n'
 
 type TranslationMode = 'fallback' | 'strict'
 type DemoCase =

@@ -15,7 +15,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "typekit-i18n": "workspace:*"
+    "@number10/typekit-i18n": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.0.9",
