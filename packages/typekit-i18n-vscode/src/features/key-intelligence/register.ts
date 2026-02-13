@@ -14,11 +14,13 @@ const codeSelector: vscode.DocumentSelector = [
  * Registers definition/reference/rename providers for translation keys.
  *
  * @param workspace Shared translation workspace index.
+ * @param output Shared extension output channel.
  * @returns Disposable that unregisters all key-intelligence providers.
  */
-export const registerKeyIntelligence = (workspace: TranslationWorkspace): vscode.Disposable => {
-  const output = vscode.window.createOutputChannel('typekit-i18n')
-
+export const registerKeyIntelligence = (
+  workspace: TranslationWorkspace,
+  output: vscode.OutputChannel
+): vscode.Disposable => {
   const refreshIndexCommand = vscode.commands.registerCommand(
     'typekitI18n.refreshIndex',
     async () => {
@@ -136,7 +138,6 @@ export const registerKeyIntelligence = (workspace: TranslationWorkspace): vscode
   })
 
   return vscode.Disposable.from(
-    output,
     refreshIndexCommand,
     measureIndexPerformanceCommand,
     definitionDisposable,

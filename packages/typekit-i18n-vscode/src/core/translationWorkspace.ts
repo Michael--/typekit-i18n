@@ -114,9 +114,10 @@ export interface TranslationWorkspace extends vscode.Disposable {
   /**
    * Rebuilds the translation index from configured workspace globs.
    *
+   * @param translationGlobs Optional explicit glob list for this refresh cycle.
    * @returns Promise resolved after the index has been rebuilt.
    */
-  refresh(): Promise<void>
+  refresh(translationGlobs?: readonly string[]): Promise<void>
   /**
    * Returns all indexed translation keys sorted alphabetically.
    *
@@ -217,15 +218,15 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
     return this.indexedDocuments
   }
 
-  public async refresh(): Promise<void> {
-    const translationGlobs = await resolveEffectiveTranslationGlobs()
+  public async refresh(translationGlobs?: readonly string[]): Promise<void> {
+    const effectiveGlobs = translationGlobs ?? (await resolveEffectiveTranslationGlobs())
 
     const discoveredByUri = new Map<string, TranslationDocument>()
     const diagnosticsByUri = new Map<string, vscode.Diagnostic[]>()
     const excludeGlob = '**/{node_modules,dist,build,.git}/**'
 
     await Promise.all(
-      translationGlobs.map(async (globPattern) => {
+      effectiveGlobs.map(async (globPattern) => {
         const uris = await vscode.workspace.findFiles(globPattern, excludeGlob)
         await Promise.all(
           uris.map(async (uri) => {

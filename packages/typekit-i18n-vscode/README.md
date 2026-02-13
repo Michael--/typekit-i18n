@@ -52,6 +52,20 @@ Diagnostic code coverage is tracked in `docs/DIAGNOSTICS.md`.
 - `typekitI18n.previewLocales`: locales shown in completion/hover previews.
 - `typekitI18n.previewMaxLocales`: max locale count shown in completion/hover previews.
 
+## Status Output
+
+Open the `typekit-i18n` output channel in VSCode to inspect extension status logs.
+
+Logged status includes:
+
+- discovered and effective translation globs
+- loaded `typekit.config.*` / `typekit-i18n.config.*` files
+- non-fatal config discovery warnings
+- watcher reconfiguration events
+- refresh triggers (startup/settings/file changes)
+- refresh result summary (`files`, `keys`, `languages`, `diagnostics`)
+- explicit warning when no translation files were indexed
+
 ## Local Installation
 
 1. Build and package the extension:

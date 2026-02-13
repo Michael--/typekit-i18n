@@ -52,6 +52,19 @@ Install in VSCode:
 - `typekitI18n.previewLocales`: locales shown in completion and hover previews.
 - `typekitI18n.previewMaxLocales`: max locale count in completion and hover previews.
 
+## Status Output
+
+The extension writes runtime status logs to the `typekit-i18n` output channel.
+
+Logged events include:
+
+- discovered/effective translation globs
+- loaded typekit config files
+- ignored/invalid config warnings
+- watcher updates and refresh triggers
+- refresh result summary and indexed file preview
+- explicit "no translation files indexed" warning
+
 ## Commands
 
 - `typekit-i18n: Refresh Translation Index`

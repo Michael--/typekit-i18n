@@ -29,6 +29,32 @@ interface LoadedTypekitConfig {
 }
 
 /**
+ * Translation discovery resolution details for extension status output.
+ */
+export interface TranslationDiscoveryStatus {
+  /**
+   * Final glob list used for file indexing.
+   */
+  readonly effectiveGlobs: readonly string[]
+  /**
+   * User-configured glob list from VSCode settings.
+   */
+  readonly configuredGlobs: readonly string[]
+  /**
+   * Glob list inferred from discovered typekit config `input` entries.
+   */
+  readonly configGlobs: readonly string[]
+  /**
+   * Successfully loaded config file paths.
+   */
+  readonly loadedConfigPaths: readonly string[]
+  /**
+   * Non-fatal discovery warnings.
+   */
+  readonly discoveryWarnings: readonly string[]
+}
+
+/**
  * Glob patterns used to watch for typekit config changes.
  */
 export const TYPEKIT_CONFIG_DISCOVERY_GLOBS: readonly string[] = CONFIG_FILE_CANDIDATES.map(
@@ -122,6 +148,9 @@ const loadConfigFromPath = async (configPath: string): Promise<Record<string, un
   throw new Error(`Unsupported configuration extension "${extension}" for "${configPath}".`)
 }
 
+const formatErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
 const discoverConfigUris = async (): Promise<readonly vscode.Uri[]> => {
   const configUrisByPath = new Map<string, vscode.Uri>()
 
@@ -142,12 +171,19 @@ const discoverConfigUris = async (): Promise<readonly vscode.Uri[]> => {
   )
 }
 
-const loadDiscoveredConfigs = async (): Promise<readonly LoadedTypekitConfig[]> => {
+interface ConfigLoadOutcome {
+  readonly loadedConfigs: readonly LoadedTypekitConfig[]
+  readonly warnings: readonly string[]
+}
+
+const loadDiscoveredConfigs = async (): Promise<ConfigLoadOutcome> => {
   const configUris = await discoverConfigUris()
+  const warnings: string[] = []
   const loadedConfigs = await Promise.all(
     configUris.map(async (uri) => {
       const configPath = uri.fsPath
       if (!(await hasReadableFile(configPath))) {
+        warnings.push(`Ignored unreadable config file "${configPath}".`)
         return null
       }
 
@@ -156,13 +192,17 @@ const loadDiscoveredConfigs = async (): Promise<readonly LoadedTypekitConfig[]> 
           configPath,
           config: await loadConfigFromPath(configPath),
         }
-      } catch {
+      } catch (error: unknown) {
+        warnings.push(`Ignored invalid config "${configPath}": ${formatErrorMessage(error)}`)
         return null
       }
     })
   )
 
-  return loadedConfigs.filter((item): item is LoadedTypekitConfig => item !== null)
+  return {
+    loadedConfigs: loadedConfigs.filter((item): item is LoadedTypekitConfig => item !== null),
+    warnings,
+  }
 }
 
 const toInputPatterns = (config: Record<string, unknown>): readonly string[] => {
@@ -230,6 +270,54 @@ const readConfiguredTranslationGlobs = (): readonly string[] => {
 }
 
 /**
+ * Resolves translation discovery globs together with status metadata.
+ *
+ * @returns Effective globs and discovery metadata for diagnostics/status output.
+ */
+export const resolveEffectiveTranslationGlobsStatus =
+  async (): Promise<TranslationDiscoveryStatus> => {
+    const configuredGlobs = readConfiguredTranslationGlobs()
+    const loadedConfigOutcome = await loadDiscoveredConfigs()
+    const configGlobs: string[] = []
+    const warnings = [...loadedConfigOutcome.warnings]
+
+    loadedConfigOutcome.loadedConfigs.forEach((loadedConfig) => {
+      const inputPatterns = toInputPatterns(loadedConfig.config)
+      if (inputPatterns.length === 0) {
+        warnings.push(`Config "${loadedConfig.configPath}" has no valid "input" entries.`)
+        return
+      }
+
+      inputPatterns.forEach((inputPattern) => {
+        const resolvedGlob = toWorkspaceGlob(loadedConfig.configPath, inputPattern)
+        if (!resolvedGlob) {
+          warnings.push(
+            `Ignored input "${inputPattern}" from "${loadedConfig.configPath}" because it resolves outside the workspace root.`
+          )
+          return
+        }
+        configGlobs.push(resolvedGlob)
+      })
+    })
+
+    const uniqueConfigGlobs = toUniqueGlobs(configGlobs)
+    const effectiveGlobs =
+      uniqueConfigGlobs.length > 0
+        ? toUniqueGlobs([...uniqueConfigGlobs, ...configuredGlobs])
+        : configuredGlobs
+
+    return {
+      effectiveGlobs,
+      configuredGlobs,
+      configGlobs: uniqueConfigGlobs,
+      loadedConfigPaths: loadedConfigOutcome.loadedConfigs
+        .map((loadedConfig) => loadedConfig.configPath)
+        .sort((left, right) => left.localeCompare(right)),
+      discoveryWarnings: warnings.sort((left, right) => left.localeCompare(right)),
+    }
+  }
+
+/**
  * Resolves translation discovery globs for the extension.
  *
  * Resolution order:
@@ -239,18 +327,6 @@ const readConfiguredTranslationGlobs = (): readonly string[] => {
  * @returns Unique workspace-relative glob list.
  */
 export const resolveEffectiveTranslationGlobs = async (): Promise<readonly string[]> => {
-  const configuredGlobs = readConfiguredTranslationGlobs()
-  const discoveredConfigs = await loadDiscoveredConfigs()
-
-  const configGlobs = discoveredConfigs.flatMap((loadedConfig) =>
-    toInputPatterns(loadedConfig.config)
-      .map((inputPattern) => toWorkspaceGlob(loadedConfig.configPath, inputPattern))
-      .filter((globPattern): globPattern is string => typeof globPattern === 'string')
-  )
-
-  if (configGlobs.length === 0) {
-    return configuredGlobs
-  }
-
-  return toUniqueGlobs([...configGlobs, ...configuredGlobs])
+  const discoveryStatus = await resolveEffectiveTranslationGlobsStatus()
+  return discoveryStatus.effectiveGlobs
 }
