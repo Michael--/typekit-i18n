@@ -7,12 +7,18 @@ Type-safe internationalization toolkit for TypeScript with:
 - code generation from CSV/YAML resources
 - CLI for generate, validate, and convert workflows
 
-This repository is a `pnpm` workspace with three targets:
+This repository is a `pnpm` workspace with four targets:
 
 - `packages/typekit-i18n`: publishable npm package (runtime + codegen + CLI)
 - `packages/typekit-i18n-vscode`: VSCode extension for translation authoring
 - `apps/playground-ts`: React playground for feature demos
 - `apps/docs-site`: VitePress documentation site (GitHub Pages target)
+
+## Project Links
+
+- GitHub: https://github.com/Michael--/typekit-i18n
+- Documentation: https://michael--.github.io/typekit-i18n/
+- npm: https://www.npmjs.com/package/@number10/typekit-i18n
 
 ## Requirements
 
@@ -39,7 +45,7 @@ pnpm run check
 Useful targeted commands:
 
 ```bash
-pnpm --filter typekit-i18n run build
+pnpm --filter @number10/typekit-i18n run build
 pnpm --filter @typekit-i18n/playground-ts run gen
 pnpm --filter @typekit-i18n/docs-site run docs:build
 ```
@@ -68,7 +74,7 @@ pnpm run dev:docs
 
 Docs URL: `http://localhost:4174`
 
-## Package Capabilities (`typekit-i18n`)
+## Package Capabilities (`@number10/typekit-i18n`)
 
 ### Runtime
 
@@ -111,13 +117,13 @@ Commands:
 Install package:
 
 ```bash
-pnpm add typekit-i18n
+pnpm add @number10/typekit-i18n
 ```
 
 Define config (`typekit.config.ts`):
 
 ```ts
-import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
+import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 
 export default defineTypekitI18nConfig({
   input: ['./translations/*.csv', './translations/*.yaml'],
@@ -137,7 +143,7 @@ npx typekit-i18n
 Use runtime:
 
 ```ts
-import { createTranslator } from 'typekit-i18n'
+import { createTranslator } from '@number10/typekit-i18n'
 import { translationTable } from './generated/translationTable'
 
 const t = createTranslator(translationTable)

@@ -2,18 +2,24 @@
 
 Type-safe i18n runtime and code generator for TypeScript.
 
+## Links
+
+- GitHub: https://github.com/Michael--/typekit-i18n
+- Documentation: https://michael--.github.io/typekit-i18n/
+- npm: https://www.npmjs.com/package/@number10/typekit-i18n
+
 ## Installation
 
 ```bash
-pnpm add typekit-i18n
+pnpm add @number10/typekit-i18n
 ```
 
 Alternative package managers:
 
 ```bash
-npm install typekit-i18n
+npm install @number10/typekit-i18n
 # or
-yarn add typekit-i18n
+yarn add @number10/typekit-i18n
 ```
 
 ## VSCode Extension
@@ -34,13 +40,13 @@ pnpm --filter typekit-i18n-vscode package:vsix
 Runtime APIs:
 
 ```ts
-import { createTranslator, createIcuTranslator } from 'typekit-i18n'
+import { createTranslator, createIcuTranslator } from '@number10/typekit-i18n'
 ```
 
 Codegen APIs:
 
 ```ts
-import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
+import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 ```
 
 CLI binary:
@@ -63,7 +69,7 @@ typekit-i18n
 ### 1. Create config (`typekit.config.ts`)
 
 ```ts
-import { defineTypekitI18nConfig } from 'typekit-i18n/codegen'
+import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 
 export default defineTypekitI18nConfig({
   input: ['./translations/*.csv', './translations/*.yaml'],
@@ -84,8 +90,8 @@ npx typekit-i18n
 ### 3. Create a runtime translator
 
 ```ts
-import { createTranslator } from 'typekit-i18n'
-import type { PlaceholderFormatterMap } from 'typekit-i18n'
+import { createTranslator } from '@number10/typekit-i18n'
+import type { PlaceholderFormatterMap } from '@number10/typekit-i18n'
 import type { TranslateKey, TranslateLanguage } from './generated/translationKeys'
 import { translationTable } from './generated/translationTable'
 
@@ -183,7 +189,7 @@ Also exported:
 
 For application integrations, `createTranslator` or `createIcuTranslator` should be preferred.
 
-## Codegen Config API (`typekit-i18n/codegen`)
+## Codegen Config API (`@number10/typekit-i18n/codegen`)
 
 Main exports:
 
