@@ -1,5 +1,9 @@
 import * as vscode from 'vscode'
 
+import {
+  resolveEffectiveTranslationGlobs,
+  TYPEKIT_CONFIG_DISCOVERY_GLOBS,
+} from './core/configDiscovery'
 import { createTranslationWorkspace } from './core/translationWorkspace'
 import { registerCompletionAndHover } from './features/completion-hover/register'
 import { registerDiagnostics } from './features/diagnostics/register'
@@ -17,44 +21,65 @@ export const activate = async (context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(translationWorkspace)
 
   let refreshTimer: NodeJS.Timeout | null = null
-  const scheduleRefresh = (): void => {
+  let pendingWatcherReconfiguration = false
+  let translationWatchers: vscode.Disposable = vscode.Disposable.from()
+  const configWatchGlobs = new Set(TYPEKIT_CONFIG_DISCOVERY_GLOBS)
+
+  const registerTranslationWatchers = async (): Promise<vscode.Disposable> => {
+    const translationGlobs = await resolveEffectiveTranslationGlobs()
+    const watcherGlobs = [...new Set([...translationGlobs, ...TYPEKIT_CONFIG_DISCOVERY_GLOBS])]
+
+    const watchers = watcherGlobs.map((globPattern) => {
+      const watcher = vscode.workspace.createFileSystemWatcher(globPattern)
+      const requiresWatcherReconfiguration = configWatchGlobs.has(globPattern)
+      const handleFileEvent = (): void => {
+        scheduleRefresh({ reconfigureWatchers: requiresWatcherReconfiguration })
+      }
+      watcher.onDidCreate(handleFileEvent)
+      watcher.onDidChange(handleFileEvent)
+      watcher.onDidDelete(handleFileEvent)
+      return watcher
+    })
+
+    return vscode.Disposable.from(...watchers)
+  }
+
+  const reconfigureWatchers = async (): Promise<void> => {
+    translationWatchers.dispose()
+    translationWatchers = await registerTranslationWatchers()
+  }
+
+  const runRefreshCycle = async (): Promise<void> => {
+    if (pendingWatcherReconfiguration) {
+      pendingWatcherReconfiguration = false
+      await reconfigureWatchers()
+    }
+    await translationWorkspace.refresh()
+  }
+
+  const scheduleRefresh = (options?: { reconfigureWatchers?: boolean }): void => {
+    if (options?.reconfigureWatchers) {
+      pendingWatcherReconfiguration = true
+    }
     if (refreshTimer) {
       clearTimeout(refreshTimer)
     }
     refreshTimer = setTimeout(() => {
-      void translationWorkspace.refresh()
+      void runRefreshCycle()
     }, 150)
   }
 
-  const registerTranslationWatchers = (): vscode.Disposable => {
-    const translationGlobs = vscode.workspace
-      .getConfiguration('typekitI18n')
-      .get<readonly string[]>('translationGlobs', ['**/translations/**/*.{yaml,yml,csv}'])
-
-    const watchers = translationGlobs.map((globPattern) => {
-      const watcher = vscode.workspace.createFileSystemWatcher(globPattern)
-      watcher.onDidCreate(() => scheduleRefresh())
-      watcher.onDidChange(() => scheduleRefresh())
-      watcher.onDidDelete(() => scheduleRefresh())
-      return watcher
-    })
-    return vscode.Disposable.from(...watchers)
-  }
-
-  let translationWatchers = registerTranslationWatchers()
-  context.subscriptions.push(translationWatchers)
+  await reconfigureWatchers()
+  context.subscriptions.push(new vscode.Disposable(() => translationWatchers.dispose()))
 
   context.subscriptions.push(registerKeyIntelligence(translationWorkspace))
   context.subscriptions.push(registerDiagnostics(translationWorkspace))
   context.subscriptions.push(registerSchemaValidation(translationWorkspace))
   context.subscriptions.push(registerCompletionAndHover(translationWorkspace))
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(async (event) => {
+    vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration('typekitI18n.translationGlobs')) {
-        translationWatchers.dispose()
-        translationWatchers = registerTranslationWatchers()
-        context.subscriptions.push(translationWatchers)
-        await translationWorkspace.refresh()
+        scheduleRefresh({ reconfigureWatchers: true })
       }
     })
   )

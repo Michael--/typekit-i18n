@@ -46,7 +46,7 @@ Diagnostic code coverage is tracked in `docs/DIAGNOSTICS.md`.
 
 ## Useful Settings
 
-- `typekitI18n.translationGlobs`: translation file discovery globs.
+- `typekitI18n.translationGlobs`: additional translation file discovery globs (merged with detected `input` entries from `typekit.config.*` / `typekit-i18n.config.*` when present).
 - `typekitI18n.completionMode`: `fallback`, `always`, or `alwaysPreferExtension` (default, keeps extension suggestions first).
 - `typekitI18n.enablePlaceholderSnippets`: inserts `t("key", { ... })` placeholder snippets on completion when applicable.
 - `typekitI18n.previewLocales`: locales shown in completion/hover previews.

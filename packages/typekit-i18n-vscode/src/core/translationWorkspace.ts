@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { isMap, isScalar, isSeq, LineCounter, parseDocument } from 'yaml'
 
+import { resolveEffectiveTranslationGlobs } from './configDiscovery'
 import { parseCsvDocument } from './csvParser'
 import { DIAGNOSTIC_CODES } from './diagnosticCodes'
 import { extractPlaceholderNames } from './placeholders'
@@ -217,9 +218,7 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
   }
 
   public async refresh(): Promise<void> {
-    const translationGlobs = vscode.workspace
-      .getConfiguration('typekitI18n')
-      .get<readonly string[]>('translationGlobs', ['**/translations/**/*.{yaml,yml,csv}'])
+    const translationGlobs = await resolveEffectiveTranslationGlobs()
 
     const discoveredByUri = new Map<string, TranslationDocument>()
     const diagnosticsByUri = new Map<string, vscode.Diagnostic[]>()

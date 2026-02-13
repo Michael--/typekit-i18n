@@ -46,7 +46,7 @@ Install in VSCode:
 
 ## Extension Settings
 
-- `typekitI18n.translationGlobs`: translation file discovery globs.
+- `typekitI18n.translationGlobs`: additional translation file discovery globs. The extension also auto-discovers `input` paths from `typekit.config.*` and `typekit-i18n.config.*`.
 - `typekitI18n.completionMode`: completion behavior (`fallback`, `always`, `alwaysPreferExtension`).
 - `typekitI18n.enablePlaceholderSnippets`: enables snippet insertion for placeholder data arguments.
 - `typekitI18n.previewLocales`: locales shown in completion and hover previews.
