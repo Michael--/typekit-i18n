@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 
 vi.mock('vscode', () => {
   class Position {
@@ -71,7 +74,10 @@ const toLineOffsets = (content: string): readonly number[] => {
   return offsets
 }
 
-const createMockDocument = (content: string): MockTextDocument => {
+const createMockDocument = (
+  content: string,
+  fileName = '/workspace/src/app.ts'
+): MockTextDocument => {
   const lineOffsets = toLineOffsets(content)
   const positionAt = (offset: number): { readonly line: number; readonly character: number } => {
     const safeOffset = Math.max(0, Math.min(offset, content.length))
@@ -90,9 +96,9 @@ const createMockDocument = (content: string): MockTextDocument => {
   }
 
   return {
-    fileName: '/workspace/src/app.ts',
+    fileName,
     languageId: 'typescript',
-    uri: { fsPath: '/workspace/src/app.ts' },
+    uri: { fsPath: fileName },
     getText: () => content,
     positionAt,
   }
@@ -137,5 +143,40 @@ const value = translate('Checkout')
     const usage = findUsageAtPosition(document as never, document.positionAt(keyOffset) as never)
 
     expect(usage?.key).toBe('Checkout')
+  })
+
+  it('resolves translator identifier imported from another module', () => {
+    const workspacePath = mkdtempSync(join(tmpdir(), 'typekit-i18n-key-usage-'))
+    const languagesPath = join(workspacePath, 'languages')
+    const translatePath = join(languagesPath, 'translate.ts')
+    const appPath = join(workspacePath, 'app.ts')
+    mkdirSync(languagesPath, { recursive: true })
+
+    try {
+      writeFileSync(
+        translatePath,
+        `
+import { createTranslator } from '@number10/typekit-i18n'
+
+export const translate = createTranslator(translationTable)
+`,
+        'utf8'
+      )
+      const appSource = `
+import { translate } from './languages/translate'
+
+const result = translate('Use Helper')
+`
+      writeFileSync(appPath, appSource, 'utf8')
+
+      const document = createMockDocument(appSource, appPath)
+      const usages = extractKeyUsages(document as never)
+
+      expect(isTranslatorIdentifierInDocument(document as never, 'translate')).toBe(true)
+      expect(usages).toHaveLength(1)
+      expect(usages[0]?.key).toBe('Use Helper')
+    } finally {
+      rmSync(workspacePath, { recursive: true, force: true })
+    }
   })
 })

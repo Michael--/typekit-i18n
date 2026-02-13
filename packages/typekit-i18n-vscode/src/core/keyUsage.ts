@@ -1,3 +1,5 @@
+import { accessSync, constants, readFileSync, statSync } from 'node:fs'
+import { dirname, extname, isAbsolute, resolve } from 'node:path'
 import * as ts from 'typescript'
 import * as vscode from 'vscode'
 
@@ -23,6 +25,27 @@ const codeFileGlob = '**/*.{ts,tsx,js,jsx}'
 const excludeGlob = '**/{node_modules,dist,build,.git}/**'
 const TRANSLATOR_FACTORY_EXPORT_NAMES = new Set<string>(['createTranslator', 'createIcuTranslator'])
 const DEFAULT_TRANSLATOR_IDENTIFIERS = new Set<string>(['t', 'icu'])
+const RESOLVABLE_MODULE_EXTENSIONS = [
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+] as const
+
+interface ModuleTranslatorMetadata {
+  readonly exportedTranslatorNames: ReadonlySet<string>
+}
+
+interface CachedModuleMetadata {
+  readonly modifiedAtMs: number
+  readonly metadata: ModuleTranslatorMetadata | null
+}
+
+const moduleTranslatorMetadataCache = new Map<string, CachedModuleMetadata>()
 
 /**
  * Extracts translation key usages from a TS/JS document using AST traversal.
@@ -32,13 +55,15 @@ const DEFAULT_TRANSLATOR_IDENTIFIERS = new Set<string>(['t', 'icu'])
  */
 export const extractKeyUsages = (document: vscode.TextDocument): readonly KeyUsage[] => {
   const sourceFile = toSourceFile(document)
-  const translatorIdentifiers = collectTranslatorIdentifiers(sourceFile)
+  const translatorAnalysis = collectTranslatorIdentifierAnalysis(sourceFile, document.fileName, [
+    document.fileName,
+  ])
 
   const usages: KeyUsage[] = []
 
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
-      const usage = toUsageFromCall(node, document, sourceFile, translatorIdentifiers)
+      const usage = toUsageFromCall(node, document, sourceFile, translatorAnalysis)
       if (usage) {
         usages.push(usage)
       }
@@ -82,7 +107,9 @@ export const isTranslatorIdentifierInDocument = (
   identifier: string
 ): boolean => {
   const sourceFile = toSourceFile(document)
-  return collectTranslatorIdentifiers(sourceFile).has(identifier)
+  return collectTranslatorIdentifierAnalysis(sourceFile, document.fileName, [
+    document.fileName,
+  ]).identifiers.has(identifier)
 }
 
 /**
@@ -115,10 +142,10 @@ const toUsageFromCall = (
   node: ts.CallExpression,
   document: vscode.TextDocument,
   sourceFile: ts.SourceFile,
-  translatorIdentifiers: ReadonlySet<string>
+  translatorAnalysis: TranslatorIdentifierAnalysis
 ): KeyUsage | null => {
   if (ts.isIdentifier(node.expression)) {
-    if (!isTranslatorIdentifier(node.expression.text, translatorIdentifiers)) {
+    if (!isTranslatorIdentifier(node.expression.text, translatorAnalysis.identifiers)) {
       return null
     }
     const firstArgument = node.arguments[0]
@@ -139,10 +166,27 @@ const toUsageFromCall = (
     if (!ts.isIdentifier(object) || !ts.isIdentifier(method)) {
       return null
     }
-    if (!isTranslatorIdentifier(object.text, translatorIdentifiers) || method.text !== 'in') {
+
+    if (method.text === 'in') {
+      if (!isTranslatorIdentifier(object.text, translatorAnalysis.identifiers)) {
+        return null
+      }
+      const keyLiteral = toStringLiteral(node.arguments[1])
+      if (!keyLiteral) {
+        return null
+      }
+      return {
+        key: keyLiteral.text,
+        uri: document.uri,
+        range: toStringContentRange(keyLiteral.node, document, sourceFile),
+      }
+    }
+
+    const namespaceMembers = translatorAnalysis.namespaceMemberTranslators.get(object.text)
+    if (!namespaceMembers || !namespaceMembers.has(method.text)) {
       return null
     }
-    const keyLiteral = toStringLiteral(node.arguments[1])
+    const keyLiteral = toStringLiteral(node.arguments[0])
     if (!keyLiteral) {
       return null
     }
@@ -185,7 +229,7 @@ const inferScriptKind = (fileName: string): ts.ScriptKind => {
   if (fileName.endsWith('.tsx')) {
     return ts.ScriptKind.TSX
   }
-  if (fileName.endsWith('.ts')) {
+  if (fileName.endsWith('.ts') || fileName.endsWith('.mts') || fileName.endsWith('.cts')) {
     return ts.ScriptKind.TS
   }
   if (fileName.endsWith('.jsx')) {
@@ -213,9 +257,65 @@ interface TranslatorFactoryResolution {
   readonly namespaceFactories: ReadonlySet<string>
 }
 
-const collectTranslatorIdentifiers = (sourceFile: ts.SourceFile): ReadonlySet<string> => {
+interface TranslatorIdentifierAnalysis {
+  readonly identifiers: ReadonlySet<string>
+  readonly namespaceMemberTranslators: ReadonlyMap<string, ReadonlySet<string>>
+}
+
+const collectTranslatorIdentifierAnalysis = (
+  sourceFile: ts.SourceFile,
+  sourceFilePath: string,
+  activeChainInput?: Iterable<string>
+): TranslatorIdentifierAnalysis => {
+  const activeChain = new Set<string>(activeChainInput ?? [])
   const identifiers = new Set<string>(DEFAULT_TRANSLATOR_IDENTIFIERS)
+  const namespaceMemberTranslators = new Map<string, ReadonlySet<string>>()
   const factoryResolution = collectTranslatorFactoryResolution(sourceFile)
+
+  sourceFile.statements.forEach((statement) => {
+    if (!ts.isImportDeclaration(statement)) {
+      return
+    }
+    if (!ts.isStringLiteral(statement.moduleSpecifier)) {
+      return
+    }
+
+    const importClause = statement.importClause
+    if (!importClause) {
+      return
+    }
+    const resolvedImportPath = resolveImportFilePath(sourceFilePath, statement.moduleSpecifier.text)
+    if (!resolvedImportPath) {
+      return
+    }
+
+    const importedMetadata = readModuleTranslatorMetadata(resolvedImportPath, activeChain)
+    if (!importedMetadata) {
+      return
+    }
+    const exportedNames = importedMetadata.exportedTranslatorNames
+
+    if (importClause.name && exportedNames.has('default')) {
+      identifiers.add(importClause.name.text)
+    }
+
+    const namedBindings = importClause.namedBindings
+    if (!namedBindings) {
+      return
+    }
+    if (ts.isNamespaceImport(namedBindings)) {
+      namespaceMemberTranslators.set(namedBindings.name.text, exportedNames)
+      return
+    }
+
+    namedBindings.elements.forEach((importSpecifier) => {
+      const importedName = importSpecifier.propertyName?.text ?? importSpecifier.name.text
+      if (!exportedNames.has(importedName)) {
+        return
+      }
+      identifiers.add(importSpecifier.name.text)
+    })
+  })
 
   const visit = (node: ts.Node): void => {
     if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
@@ -238,7 +338,10 @@ const collectTranslatorIdentifiers = (sourceFile: ts.SourceFile): ReadonlySet<st
   }
 
   visit(sourceFile)
-  return identifiers
+  return {
+    identifiers,
+    namespaceMemberTranslators,
+  }
 }
 
 const collectTranslatorFactoryResolution = (
@@ -287,6 +390,174 @@ const collectTranslatorFactoryResolution = (
 
 const isTypekitModuleName = (moduleName: string): boolean =>
   moduleName === '@number10/typekit-i18n' || moduleName.startsWith('@number10/typekit-i18n/')
+
+const hasExportModifier = (node: { readonly modifiers?: ts.NodeArray<ts.ModifierLike> }): boolean =>
+  node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false
+
+const isReadableFile = (filePath: string): boolean => {
+  try {
+    accessSync(filePath, constants.R_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const resolveImportFilePath = (fromFilePath: string, moduleSpecifier: string): string | null => {
+  if (!moduleSpecifier.startsWith('.') && !isAbsolute(moduleSpecifier)) {
+    return null
+  }
+  const basePath = isAbsolute(moduleSpecifier)
+    ? moduleSpecifier
+    : resolve(dirname(fromFilePath), moduleSpecifier)
+  const explicitExtension = extname(basePath)
+
+  const candidates: string[] = []
+  if (explicitExtension.length > 0) {
+    candidates.push(basePath)
+  } else {
+    RESOLVABLE_MODULE_EXTENSIONS.forEach((extension) => {
+      candidates.push(`${basePath}${extension}`)
+    })
+    RESOLVABLE_MODULE_EXTENSIONS.forEach((extension) => {
+      candidates.push(resolve(basePath, `index${extension}`))
+    })
+  }
+
+  const readableCandidate =
+    candidates.find((candidatePath) => isReadableFile(candidatePath)) ?? null
+  return readableCandidate
+}
+
+const readModuleTranslatorMetadata = (
+  modulePath: string,
+  activeChain: Set<string>
+): ModuleTranslatorMetadata | null => {
+  if (activeChain.has(modulePath)) {
+    return null
+  }
+
+  let modifiedAtMs: number
+  try {
+    modifiedAtMs = statSync(modulePath).mtimeMs
+  } catch {
+    return null
+  }
+
+  const cached = moduleTranslatorMetadataCache.get(modulePath)
+  if (cached && cached.modifiedAtMs === modifiedAtMs) {
+    return cached.metadata
+  }
+
+  let content: string
+  try {
+    content = readFileSync(modulePath, 'utf8')
+  } catch {
+    moduleTranslatorMetadataCache.set(modulePath, {
+      modifiedAtMs,
+      metadata: null,
+    })
+    return null
+  }
+
+  const sourceFile = ts.createSourceFile(
+    modulePath,
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    inferScriptKind(modulePath)
+  )
+  const nextChain = new Set(activeChain)
+  nextChain.add(modulePath)
+  const exportedTranslatorNames = collectExportedTranslatorNames(sourceFile, modulePath, nextChain)
+  const metadata: ModuleTranslatorMetadata = {
+    exportedTranslatorNames,
+  }
+  moduleTranslatorMetadataCache.set(modulePath, {
+    modifiedAtMs,
+    metadata,
+  })
+  return metadata
+}
+
+const collectExportedTranslatorNames = (
+  sourceFile: ts.SourceFile,
+  sourceFilePath: string,
+  activeChain: Set<string>
+): ReadonlySet<string> => {
+  const exportedNames = new Set<string>()
+  const localAnalysis = collectTranslatorIdentifierAnalysis(sourceFile, sourceFilePath, activeChain)
+  const factoryResolution = collectTranslatorFactoryResolution(sourceFile)
+
+  sourceFile.statements.forEach((statement) => {
+    if (ts.isVariableStatement(statement) && hasExportModifier(statement)) {
+      statement.declarationList.declarations.forEach((declaration) => {
+        if (!ts.isIdentifier(declaration.name)) {
+          return
+        }
+        if (
+          localAnalysis.identifiers.has(declaration.name.text) ||
+          isTranslatorFactoryInitializer(declaration.initializer, factoryResolution)
+        ) {
+          exportedNames.add(declaration.name.text)
+        }
+      })
+      return
+    }
+
+    if (ts.isExportAssignment(statement)) {
+      if (
+        ts.isIdentifier(statement.expression) &&
+        localAnalysis.identifiers.has(statement.expression.text)
+      ) {
+        exportedNames.add('default')
+        return
+      }
+      if (isTranslatorFactoryInitializer(statement.expression, factoryResolution)) {
+        exportedNames.add('default')
+      }
+      return
+    }
+
+    if (!ts.isExportDeclaration(statement) || !statement.exportClause) {
+      return
+    }
+
+    if (statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)) {
+      const reExportPath = resolveImportFilePath(sourceFilePath, statement.moduleSpecifier.text)
+      if (!reExportPath) {
+        return
+      }
+      const reExportMetadata = readModuleTranslatorMetadata(reExportPath, activeChain)
+      if (!reExportMetadata) {
+        return
+      }
+
+      if (ts.isNamedExports(statement.exportClause)) {
+        statement.exportClause.elements.forEach((element) => {
+          const importedName = element.propertyName?.text ?? element.name.text
+          if (!reExportMetadata.exportedTranslatorNames.has(importedName)) {
+            return
+          }
+          exportedNames.add(element.name.text)
+        })
+      }
+      return
+    }
+
+    if (ts.isNamedExports(statement.exportClause)) {
+      statement.exportClause.elements.forEach((element) => {
+        const localName = element.propertyName?.text ?? element.name.text
+        if (!localAnalysis.identifiers.has(localName)) {
+          return
+        }
+        exportedNames.add(element.name.text)
+      })
+    }
+  })
+
+  return exportedNames
+}
 
 const isTranslatorFactoryInitializer = (
   initializer: ts.Expression | undefined,

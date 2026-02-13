@@ -2,7 +2,7 @@
   "name": "typekit-i18n-vscode",
   "displayName": "typekit-i18n",
   "description": "VSCode extension for typekit-i18n translation workflows.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "number10",
   "homepage": "https://github.com/Michael--/typekit-i18n/tree/main/packages/typekit-i18n-vscode",
   "repository": {
