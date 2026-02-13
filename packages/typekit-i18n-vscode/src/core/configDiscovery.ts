@@ -1,8 +1,6 @@
 import { constants } from 'node:fs'
-import { access, readFile, stat } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { basename, dirname, extname, isAbsolute, relative, resolve } from 'node:path'
-import { pathToFileURL } from 'node:url'
-import { tsImport } from 'tsx/esm/api'
 import * as vscode from 'vscode'
 import { parse as parseYaml } from 'yaml'
 
@@ -25,7 +23,7 @@ const YAML_CONFIG_EXTENSIONS = new Set<string>(['.yaml', '.yml'])
 
 interface LoadedTypekitConfig {
   readonly configPath: string
-  readonly config: Record<string, unknown>
+  readonly inputPatterns: readonly string[]
 }
 
 /**
@@ -88,61 +86,332 @@ const toConfigObject = (value: unknown, configPath: string): Record<string, unkn
   return value as Record<string, unknown>
 }
 
-const loadConfigFromModule = async (
-  configPath: string,
-  isTypeScriptModule: boolean
-): Promise<Record<string, unknown>> => {
-  const moduleUrl = pathToFileURL(configPath)
-  try {
-    const fileStats = await stat(configPath)
-    moduleUrl.searchParams.set('mtime', String(fileStats.mtimeMs))
-  } catch {
-    // Ignore mtime resolution errors and keep URL without cache-busting params.
+const toInputPatterns = (config: Record<string, unknown>): readonly string[] => {
+  const inputValue = config.input
+  if (typeof inputValue === 'string') {
+    const trimmedInput = inputValue.trim()
+    return trimmedInput.length > 0 ? [trimmedInput] : []
+  }
+  if (!Array.isArray(inputValue)) {
+    return []
   }
 
-  const imported = isTypeScriptModule
-    ? ((await tsImport(moduleUrl.toString(), import.meta.url)) as { default?: unknown })
-    : ((await import(moduleUrl.toString())) as { default?: unknown })
-  if (imported.default === undefined) {
-    throw new Error(`Configuration "${configPath}" must export a default object.`)
-  }
-  return toConfigObject(imported.default, configPath)
+  const patterns: string[] = []
+  inputValue.forEach((item) => {
+    if (typeof item !== 'string') {
+      return
+    }
+    const trimmedInput = item.trim()
+    if (trimmedInput.length === 0) {
+      return
+    }
+    patterns.push(trimmedInput)
+  })
+  return patterns
 }
 
-const loadConfigFromJson = async (configPath: string): Promise<Record<string, unknown>> => {
+const decodeSimpleEscape = (escapedCharacter: string): string => {
+  if (escapedCharacter === 'n') {
+    return '\n'
+  }
+  if (escapedCharacter === 'r') {
+    return '\r'
+  }
+  if (escapedCharacter === 't') {
+    return '\t'
+  }
+  if (escapedCharacter === 'b') {
+    return '\b'
+  }
+  if (escapedCharacter === 'f') {
+    return '\f'
+  }
+  if (escapedCharacter === 'v') {
+    return '\v'
+  }
+  if (escapedCharacter === '\\') {
+    return '\\'
+  }
+  if (escapedCharacter === "'") {
+    return "'"
+  }
+  if (escapedCharacter === '"') {
+    return '"'
+  }
+  if (escapedCharacter === '`') {
+    return '`'
+  }
+  return escapedCharacter
+}
+
+const decodeSingleOrTemplateLiteral = (literal: string, quote: "'" | '`'): string | null => {
+  const body = literal.slice(1, -1)
+  if (quote === '`' && body.includes('${')) {
+    return null
+  }
+
+  let decoded = ''
+  for (let index = 0; index < body.length; index += 1) {
+    const character = body[index]
+    if (character !== '\\') {
+      decoded += character
+      continue
+    }
+    if (index + 1 >= body.length) {
+      return null
+    }
+    const escapedCharacter = body[index + 1]
+    decoded += decodeSimpleEscape(escapedCharacter)
+    index += 1
+  }
+  return decoded
+}
+
+const decodeStringLiteral = (literal: string): string | null => {
+  if (literal.length < 2) {
+    return null
+  }
+
+  const quote = literal[0]
+  if (quote === '"') {
+    try {
+      const parsed = JSON.parse(literal) as unknown
+      return typeof parsed === 'string' ? parsed : null
+    } catch {
+      return null
+    }
+  }
+  if (quote === "'") {
+    return decodeSingleOrTemplateLiteral(literal, "'")
+  }
+  if (quote === '`') {
+    return decodeSingleOrTemplateLiteral(literal, '`')
+  }
+  return null
+}
+
+const readQuotedLiteral = (source: string, startIndex: number): string | null => {
+  const quote = source[startIndex]
+  if (quote !== "'" && quote !== '"' && quote !== '`') {
+    return null
+  }
+
+  for (let index = startIndex + 1; index < source.length; index += 1) {
+    const character = source[index]
+    if (character === '\\') {
+      index += 1
+      continue
+    }
+    if (character === quote) {
+      return source.slice(startIndex, index + 1)
+    }
+  }
+  return null
+}
+
+const skipLineComment = (source: string, startIndex: number): number => {
+  for (let index = startIndex; index < source.length; index += 1) {
+    if (source[index] === '\n') {
+      return index
+    }
+  }
+  return source.length
+}
+
+const skipBlockComment = (source: string, startIndex: number): number | null => {
+  const endIndex = source.indexOf('*/', startIndex + 2)
+  if (endIndex < 0) {
+    return null
+  }
+  return endIndex + 1
+}
+
+const readArrayLiteral = (source: string, startIndex: number): string | null => {
+  if (source[startIndex] !== '[') {
+    return null
+  }
+
+  let depth = 0
+  for (let index = startIndex; index < source.length; index += 1) {
+    const character = source[index]
+    if (character === "'" || character === '"' || character === '`') {
+      const quoted = readQuotedLiteral(source, index)
+      if (!quoted) {
+        return null
+      }
+      index += quoted.length - 1
+      continue
+    }
+    if (character === '/' && source[index + 1] === '/') {
+      index = skipLineComment(source, index + 2)
+      continue
+    }
+    if (character === '/' && source[index + 1] === '*') {
+      const commentEndIndex = skipBlockComment(source, index)
+      if (commentEndIndex === null) {
+        return null
+      }
+      index = commentEndIndex
+      continue
+    }
+
+    if (character === '[') {
+      depth += 1
+      continue
+    }
+    if (character === ']') {
+      depth -= 1
+      if (depth === 0) {
+        return source.slice(startIndex, index + 1)
+      }
+    }
+  }
+  return null
+}
+
+const skipWhitespace = (source: string, startIndex: number): number => {
+  let index = startIndex
+  while (index < source.length && /\s/u.test(source[index])) {
+    index += 1
+  }
+  return index
+}
+
+const readInputExpression = (source: string, startIndex: number): string | null => {
+  const valueStartIndex = skipWhitespace(source, startIndex)
+  if (valueStartIndex >= source.length) {
+    return null
+  }
+
+  const firstCharacter = source[valueStartIndex]
+  if (firstCharacter === '[') {
+    return readArrayLiteral(source, valueStartIndex)
+  }
+  if (firstCharacter === "'" || firstCharacter === '"' || firstCharacter === '`') {
+    return readQuotedLiteral(source, valueStartIndex)
+  }
+  return null
+}
+
+const extractInputExpression = (source: string): string | null => {
+  const inputPropertyPattern = /\binput\s*:/gu
+  let match: RegExpExecArray | null = inputPropertyPattern.exec(source)
+  while (match) {
+    const expression = readInputExpression(source, match.index + match[0].length)
+    if (expression) {
+      return expression
+    }
+    match = inputPropertyPattern.exec(source)
+  }
+  return null
+}
+
+const parseInputPatternsFromArrayLiteral = (arrayLiteral: string): readonly string[] => {
+  const patterns: string[] = []
+  const bodyStartIndex = arrayLiteral.indexOf('[') + 1
+  const bodyEndIndex = arrayLiteral.lastIndexOf(']')
+  if (bodyStartIndex <= 0 || bodyEndIndex < bodyStartIndex) {
+    return []
+  }
+
+  let index = bodyStartIndex
+  while (index < bodyEndIndex) {
+    const nextIndex = skipWhitespace(arrayLiteral, index)
+    if (nextIndex >= bodyEndIndex) {
+      break
+    }
+    const character = arrayLiteral[nextIndex]
+    if (character === ',') {
+      index = nextIndex + 1
+      continue
+    }
+    if (character !== "'" && character !== '"' && character !== '`') {
+      return []
+    }
+
+    const literal = readQuotedLiteral(arrayLiteral, nextIndex)
+    if (!literal) {
+      return []
+    }
+    const decoded = decodeStringLiteral(literal)
+    if (typeof decoded !== 'string') {
+      return []
+    }
+    const normalized = decoded.trim()
+    if (normalized.length > 0) {
+      patterns.push(normalized)
+    }
+    index = nextIndex + literal.length
+  }
+
+  return patterns
+}
+
+const parseInputPatternsFromExpression = (expression: string): readonly string[] => {
+  const trimmedExpression = expression.trim()
+  if (trimmedExpression.length < 2) {
+    return []
+  }
+  if (trimmedExpression.startsWith('[')) {
+    return parseInputPatternsFromArrayLiteral(trimmedExpression)
+  }
+
+  const decoded = decodeStringLiteral(trimmedExpression)
+  if (typeof decoded !== 'string') {
+    return []
+  }
+  const normalized = decoded.trim()
+  return normalized.length > 0 ? [normalized] : []
+}
+
+const loadInputPatternsFromModuleConfig = async (
+  configPath: string
+): Promise<readonly string[]> => {
+  const content = await readFile(configPath, 'utf8')
+  const inputExpression = extractInputExpression(content)
+  if (!inputExpression) {
+    throw new Error('Could not statically resolve "input" from module config.')
+  }
+  const parsedPatterns = parseInputPatternsFromExpression(inputExpression)
+  if (parsedPatterns.length === 0) {
+    throw new Error('Could not parse "input" as a static string or string array.')
+  }
+  return parsedPatterns
+}
+
+const loadInputPatternsFromJsonConfig = async (configPath: string): Promise<readonly string[]> => {
   const content = await readFile(configPath, 'utf8')
   try {
-    return toConfigObject(JSON.parse(content) as unknown, configPath)
+    const parsed = toConfigObject(JSON.parse(content) as unknown, configPath)
+    return toInputPatterns(parsed)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(`Invalid JSON configuration "${configPath}": ${message}`)
   }
 }
 
-const loadConfigFromYaml = async (configPath: string): Promise<Record<string, unknown>> => {
+const loadInputPatternsFromYamlConfig = async (configPath: string): Promise<readonly string[]> => {
   const content = await readFile(configPath, 'utf8')
   try {
-    return toConfigObject(parseYaml(content) as unknown, configPath)
+    const parsed = toConfigObject(parseYaml(content) as unknown, configPath)
+    return toInputPatterns(parsed)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(`Invalid YAML configuration "${configPath}": ${message}`)
   }
 }
 
-const loadConfigFromPath = async (configPath: string): Promise<Record<string, unknown>> => {
+const loadInputPatternsFromPath = async (configPath: string): Promise<readonly string[]> => {
   const extension = extname(configPath).toLowerCase()
 
-  if (TS_MODULE_CONFIG_EXTENSIONS.has(extension)) {
-    return loadConfigFromModule(configPath, true)
-  }
-  if (JS_MODULE_CONFIG_EXTENSIONS.has(extension)) {
-    return loadConfigFromModule(configPath, false)
+  if (TS_MODULE_CONFIG_EXTENSIONS.has(extension) || JS_MODULE_CONFIG_EXTENSIONS.has(extension)) {
+    return loadInputPatternsFromModuleConfig(configPath)
   }
   if (extension === '.json') {
-    return loadConfigFromJson(configPath)
+    return loadInputPatternsFromJsonConfig(configPath)
   }
   if (YAML_CONFIG_EXTENSIONS.has(extension)) {
-    return loadConfigFromYaml(configPath)
+    return loadInputPatternsFromYamlConfig(configPath)
   }
 
   throw new Error(`Unsupported configuration extension "${extension}" for "${configPath}".`)
@@ -188,9 +457,10 @@ const loadDiscoveredConfigs = async (): Promise<ConfigLoadOutcome> => {
       }
 
       try {
+        const inputPatterns = await loadInputPatternsFromPath(configPath)
         return {
           configPath,
-          config: await loadConfigFromPath(configPath),
+          inputPatterns,
         }
       } catch (error: unknown) {
         warnings.push(`Ignored invalid config "${configPath}": ${formatErrorMessage(error)}`)
@@ -203,31 +473,6 @@ const loadDiscoveredConfigs = async (): Promise<ConfigLoadOutcome> => {
     loadedConfigs: loadedConfigs.filter((item): item is LoadedTypekitConfig => item !== null),
     warnings,
   }
-}
-
-const toInputPatterns = (config: Record<string, unknown>): readonly string[] => {
-  const inputValue = config.input
-  if (typeof inputValue === 'string') {
-    const trimmedInput = inputValue.trim()
-    return trimmedInput.length > 0 ? [trimmedInput] : []
-  }
-  if (!Array.isArray(inputValue)) {
-    return []
-  }
-
-  const patterns: string[] = []
-  inputValue.forEach((item) => {
-    if (typeof item !== 'string') {
-      return
-    }
-    const trimmedInput = item.trim()
-    if (trimmedInput.length === 0) {
-      return
-    }
-    patterns.push(trimmedInput)
-  })
-
-  return patterns
 }
 
 const toWorkspaceGlob = (configPath: string, inputPattern: string): string | null => {
@@ -282,13 +527,12 @@ export const resolveEffectiveTranslationGlobsStatus =
     const warnings = [...loadedConfigOutcome.warnings]
 
     loadedConfigOutcome.loadedConfigs.forEach((loadedConfig) => {
-      const inputPatterns = toInputPatterns(loadedConfig.config)
-      if (inputPatterns.length === 0) {
+      if (loadedConfig.inputPatterns.length === 0) {
         warnings.push(`Config "${loadedConfig.configPath}" has no valid "input" entries.`)
         return
       }
 
-      inputPatterns.forEach((inputPattern) => {
+      loadedConfig.inputPatterns.forEach((inputPattern) => {
         const resolvedGlob = toWorkspaceGlob(loadedConfig.configPath, inputPattern)
         if (!resolvedGlob) {
           warnings.push(
