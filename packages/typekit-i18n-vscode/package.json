@@ -106,7 +106,9 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "lint": "eslint \"src/**/*.ts\"",
-    "package:vsix": "pnpm run build && vsce package --allow-missing-repository --no-dependencies --allow-package-all-secrets --allow-package-env-file",
+    "package:local": "pnpm run build && vsce package --allow-missing-repository --no-dependencies --allow-package-all-secrets --allow-package-env-file",
+    "package:release": "pnpm run build && pnpm dlx @vscode/vsce package --allow-missing-repository --no-dependencies",
+    "package:vsix": "pnpm run package:local",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },
