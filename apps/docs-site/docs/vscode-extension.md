@@ -4,7 +4,7 @@ The `typekit-i18n` VSCode extension improves authoring workflows for translation
 
 ## Availability
 
-- Marketplace listing: pending first publish.
+- Marketplace listing: https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
 - Local package path in this repository:
   - `packages/typekit-i18n-vscode`
 

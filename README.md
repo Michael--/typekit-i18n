@@ -190,7 +190,11 @@ The repository includes a first `typekit-i18n` VSCode extension release (`0.1.0`
 
 - `packages/typekit-i18n-vscode`
 
-Marketplace link is pending first publish. Until then, install from local VSIX:
+Marketplace link:
+
+- https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
+
+Local VSIX install:
 
 ```bash
 pnpm --filter typekit-i18n-vscode package:vsix

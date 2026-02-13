@@ -27,7 +27,7 @@ yarn add @number10/typekit-i18n
 For translation authoring, the repository also ships a dedicated VSCode extension:
 
 - Source: `packages/typekit-i18n-vscode`
-- Marketplace link: pending first publish
+- Marketplace link: https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
 
 Local VSIX build:
 

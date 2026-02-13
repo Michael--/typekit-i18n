@@ -5,7 +5,7 @@ VSCode extension for `typekit-i18n` authoring workflows.
 ## Status
 
 - Initial release: `0.1.0`
-- Marketplace link: pending first publish
+- Marketplace link: https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
 
 ## Features
 

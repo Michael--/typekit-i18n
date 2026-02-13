@@ -34,6 +34,7 @@ pnpm run dev:docs
 The repository includes a VSCode extension for translation authoring:
 
 - docs: [VSCode Extension](./vscode-extension)
+- marketplace: https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
 - package: `packages/typekit-i18n-vscode`
 
 Build local VSIX:
