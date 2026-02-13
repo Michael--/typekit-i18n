@@ -1,6 +1,10 @@
 import * as vscode from 'vscode'
 
-import { findUsageAtPosition, isCodeDocument } from '../../core/keyUsage'
+import {
+  findUsageAtPosition,
+  isCodeDocument,
+  isTranslatorIdentifierInDocument,
+} from '../../core/keyUsage'
 import type { TranslationWorkspace } from '../../core/translationWorkspace'
 
 const codeSelector: vscode.DocumentSelector = [
@@ -220,13 +224,18 @@ const findTranslationCallContext = (
 ): TranslationCallContext | null => {
   const lineText = document.lineAt(position.line).text
   const linePrefix = lineText.slice(0, position.character)
-  const match = /\b(?:t|icu)(?:\.in)?\(\s*(["'])([^"'\\]*)$/u.exec(linePrefix)
+  const match = /\b([A-Za-z_$][A-Za-z0-9_$]*)(?:\.in)?\(\s*(["'])([^"'\\]*)$/u.exec(linePrefix)
   if (!match) {
     return null
   }
 
-  const quote = match[1] as '"' | "'"
-  const literalPrefix = match[2] ?? ''
+  const translatorIdentifier = match[1]
+  if (!isTranslatorIdentifierInDocument(document, translatorIdentifier)) {
+    return null
+  }
+
+  const quote = match[2] as '"' | "'"
+  const literalPrefix = match[3] ?? ''
   const literalStart = position.character - literalPrefix.length
   const closingQuote = findUnescapedQuote(lineText, quote, position.character)
 
