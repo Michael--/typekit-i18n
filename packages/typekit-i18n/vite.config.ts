@@ -34,6 +34,7 @@ export default defineConfig({
         /^node:/,
         /^fast-csv$/,
         /^glob$/,
+        /^esbuild$/,
         /^picocolors$/,
         /^tsx(\/.*)?$/,
         /^yaml$/,

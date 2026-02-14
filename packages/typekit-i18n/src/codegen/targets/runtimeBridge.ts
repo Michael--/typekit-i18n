@@ -11,46 +11,44 @@ const RUNTIME_ICU_IMPORT = '@number10/typekit-i18n/runtime/icu'
 const RUNTIME_BASIC_IMPORT = '@number10/typekit-i18n/runtime/basic'
 const MODULE_DIRECTORY_PATH = dirname(fileURLToPath(import.meta.url))
 
-const PACKAGE_ROOT_CANDIDATES: ReadonlyArray<string> = [
-  // Source layout: src/codegen/targets -> package root
-  resolve(MODULE_DIRECTORY_PATH, '../../..'),
-  // Dist layout: dist/src/codegen/targets -> package root
-  resolve(MODULE_DIRECTORY_PATH, '../../../..'),
-]
-
 const resolvePackageRootPath = (): string => {
-  const existingRoot = PACKAGE_ROOT_CANDIDATES.find((candidate) => {
-    const hasSourceRuntime = existsSync(resolve(candidate, 'src/runtime/icu.ts'))
-    const hasDistRuntime = existsSync(resolve(candidate, 'dist/runtime-icu.js'))
-    return hasSourceRuntime || hasDistRuntime
-  })
+  let cursor = MODULE_DIRECTORY_PATH
+  for (let index = 0; index < 10; index += 1) {
+    const hasSourceRuntime = existsSync(resolve(cursor, 'src/runtime/icu.ts'))
+    const hasDistRuntime = existsSync(resolve(cursor, 'dist/runtime-icu.js'))
+    if (hasSourceRuntime || hasDistRuntime) {
+      return cursor
+    }
 
-  if (!existingRoot) {
-    throw new Error('Unable to resolve package root path for runtime bridge bundling.')
+    const next = dirname(cursor)
+    if (next === cursor) {
+      break
+    }
+    cursor = next
   }
 
-  return existingRoot
+  throw new Error('Unable to resolve package root path for runtime bridge bundling.')
 }
 
-const PACKAGE_ROOT_PATH = resolvePackageRootPath()
-
 const resolveRuntimeImportAlias = (runtimeImportPath: string): string => {
+  const packageRootPath = resolvePackageRootPath()
+
   if (runtimeImportPath === RUNTIME_ICU_IMPORT) {
-    const sourceCandidate = resolve(PACKAGE_ROOT_PATH, 'src/runtime/icu.ts')
+    const sourceCandidate = resolve(packageRootPath, 'src/runtime/icu.ts')
     if (existsSync(sourceCandidate)) {
       return sourceCandidate
     }
-    const distCandidate = resolve(PACKAGE_ROOT_PATH, 'dist/runtime-icu.js')
+    const distCandidate = resolve(packageRootPath, 'dist/runtime-icu.js')
     if (existsSync(distCandidate)) {
       return distCandidate
     }
   }
   if (runtimeImportPath === RUNTIME_BASIC_IMPORT) {
-    const sourceCandidate = resolve(PACKAGE_ROOT_PATH, 'src/runtime/basic.ts')
+    const sourceCandidate = resolve(packageRootPath, 'src/runtime/basic.ts')
     if (existsSync(sourceCandidate)) {
       return sourceCandidate
     }
-    const distCandidate = resolve(PACKAGE_ROOT_PATH, 'dist/runtime-basic.js')
+    const distCandidate = resolve(packageRootPath, 'dist/runtime-basic.js')
     if (existsSync(distCandidate)) {
       return distCandidate
     }
@@ -227,6 +225,7 @@ export const generateRuntimeBridgeTarget = async (
 export const bundleRuntimeBridgeTarget = async (
   options: BundleRuntimeBridgeTargetOptions
 ): Promise<BundleRuntimeBridgeTargetResult> => {
+  const packageRootPath = resolvePackageRootPath()
   const runtimeIcuImportAlias = resolveRuntimeImportAlias(RUNTIME_ICU_IMPORT)
   const runtimeBasicImportAlias = resolveRuntimeImportAlias(RUNTIME_BASIC_IMPORT)
 
@@ -235,7 +234,7 @@ export const bundleRuntimeBridgeTarget = async (
   await build({
     entryPoints: [options.inputPath],
     outfile: options.outputPath,
-    absWorkingDir: PACKAGE_ROOT_PATH,
+    absWorkingDir: packageRootPath,
     bundle: true,
     alias: {
       [RUNTIME_ICU_IMPORT]: runtimeIcuImportAlias,
