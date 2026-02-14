@@ -25,6 +25,7 @@ Config fields:
 - `output`: generated table file path
 - `outputKeys?`: generated key/language type file path
 - `outputSwift?`: generated Swift output path (used by `--target swift`)
+- `outputKotlin?`: generated Kotlin output path (used by `--target kotlin`)
 - `outputContract?`: generated canonical contract JSON path
 - `languages`: supported languages
 - `defaultLanguage`: fallback language
@@ -76,7 +77,8 @@ typekit-i18n
 # explicit target selection
 typekit-i18n generate --target ts
 typekit-i18n generate --target swift
-typekit-i18n generate --target ts,swift
+typekit-i18n generate --target kotlin
+typekit-i18n generate --target ts,swift,kotlin
 ```
 
 If no config is found, command exits successfully and skips generation.

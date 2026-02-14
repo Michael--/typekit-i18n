@@ -208,6 +208,7 @@ interface TypekitI18nConfig<TLanguage extends string = string> {
   output: string
   outputKeys?: string
   outputSwift?: string
+  outputKotlin?: string
   outputContract?: string
   languages: ReadonlyArray<TLanguage>
   defaultLanguage: TLanguage
@@ -247,12 +248,14 @@ typekit-i18n
 # explicit targets:
 typekit-i18n generate --target ts
 typekit-i18n generate --target swift
-typekit-i18n generate --target ts,swift
+typekit-i18n generate --target kotlin
+typekit-i18n generate --target ts,swift,kotlin
 ```
 
 - Loads config and generates `translationTable.ts` and `translationKeys.ts`
 - Also generates canonical `translation.contract.json` (path configurable via `outputContract`)
 - `--target swift` also generates Swift output (path configurable via `outputSwift`)
+- `--target kotlin` also generates Kotlin output (path configurable via `outputKotlin`)
 - If no config is found, exits successfully and skips generation
 
 ### `validate`

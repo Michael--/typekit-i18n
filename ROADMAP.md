@@ -105,7 +105,7 @@ flowchart TB
 - [x] Add generator plugin entry points:
   - [x] `typekit-i18n generate --target ts`
   - [x] `typekit-i18n generate --target swift`
-  - [ ] `typekit-i18n generate --target kotlin`
+  - [x] `typekit-i18n generate --target kotlin`
 - [ ] Add deterministic snapshot tests for each target based on the same contract fixture.
 
 ## Swift/Xcode Reintroduction Plan
@@ -138,9 +138,10 @@ flowchart TB
 ### Priority 1 (immediate after Swift contract foundation)
 
 - [ ] Android Studio (`kotlin` generator) with Java interop:
-  - generate Kotlin data classes/enums + API wrapper
-  - ensure Java-callable facade for mixed Kotlin/Java projects
-  - reuse same JS-runtime bridge strategy first (WebView/JS engine or host-provided bridge)
+  - [x] generate Kotlin data classes/enums + API wrapper
+  - [x] ensure Java-callable facade for mixed Kotlin/Java projects
+  - [x] reuse same JS-runtime bridge strategy first (bridge interface in generated target layer)
+  - [ ] add Android project fixture (Gradle/Android Studio) for end-to-end packaging validation
 - [ ] Kotlin Multiplatform (shared core model):
   - keep Android and server/desktop Kotlin consumers on one generated contract model
 
@@ -192,17 +193,17 @@ flowchart LR
   E -->|no| G["Release Blocked"]
 ```
 
-- [ ] Add per-target consumer fixtures in-repo (`fixtures/consumer-swift`, `fixtures/consumer-kotlin`).
+- [x] Add per-target consumer fixtures in-repo (`fixtures/consumer-swift`, `fixtures/consumer-kotlin`).
 - [ ] CI pipeline per fixture:
-  - generate canonical contract
-  - generate target artifacts
-  - compile consumer project (`swift build` / Gradle build)
+  - [x] generate canonical contract
+  - [x] generate target artifacts
+  - [x] compile consumer project (tool-availability aware `swiftc` / `kotlinc` smoke compilation)
 - [ ] Add runtime smoke scenarios per fixture:
-  - basic translation
-  - placeholder rendering
-  - ICU plural/select behavior
-  - missing/fallback behavior parity with JS reference runtime
-- [ ] Add release gate: no publish when any target consumer smoke test fails.
+  - [x] basic translation
+  - [x] placeholder rendering
+  - [ ] ICU plural/select behavior
+  - [ ] missing/fallback behavior parity with JS reference runtime
+- [x] Add release gate: no publish when any enabled target consumer smoke test fails.
 
 ### P1 - Adoption Assets
 
@@ -220,5 +221,5 @@ flowchart LR
 1. [x] Implement canonical contract artifact emission and schema tests.
 2. [x] Add generator plugin architecture and wire `--target ts` as baseline target.
 3. [x] Implement Swift generator MVP from contract + JavaScriptCore adapter smoke test.
-4. [ ] Implement Kotlin generator MVP with Java interoperability checks.
-5. [ ] Add consumer fixture CI (Swift + Kotlin) with compile and runtime smoke gates.
+4. [x] Implement Kotlin generator MVP with Java interoperability checks.
+5. [x] Add consumer fixture CI (Swift + Kotlin) with compile and runtime smoke gates.
