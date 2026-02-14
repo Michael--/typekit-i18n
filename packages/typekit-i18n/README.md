@@ -207,8 +207,11 @@ interface TypekitI18nConfig<TLanguage extends string = string> {
   format?: 'csv' | 'yaml'
   output: string
   outputKeys?: string
+  outputSwift?: string
+  outputContract?: string
   languages: ReadonlyArray<TLanguage>
   defaultLanguage: TLanguage
+  localeByLanguage?: Partial<Record<TLanguage, string>>
 }
 ```
 
@@ -240,9 +243,16 @@ Binary name: `typekit-i18n`
 typekit-i18n generate --config ./typekit.config.ts
 # or simply:
 typekit-i18n
+
+# explicit targets:
+typekit-i18n generate --target ts
+typekit-i18n generate --target swift
+typekit-i18n generate --target ts,swift
 ```
 
 - Loads config and generates `translationTable.ts` and `translationKeys.ts`
+- Also generates canonical `translation.contract.json` (path configurable via `outputContract`)
+- `--target swift` also generates Swift output (path configurable via `outputSwift`)
 - If no config is found, exits successfully and skips generation
 
 ### `validate`

@@ -24,8 +24,11 @@ Config fields:
 - `format?`: optional force format for all inputs (`csv` or `yaml`)
 - `output`: generated table file path
 - `outputKeys?`: generated key/language type file path
+- `outputSwift?`: generated Swift output path (used by `--target swift`)
+- `outputContract?`: generated canonical contract JSON path
 - `languages`: supported languages
 - `defaultLanguage`: fallback language
+- `localeByLanguage?`: optional locale mapping (used by ICU-aware targets)
 
 Rules:
 
@@ -69,9 +72,16 @@ Binary name: `typekit-i18n`
 typekit-i18n generate --config ./typekit.config.ts
 # or simply
 typekit-i18n
+
+# explicit target selection
+typekit-i18n generate --target ts
+typekit-i18n generate --target swift
+typekit-i18n generate --target ts,swift
 ```
 
 If no config is found, command exits successfully and skips generation.
+
+`generate` always emits canonical `translation.contract.json` plus selected target outputs.
 
 ### `validate`
 

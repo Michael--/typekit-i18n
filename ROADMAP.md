@@ -48,7 +48,7 @@ Last sync: 2026-02-14
 ### Decision
 
 - [x] Freeze legacy scripts as reference-only.
-- [ ] Reintroduce Swift/Xcode only via the modern IR/codegen pipeline (no direct continuation of legacy script outputs).
+- [x] Reintroduce Swift/Xcode only via the modern IR/codegen pipeline (no direct continuation of legacy script outputs).
 
 ## Architecture Direction: Single Source of Truth
 
@@ -85,14 +85,14 @@ flowchart TB
 
 ### Canonical artifact
 
-- [ ] Add a target-neutral generated artifact from IR, for example `translation.contract.json`.
-- [ ] Contract v1 includes:
-  - schema version
-  - languages and source language
-  - optional locale mapping per language
-  - keys + categories
-  - placeholder metadata per key
-  - optional workflow metadata (`status`, `tags`)
+- [x] Add a target-neutral generated artifact from IR, for example `translation.contract.json`.
+- [x] Contract v1 includes:
+  - [x] schema version
+  - [x] languages and source language
+  - [x] optional locale mapping per language
+  - [x] keys + categories
+  - [x] placeholder metadata per key
+  - [x] optional workflow metadata (`status`, `tags`)
 
 ### Code ownership boundaries
 
@@ -102,29 +102,30 @@ flowchart TB
 
 ### Generator extensibility
 
-- [ ] Add generator plugin entry points, for example:
-  - `typekit-i18n generate --target ts`
-  - `typekit-i18n generate --target swift`
-  - `typekit-i18n generate --target kotlin`
+- [x] Add generator plugin entry points:
+  - [x] `typekit-i18n generate --target ts`
+  - [x] `typekit-i18n generate --target swift`
+  - [ ] `typekit-i18n generate --target kotlin`
 - [ ] Add deterministic snapshot tests for each target based on the same contract fixture.
 
 ## Swift/Xcode Reintroduction Plan
 
 ### P0 - Contract and CLI foundation
 
-- [ ] Implement canonical contract emission in codegen (`generate` writes TS artifacts + contract).
+- [x] Implement canonical contract emission in codegen (`generate` writes TS artifacts + contract).
 - [ ] Define compatibility policy for contract versioning and generator minimum supported version.
-- [ ] Add fixture-based tests that prove TS outputs and contract outputs remain aligned.
+- [x] Add fixture-based tests that prove TS outputs and contract outputs remain aligned.
 
 ### P1 - Swift MVP (Xcode-first, no duplicated business logic)
 
-- [ ] Implement `swift` generator from contract:
-  - strongly typed key/language/category definitions
-  - typed placeholder models
-  - translation access API surface compatible with existing TS behavior contracts
-- [ ] Add a Swift runtime adapter layer for JavaScript execution (`JavaScriptCore`) that consumes generated metadata and calls the shared JS runtime bundle.
-- [ ] Define error and missing-translation mapping from JS runtime events into Swift-native error/event types.
-- [ ] Add sample iOS app integration and CI smoke test for generated Swift code compilation.
+- [x] Implement `swift` generator from contract:
+  - [x] strongly typed key/language/category definitions
+  - [x] typed placeholder models
+  - [x] translation access API surface compatible with existing TS behavior contracts
+- [x] Add a Swift runtime adapter layer for JavaScript execution (`JavaScriptCore`) that consumes generated metadata and calls the shared JS runtime bundle.
+- [x] Define error and missing-translation mapping from JS runtime events into Swift-native error/event types.
+- [ ] Add sample iOS app integration fixture.
+- [x] Add CI smoke test for generated Swift code compilation.
 
 ### P2 - Swift hardening
 
@@ -162,7 +163,7 @@ flowchart TB
 
 ### P0 - Canonical Contract + Multi-Target Safety
 
-- [ ] Canonical contract artifact and schema versioning in codegen.
+- [x] Canonical contract artifact and schema versioning in codegen.
 - [ ] TS runtime metadata derived from contract outputs, not duplicated literals.
 - [ ] Per-target snapshot and conformance tests from identical fixtures.
 
@@ -216,8 +217,8 @@ flowchart LR
 
 ## Next Concrete Steps
 
-1. Implement canonical contract artifact emission and schema tests.
-2. Add generator plugin architecture and wire `--target ts` as baseline target.
-3. Implement Swift generator MVP from contract + JavaScriptCore adapter smoke test.
-4. Implement Kotlin generator MVP with Java interoperability checks.
-5. Add consumer fixture CI (Swift + Kotlin) with compile and runtime smoke gates.
+1. [x] Implement canonical contract artifact emission and schema tests.
+2. [x] Add generator plugin architecture and wire `--target ts` as baseline target.
+3. [x] Implement Swift generator MVP from contract + JavaScriptCore adapter smoke test.
+4. [ ] Implement Kotlin generator MVP with Java interoperability checks.
+5. [ ] Add consumer fixture CI (Swift + Kotlin) with compile and runtime smoke gates.
