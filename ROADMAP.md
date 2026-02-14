@@ -52,6 +52,37 @@ Last sync: 2026-02-14
 
 ## Architecture Direction: Single Source of Truth
 
+### Architecture Overview
+
+```mermaid
+flowchart LR
+  S["Source Files (CSV/YAML)"] --> IR["IR Parse + Validation"]
+  IR --> C["translation.contract.json"]
+  C --> GTS["Generator: ts"]
+  C --> GSW["Generator: swift"]
+  C --> GKT["Generator: kotlin"]
+  GTS --> ATS["translationTable.ts + translationKeys.ts"]
+  GSW --> ASW["Swift Types + Bridge Adapter"]
+  GKT --> AKT["Kotlin Types + Bridge Adapter"]
+  ATS --> RTS["TS Runtime API"]
+  JS["Shared JS Runtime Engine"] --> RTS
+  JS --> ASW
+  JS --> AKT
+  JS -. "optional future replacement" .-> NSW["Native Swift Runtime (optional)"]
+  JS -. "optional future replacement" .-> NKT["Native Kotlin Runtime (optional)"]
+```
+
+### Editor vs Build Tooling Boundary
+
+```mermaid
+flowchart TB
+  SRC["Workspace Sources (CSV/YAML)"] --> EXT["VSCode Extension Indexing (F12/Rename/Diagnostics)"]
+  SRC --> IR["IR Parse + Validation"]
+  IR --> CTR["translation.contract.json"]
+  CTR --> GEN["Target Generators (ts/swift/kotlin/...)"]
+  GEN --> CONSUMERS["App/SDK Consumer Projects"]
+```
+
 ### Canonical artifact
 
 - [ ] Add a target-neutral generated artifact from IR, for example `translation.contract.json`.
@@ -149,6 +180,16 @@ Last sync: 2026-02-14
 - [ ] Add pre-publish validation including codegen drift + docs build.
 
 ### P1 - Cross-Target Consumer Validation
+
+```mermaid
+flowchart LR
+  A["Generate Contract"] --> B["Generate Target Artifacts"]
+  B --> C["Compile Consumer Fixture"]
+  C --> D["Run Runtime Smoke Tests"]
+  D --> E{"Parity + Pass?"}
+  E -->|yes| F["Release Gate Open"]
+  E -->|no| G["Release Blocked"]
+```
 
 - [ ] Add per-target consumer fixtures in-repo (`fixtures/consumer-swift`, `fixtures/consumer-kotlin`).
 - [ ] CI pipeline per fixture:
