@@ -26,6 +26,12 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    */
   outputKeys?: string
   /**
+   * Optional output file path for generated Swift target artifacts.
+   * Used by `generate --target swift`.
+   * Defaults to `translation.swift` in the same directory as `output`.
+   */
+  outputSwift?: string
+  /**
    * Optional output file path for the canonical translation contract JSON artifact.
    * Defaults to `translation.contract.json` in the same directory as `output`.
    */

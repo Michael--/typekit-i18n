@@ -1,4 +1,5 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
@@ -28,9 +29,13 @@ describe('resolveCodegenTargets', () => {
     expect(resolveCodegenTargets(['ts', 'ts'])).toEqual(['ts'])
   })
 
+  test('accepts supported swift target', () => {
+    expect(resolveCodegenTargets(['swift'])).toEqual(['swift'])
+  })
+
   test('throws for unsupported targets', () => {
-    expect(() => resolveCodegenTargets(['swift'])).toThrow(
-      /Unsupported generation target\(s\): swift/
+    expect(() => resolveCodegenTargets(['kotlin'])).toThrow(
+      /Unsupported generation target\(s\): kotlin/
     )
   })
 })
@@ -78,4 +83,154 @@ title;Main title;Welcome;Willkommen
     expect(contractSource).toContain('"schemaVersion": "1"')
     expect(contractSource).toContain('"key": "title"')
   })
+
+  test('generates swift target artifact', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translationTable.ts')
+    const outputSwiftPath = join(directory, 'translation.swift')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+checkout.total;Total label;Total;Summe
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputSwift: outputSwiftPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+      localeByLanguage: {
+        en: 'en-US',
+        de: 'de-DE',
+      },
+    }
+
+    const result = await generateTranslations(config, {
+      targets: ['swift'],
+    })
+    expect(result.targets).toEqual(['swift'])
+    expect(result.targetResults).toEqual([
+      {
+        target: 'swift',
+        outputPaths: [outputSwiftPath],
+      },
+    ])
+
+    const swiftSource = await readFile(outputSwiftPath, 'utf-8')
+    expect(swiftSource).toContain('public enum TranslationLanguage')
+    expect(swiftSource).toContain('public enum TranslationKey')
+    expect(swiftSource).toContain('public final class TypekitTranslator')
+    expect(swiftSource).toContain('checkout.total')
+    expect(swiftSource).toContain('JavaScriptCoreTranslationRuntimeBridge')
+  })
+
+  test('throws when outputSwift collides with output', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translationTable.ts')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputSwift: outputPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await expect(generateTranslations(config, { targets: ['swift'] })).rejects.toThrow(
+      /"outputSwift" must not point to the same file as "output" or "outputKeys"/
+    )
+  })
+
+  test.runIf(spawnSync('swiftc', ['--version'], { stdio: 'ignore' }).status === 0)(
+    'swift target compiles in a consumer smoke project',
+    async () => {
+      const directory = await createTempDirectory()
+      const csvPath = join(directory, 'translations.csv')
+      const outputPath = join(directory, 'translationTable.ts')
+      const outputSwiftPath = join(directory, 'translation.swift')
+      const smokePath = join(directory, 'smoke.swift')
+      const binaryPath = join(directory, 'smoke')
+      const moduleCachePath = join(directory, 'swift-module-cache')
+      const clangModuleCachePath = join(directory, 'clang-module-cache')
+
+      await writeFile(
+        csvPath,
+        `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+        'utf-8'
+      )
+
+      const config: TypekitI18nConfig<'en' | 'de'> = {
+        input: [csvPath],
+        output: outputPath,
+        outputSwift: outputSwiftPath,
+        languages: ['en', 'de'],
+        defaultLanguage: 'en',
+      }
+
+      await generateTranslations(config, { targets: ['swift'] })
+      await Promise.all([
+        mkdir(moduleCachePath, { recursive: true }),
+        mkdir(clangModuleCachePath, { recursive: true }),
+      ])
+
+      await writeFile(
+        smokePath,
+        `import Foundation
+
+@main
+struct SmokeApp {
+  static func main() throws {
+    let bridge = ClosureTranslationRuntimeBridge { key, language, placeholders in
+      return "\\(key):\\(language):\\(placeholders.count)"
+    }
+    let translator = TypekitTranslator(bridge: bridge)
+    let value = try translator.translate(
+      .title,
+      language: .de,
+      placeholders: [TranslationPlaceholder(key: "name", value: .string("Ada"))]
+    )
+    print(value)
+  }
+}
+`,
+        'utf-8'
+      )
+
+      const compileResult = spawnSync('swiftc', [outputSwiftPath, smokePath, '-o', binaryPath], {
+        encoding: 'utf-8',
+        env: {
+          ...process.env,
+          SWIFT_MODULECACHE_PATH: moduleCachePath,
+          CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
+          HOME: directory,
+        },
+      })
+      if (compileResult.status !== 0) {
+        throw new Error(compileResult.stderr || compileResult.stdout)
+      }
+
+      const runResult = spawnSync(binaryPath, [], { encoding: 'utf-8' })
+      if (runResult.status !== 0) {
+        throw new Error(runResult.stderr || runResult.stdout)
+      }
+
+      expect(runResult.stdout.trim()).toBe('title:de:1')
+    }
+  )
 })

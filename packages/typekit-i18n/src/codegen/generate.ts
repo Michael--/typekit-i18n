@@ -2,11 +2,16 @@ import { glob } from 'glob'
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import pc from 'picocolors'
-import { createTranslationContract, toTranslationContractSource } from './contract.js'
+import {
+  createTranslationContract,
+  toTranslationContractSource,
+  TranslationContract,
+} from './contract.js'
 import { readCsvHeaders } from './csv.js'
 import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { TranslationIrProject } from './ir/types.js'
 import { toIrProjectFromYamlFile } from './ir/yaml.js'
+import { generateSwiftTarget } from './targets/swift.js'
 import { TranslationInputFormat, TranslationRecord, TypekitI18nConfig } from './types.js'
 import { parse as parseYaml } from 'yaml'
 
@@ -19,7 +24,7 @@ const CSV_METADATA_COLUMNS: ReadonlySet<string> = new Set([
   'placeholders',
 ])
 const DEFAULT_CATEGORY = 'default'
-const SUPPORTED_CODEGEN_TARGETS = ['ts'] as const
+const SUPPORTED_CODEGEN_TARGETS = ['ts', 'swift'] as const
 
 /**
  * Supported generation target names.
@@ -452,9 +457,14 @@ interface TsOutputPaths {
   outputKeysPath: string
 }
 
+interface SwiftOutputPaths {
+  outputPath: string
+}
+
 interface ResolvedGenerationOutputPaths {
   outputContractPath: string
   ts: TsOutputPaths
+  swift?: SwiftOutputPaths
 }
 
 const resolveInputFiles = async (
@@ -542,7 +552,8 @@ const prepareGenerationData = async <TLanguage extends string>(
 }
 
 const resolveGenerationOutputPaths = <TLanguage extends string>(
-  config: TypekitI18nConfig<TLanguage>
+  config: TypekitI18nConfig<TLanguage>,
+  targets: ReadonlyArray<CodegenTarget>
 ): ResolvedGenerationOutputPaths => {
   const outputPath = resolve(config.output)
   const outputKeysPath = resolve(
@@ -563,12 +574,33 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
     )
   }
 
+  const includesSwift = targets.includes('swift')
+  const swiftOutputPath = includesSwift
+    ? resolve(config.outputSwift ?? join(dirname(outputPath), 'translation.swift'))
+    : null
+
+  if (swiftOutputPath && (swiftOutputPath === outputPath || swiftOutputPath === outputKeysPath)) {
+    throw new Error(
+      'Invalid configuration: "outputSwift" must not point to the same file as "output" or "outputKeys".'
+    )
+  }
+  if (swiftOutputPath && swiftOutputPath === outputContractPath) {
+    throw new Error(
+      'Invalid configuration: "outputSwift" must not point to the same file as "outputContract".'
+    )
+  }
+
   return {
     outputContractPath,
     ts: {
       outputPath,
       outputKeysPath,
     },
+    swift: swiftOutputPath
+      ? {
+          outputPath: swiftOutputPath,
+        }
+      : undefined,
   }
 }
 
@@ -619,18 +651,17 @@ export const generateTranslations = async <TLanguage extends string>(
 ): Promise<GenerateTranslationsResult> => {
   const targets = resolveCodegenTargets(options.targets)
   const prepared = await prepareGenerationData(config)
-  const outputPaths = resolveGenerationOutputPaths(config)
+  const outputPaths = resolveGenerationOutputPaths(config, targets)
 
   await mkdir(dirname(outputPaths.outputContractPath), { recursive: true })
 
-  const contractSource = toTranslationContractSource(
-    createTranslationContract({
-      sourceLanguage: config.defaultLanguage,
-      languages: config.languages,
-      localeByLanguage: config.localeByLanguage,
-      records: prepared.records,
-    })
-  )
+  const contract: TranslationContract<string> = createTranslationContract({
+    sourceLanguage: config.defaultLanguage,
+    languages: config.languages,
+    localeByLanguage: config.localeByLanguage,
+    records: prepared.records,
+  })
+  const contractSource = toTranslationContractSource(contract)
   await writeFile(outputPaths.outputContractPath, contractSource, 'utf-8')
 
   const targetResults: GenerateTargetResult[] = []
@@ -643,6 +674,21 @@ export const generateTranslations = async <TLanguage extends string>(
         outputPaths: outputPaths.ts,
       })
       targetResults.push(result)
+      continue
+    }
+
+    if (target === 'swift') {
+      if (!outputPaths.swift) {
+        throw new Error('Swift generation target is missing resolved output path.')
+      }
+      const result = await generateSwiftTarget({
+        contract,
+        outputPath: outputPaths.swift.outputPath,
+      })
+      targetResults.push({
+        target: 'swift',
+        outputPaths: [result.outputPath],
+      })
       continue
     }
   }
