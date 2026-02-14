@@ -191,8 +191,20 @@ function extractAPIFromTS(filePath, skipInheritanceResolution = false) {
 
     // Handle re-exports: export { name1, name2 } from "./other-file"
     if (node.type === 'ExportNamedDeclaration' && node.source && node.specifiers) {
+      // Type-only re-exports do not affect runtime API and should be ignored.
+      if (node.exportKind === 'type') {
+        return
+      }
+
+      const valueSpecifiers = node.specifiers.filter(
+        (spec) => spec.type === 'ExportSpecifier' && spec.exportKind !== 'type'
+      )
+      if (valueSpecifiers.length === 0) {
+        return
+      }
+
       const sourceFile = node.source.value
-      const reExports = processReExports(sourceFile, node.specifiers, path.dirname(filePath))
+      const reExports = processReExports(sourceFile, valueSpecifiers, path.dirname(filePath))
 
       // Merge re-exported functions and interfaces
       Object.assign(api, reExports.functions)
@@ -367,6 +379,49 @@ export type APIManifest = typeof default;
   return manifest
 }
 
+const RE_EXPORT_SOURCE_EXTENSION_CANDIDATES = {
+  '.js': ['.ts', '.mts', '.cts'],
+  '.mjs': ['.mts', '.ts', '.cts'],
+  '.cjs': ['.cts', '.ts', '.mts'],
+}
+
+const TS_SOURCE_EXTENSIONS = ['.ts', '.mts', '.cts']
+
+/**
+ * Resolve a re-export source path to an existing TypeScript source file.
+ */
+function resolveReExportSourcePath(sourceFile, basePath) {
+  const absoluteSourcePath = path.resolve(basePath, sourceFile)
+  const extension = path.extname(absoluteSourcePath)
+  const candidates = []
+  const addCandidate = (candidate) => {
+    if (!candidates.includes(candidate)) {
+      candidates.push(candidate)
+    }
+  }
+
+  if (extension.length === 0) {
+    TS_SOURCE_EXTENSIONS.forEach((tsExtension) => {
+      addCandidate(`${absoluteSourcePath}${tsExtension}`)
+    })
+  } else if (Object.hasOwn(RE_EXPORT_SOURCE_EXTENSION_CANDIDATES, extension)) {
+    const mappedExtensions = RE_EXPORT_SOURCE_EXTENSION_CANDIDATES[extension]
+    mappedExtensions.forEach((mappedExtension) => {
+      addCandidate(`${absoluteSourcePath.slice(0, -extension.length)}${mappedExtension}`)
+    })
+  } else {
+    addCandidate(absoluteSourcePath)
+  }
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate
+    }
+  }
+
+  return null
+}
+
 /**
  * Process re-exports by parsing the referenced file
  */
@@ -375,14 +430,10 @@ function processReExports(sourceFile, specifiers, basePath) {
   const interfaces = {}
 
   try {
-    // Resolve the file path
-    let resolvedPath = path.resolve(basePath, sourceFile)
-    if (!resolvedPath.endsWith('.ts')) {
-      resolvedPath += '.ts'
-    }
+    const resolvedPath = resolveReExportSourcePath(sourceFile, basePath)
 
-    if (!fs.existsSync(resolvedPath)) {
-      console.warn(`⚠️  Re-export source file not found: ${resolvedPath}`)
+    if (!resolvedPath) {
+      console.warn(`⚠️  Re-export source file not found for "${sourceFile}" in ${basePath}`)
       return { functions, interfaces }
     }
 
