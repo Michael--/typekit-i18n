@@ -151,19 +151,28 @@ checkout.total;Total label;Total;Summe
       targets: ['swift'],
     })
     expect(result.targets).toEqual(['swift'])
+    expect(result.runtimeBridgePath).toBe(join(directory, 'translation.runtime.mjs'))
     expect(result.targetResults).toEqual([
       {
         target: 'swift',
         outputPaths: [outputSwiftPath],
       },
     ])
+    expect(result.runtimeBridgePath).toBeDefined()
+    if (!result.runtimeBridgePath) {
+      throw new Error('Expected runtime bridge output path to be defined for swift target.')
+    }
 
     const swiftSource = await readFile(outputSwiftPath, 'utf-8')
+    const runtimeBridgeSource = await readFile(result.runtimeBridgePath, 'utf-8')
     expect(swiftSource).toContain('public enum TranslationLanguage')
     expect(swiftSource).toContain('public enum TranslationKey')
     expect(swiftSource).toContain('public final class TypekitTranslator')
     expect(swiftSource).toContain('checkout.total')
     expect(swiftSource).toContain('JavaScriptCoreTranslationRuntimeBridge')
+    expect(runtimeBridgeSource).toContain('createIcuTranslator')
+    expect(runtimeBridgeSource).toContain('installTypekitRuntimeBridge')
+    expect(runtimeBridgeSource).toContain('__typekitTranslate')
   })
 
   test('throws when outputSwift collides with output', async () => {
@@ -222,19 +231,27 @@ checkout.total;Total label;Total;Summe
       targets: ['kotlin'],
     })
     expect(result.targets).toEqual(['kotlin'])
+    expect(result.runtimeBridgePath).toBe(join(directory, 'translation.runtime.mjs'))
     expect(result.targetResults).toEqual([
       {
         target: 'kotlin',
         outputPaths: [outputKotlinPath],
       },
     ])
+    expect(result.runtimeBridgePath).toBeDefined()
+    if (!result.runtimeBridgePath) {
+      throw new Error('Expected runtime bridge output path to be defined for kotlin target.')
+    }
 
     const kotlinSource = await readFile(outputKotlinPath, 'utf-8')
+    const runtimeBridgeSource = await readFile(result.runtimeBridgePath, 'utf-8')
     expect(kotlinSource).toContain('enum class TranslationLanguage')
     expect(kotlinSource).toContain('enum class TranslationKey')
     expect(kotlinSource).toContain('class TypekitTranslator')
     expect(kotlinSource).toContain('object TypekitJavaInterop')
     expect(kotlinSource).toContain('@JvmStatic')
+    expect(runtimeBridgeSource).toContain('createIcuTranslator')
+    expect(runtimeBridgeSource).toContain('installTypekitRuntimeBridge')
   })
 
   test('throws when outputKotlin collides with output', async () => {
@@ -261,6 +278,43 @@ title;Main title;Welcome;Willkommen
     await expect(generateTranslations(config, { targets: ['kotlin'] })).rejects.toThrow(
       /"outputKotlin" must not point to the same file as "output" or "outputKeys"/
     )
+  })
+
+  test('supports basic runtime bridge mode and custom function name', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translationTable.ts')
+    const outputKotlinPath = join(directory, 'translation.kt')
+    const outputRuntimeBridgePath = join(directory, 'typekit.bridge.mjs')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputKotlin: outputKotlinPath,
+      outputRuntimeBridge: outputRuntimeBridgePath,
+      runtimeBridgeMode: 'basic',
+      runtimeBridgeFunctionName: '__translate',
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    const result = await generateTranslations(config, {
+      targets: ['kotlin'],
+    })
+
+    expect(result.runtimeBridgePath).toBe(outputRuntimeBridgePath)
+    const runtimeBridgeSource = await readFile(outputRuntimeBridgePath, 'utf-8')
+    expect(runtimeBridgeSource).toContain('import { createTranslator }')
+    expect(runtimeBridgeSource).not.toContain('createIcuTranslator')
+    expect(runtimeBridgeSource).toContain('__translate')
   })
 
   test.runIf(hasSwiftCompiler)('swift target compiles in a consumer smoke project', async () => {

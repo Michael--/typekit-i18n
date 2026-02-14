@@ -4,6 +4,11 @@
 export type TranslationInputFormat = 'csv' | 'yaml'
 
 /**
+ * Runtime bridge generation mode used for native target integrations.
+ */
+export type RuntimeBridgeMode = 'basic' | 'icu'
+
+/**
  * Generator configuration used to transform translation resources into a typed table module.
  */
 export interface TypekitI18nConfig<TLanguage extends string = string> {
@@ -37,6 +42,23 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    * Defaults to `translation.kt` in the same directory as `output`.
    */
   outputKotlin?: string
+  /**
+   * Optional output file path for generated runtime bridge module.
+   * The runtime bridge module installs `globalThis.__typekitTranslate` by default.
+   * Defaults to `translation.runtime.mjs` in the same directory as `output`.
+   */
+  outputRuntimeBridge?: string
+  /**
+   * Optional runtime bridge generation mode.
+   * `icu` uses `createIcuTranslator`; `basic` uses `createTranslator`.
+   * Defaults to `icu`.
+   */
+  runtimeBridgeMode?: RuntimeBridgeMode
+  /**
+   * Optional runtime bridge function name used on `globalThis`.
+   * Defaults to `__typekitTranslate`.
+   */
+  runtimeBridgeFunctionName?: string
   /**
    * Optional output file path for the canonical translation contract JSON artifact.
    * Defaults to `translation.contract.json` in the same directory as `output`.

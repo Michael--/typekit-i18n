@@ -29,6 +29,7 @@ Last sync: 2026-02-14
 - [x] Deterministic multi-file generation from CSV and YAML.
 - [x] IR parsing + validation with placeholder consistency checks.
 - [x] CLI commands implemented: `generate`, `validate`, `convert`.
+- [x] Shared runtime bridge artifact generation (`translation.runtime.mjs`) for native targets, backed by JS runtime (`createIcuTranslator`/`createTranslator`).
 
 ### Quality and Documentation
 
@@ -126,6 +127,7 @@ flowchart TB
 - [x] Define error and missing-translation mapping from JS runtime events into Swift-native error/event types.
 - [ ] Add sample iOS app integration fixture.
 - [x] Add CI smoke test for generated Swift code compilation.
+- [x] Generate copy/paste-ready runtime bridge installer so Swift bootstrap remains minimal (load bundle + bridge + translator).
 
 ### P2 - Swift hardening
 
@@ -141,6 +143,7 @@ flowchart TB
   - [x] generate Kotlin data classes/enums + API wrapper
   - [x] ensure Java-callable facade for mixed Kotlin/Java projects
   - [x] reuse same JS-runtime bridge strategy first (bridge interface in generated target layer)
+  - [x] generate shared JS runtime bridge module consumed by Kotlin bridge implementations
   - [ ] add Android project fixture (Gradle/Android Studio) for end-to-end packaging validation
 - [ ] Kotlin Multiplatform (shared core model):
   - keep Android and server/desktop Kotlin consumers on one generated contract model

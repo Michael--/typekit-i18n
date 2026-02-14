@@ -26,6 +26,9 @@ Config fields:
 - `outputKeys?`: generated key/language type file path
 - `outputSwift?`: generated Swift output path (used by `--target swift`)
 - `outputKotlin?`: generated Kotlin output path (used by `--target kotlin`)
+- `outputRuntimeBridge?`: generated runtime bridge module path (`translation.runtime.mjs` by default when native targets are generated)
+- `runtimeBridgeMode?`: runtime bridge mode (`icu` default, `basic` optional)
+- `runtimeBridgeFunctionName?`: runtime bridge function name on `globalThis` (`__typekitTranslate` default)
 - `outputContract?`: generated canonical contract JSON path
 - `languages`: supported languages
 - `defaultLanguage`: fallback language
@@ -84,6 +87,7 @@ typekit-i18n generate --target ts,swift,kotlin
 If no config is found, command exits successfully and skips generation.
 
 `generate` always emits canonical `translation.contract.json` plus selected target outputs.
+When `swift` or `kotlin` targets are generated, `translation.runtime.mjs` is generated automatically.
 
 Native target integration details are documented in [Native Targets](./native-targets).
 
@@ -144,4 +148,6 @@ flowchart LR
   D --> E["Merge entries + reject duplicate keys"]
   E --> F["Write translationTable.ts"]
   E --> G["Write translationKeys.ts"]
+  E --> H["Write translation.contract.json"]
+  E --> I["Write translation.runtime.mjs (native targets)"]
 ```

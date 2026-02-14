@@ -12,8 +12,14 @@ import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { TranslationIrProject } from './ir/types.js'
 import { toIrProjectFromYamlFile } from './ir/yaml.js'
 import { generateKotlinTarget } from './targets/kotlin.js'
+import { generateRuntimeBridgeTarget } from './targets/runtimeBridge.js'
 import { generateSwiftTarget } from './targets/swift.js'
-import { TranslationInputFormat, TranslationRecord, TypekitI18nConfig } from './types.js'
+import {
+  RuntimeBridgeMode,
+  TranslationInputFormat,
+  TranslationRecord,
+  TypekitI18nConfig,
+} from './types.js'
 import { parse as parseYaml } from 'yaml'
 
 const quote = (value: string): string => JSON.stringify(value)
@@ -77,6 +83,10 @@ export interface GenerateTranslationsResult {
    * Per-target output file paths.
    */
   targetResults: ReadonlyArray<GenerateTargetResult>
+  /**
+   * Optional absolute output path for generated shared runtime bridge module.
+   */
+  runtimeBridgePath?: string
 }
 
 const toTypeUnion = (values: ReadonlyArray<string>): string =>
@@ -466,11 +476,18 @@ interface KotlinOutputPaths {
   outputPath: string
 }
 
+interface RuntimeBridgeOutputPaths {
+  outputPath: string
+  mode: RuntimeBridgeMode
+  functionName: string
+}
+
 interface ResolvedGenerationOutputPaths {
   outputContractPath: string
   ts: TsOutputPaths
   swift?: SwiftOutputPaths
   kotlin?: KotlinOutputPaths
+  runtimeBridge?: RuntimeBridgeOutputPaths
 }
 
 const resolveInputFiles = async (
@@ -582,12 +599,23 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
 
   const includesSwift = targets.includes('swift')
   const includesKotlin = targets.includes('kotlin')
+  const includesNativeTargets = includesSwift || includesKotlin
+  const shouldGenerateRuntimeBridge =
+    includesNativeTargets ||
+    typeof config.outputRuntimeBridge === 'string' ||
+    typeof config.runtimeBridgeMode === 'string' ||
+    typeof config.runtimeBridgeFunctionName === 'string'
   const swiftOutputPath = includesSwift
     ? resolve(config.outputSwift ?? join(dirname(outputPath), 'translation.swift'))
     : null
   const kotlinOutputPath = includesKotlin
     ? resolve(config.outputKotlin ?? join(dirname(outputPath), 'translation.kt'))
     : null
+  const runtimeBridgeOutputPath = shouldGenerateRuntimeBridge
+    ? resolve(config.outputRuntimeBridge ?? join(dirname(outputPath), 'translation.runtime.mjs'))
+    : null
+  const runtimeBridgeMode = config.runtimeBridgeMode ?? 'icu'
+  const runtimeBridgeFunctionName = config.runtimeBridgeFunctionName ?? '__typekitTranslate'
 
   if (swiftOutputPath && (swiftOutputPath === outputPath || swiftOutputPath === outputKeysPath)) {
     throw new Error(
@@ -617,6 +645,35 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
       'Invalid configuration: "outputSwift" and "outputKotlin" must not point to the same file.'
     )
   }
+  if (
+    runtimeBridgeOutputPath &&
+    (runtimeBridgeOutputPath === outputPath ||
+      runtimeBridgeOutputPath === outputKeysPath ||
+      runtimeBridgeOutputPath === outputContractPath)
+  ) {
+    throw new Error(
+      'Invalid configuration: "outputRuntimeBridge" must not point to the same file as "output", "outputKeys", or "outputContract".'
+    )
+  }
+  if (
+    runtimeBridgeOutputPath &&
+    ((swiftOutputPath && runtimeBridgeOutputPath === swiftOutputPath) ||
+      (kotlinOutputPath && runtimeBridgeOutputPath === kotlinOutputPath))
+  ) {
+    throw new Error(
+      'Invalid configuration: "outputRuntimeBridge" must not point to the same file as "outputSwift" or "outputKotlin".'
+    )
+  }
+  if (runtimeBridgeMode !== 'basic' && runtimeBridgeMode !== 'icu') {
+    throw new Error(
+      `Invalid configuration: "runtimeBridgeMode" must be "basic" or "icu" (received "${runtimeBridgeMode}").`
+    )
+  }
+  if (runtimeBridgeFunctionName.trim().length === 0) {
+    throw new Error(
+      'Invalid configuration: "runtimeBridgeFunctionName" must be a non-empty string.'
+    )
+  }
 
   return {
     outputContractPath,
@@ -632,6 +689,13 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
     kotlin: kotlinOutputPath
       ? {
           outputPath: kotlinOutputPath,
+        }
+      : undefined,
+    runtimeBridge: runtimeBridgeOutputPath
+      ? {
+          outputPath: runtimeBridgeOutputPath,
+          mode: runtimeBridgeMode,
+          functionName: runtimeBridgeFunctionName,
         }
       : undefined,
   }
@@ -697,6 +761,15 @@ export const generateTranslations = async <TLanguage extends string>(
   const contractSource = toTranslationContractSource(contract)
   await writeFile(outputPaths.outputContractPath, contractSource, 'utf-8')
 
+  const runtimeBridgeResult = outputPaths.runtimeBridge
+    ? await generateRuntimeBridgeTarget({
+        contract,
+        outputPath: outputPaths.runtimeBridge.outputPath,
+        mode: outputPaths.runtimeBridge.mode,
+        functionName: outputPaths.runtimeBridge.functionName,
+      })
+    : null
+
   const targetResults: GenerateTargetResult[] = []
   for (const target of targets) {
     if (target === 'ts') {
@@ -744,6 +817,9 @@ export const generateTranslations = async <TLanguage extends string>(
   const formattedTargetOutputs = targetResults.flatMap((result) =>
     result.outputPaths.map((outputPath) => `"${outputPath}"`)
   )
+  if (runtimeBridgeResult) {
+    formattedTargetOutputs.push(`"${runtimeBridgeResult.outputPath}"`)
+  }
   const outputSummary =
     formattedTargetOutputs.length > 0
       ? `${formattedTargetOutputs.join(', ')}, and "${outputPaths.outputContractPath}"`
@@ -760,6 +836,7 @@ export const generateTranslations = async <TLanguage extends string>(
     outputContractPath: outputPaths.outputContractPath,
     targets,
     targetResults,
+    runtimeBridgePath: runtimeBridgeResult?.outputPath,
   }
 }
 
