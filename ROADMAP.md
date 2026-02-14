@@ -148,6 +148,20 @@ Last sync: 2026-02-14
 - [ ] Lock npm artifact contract (`dist`, exports, CLI entry checks).
 - [ ] Add pre-publish validation including codegen drift + docs build.
 
+### P1 - Cross-Target Consumer Validation
+
+- [ ] Add per-target consumer fixtures in-repo (`fixtures/consumer-swift`, `fixtures/consumer-kotlin`).
+- [ ] CI pipeline per fixture:
+  - generate canonical contract
+  - generate target artifacts
+  - compile consumer project (`swift build` / Gradle build)
+- [ ] Add runtime smoke scenarios per fixture:
+  - basic translation
+  - placeholder rendering
+  - ICU plural/select behavior
+  - missing/fallback behavior parity with JS reference runtime
+- [ ] Add release gate: no publish when any target consumer smoke test fails.
+
 ### P1 - Adoption Assets
 
 - [ ] Add `CONTRIBUTING.md` with contributor workflow and quality gates.
@@ -165,3 +179,4 @@ Last sync: 2026-02-14
 2. Add generator plugin architecture and wire `--target ts` as baseline target.
 3. Implement Swift generator MVP from contract + JavaScriptCore adapter smoke test.
 4. Implement Kotlin generator MVP with Java interoperability checks.
+5. Add consumer fixture CI (Swift + Kotlin) with compile and runtime smoke gates.
