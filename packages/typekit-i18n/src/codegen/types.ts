@@ -26,6 +26,11 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    */
   outputKeys?: string
   /**
+   * Optional output file path for the canonical translation contract JSON artifact.
+   * Defaults to `translation.contract.json` in the same directory as `output`.
+   */
+  outputContract?: string
+  /**
    * Supported language columns in the input resources.
    */
   languages: ReadonlyArray<TLanguage>
@@ -33,6 +38,11 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    * Default fallback language.
    */
   defaultLanguage: TLanguage
+  /**
+   * Optional locale mapping used by ICU-aware consumers.
+   * Keys must be part of `languages`.
+   */
+  localeByLanguage?: Partial<Record<TLanguage, string>>
 }
 
 /**
@@ -84,6 +94,31 @@ export interface TranslationRecord<TLanguage extends string = string> {
    * Human-readable translator context.
    */
   description: string
+  /**
+   * Optional review workflow status.
+   */
+  status?: 'draft' | 'review' | 'approved'
+  /**
+   * Optional tags for grouping/filtering.
+   */
+  tags?: ReadonlyArray<string>
+  /**
+   * Optional declared placeholders.
+   */
+  placeholders?: ReadonlyArray<{
+    /**
+     * Placeholder name used in template values.
+     */
+    name: string
+    /**
+     * Optional semantic type hint.
+     */
+    type?: 'string' | 'number' | 'boolean' | 'date' | 'currency'
+    /**
+     * Optional formatter hint used by tooling.
+     */
+    formatHint?: string
+  }>
   /**
    * Per-language translation values.
    */

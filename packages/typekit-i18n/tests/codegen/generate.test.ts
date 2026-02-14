@@ -29,6 +29,7 @@ describe('generateTranslationTable', () => {
     const bCsvPath = join(directory, 'b.csv')
     const outputTablePath = join(directory, 'translationTable.ts')
     const outputKeysPath = join(directory, 'translationKeys.ts')
+    const outputContractPath = join(directory, 'translation.contract.json')
 
     await writeFile(
       bCsvPath,
@@ -55,8 +56,10 @@ a_key;Text A;A english;A deutsch
     await generateTranslationTable(config)
     const tableSource = await readFile(outputTablePath, 'utf-8')
     const keysSource = await readFile(outputKeysPath, 'utf-8')
+    const contractSource = await readFile(outputContractPath, 'utf-8')
     const normalizedTableSource = normalizeTempPath(tableSource, directory)
     const normalizedKeysSource = normalizeTempPath(keysSource, directory)
+    const normalizedContractSource = normalizeTempPath(contractSource, directory)
 
     expect(normalizedTableSource).toMatchInlineSnapshot(`
       "/*
@@ -112,6 +115,39 @@ a_key;Text A;A english;A deutsch
       export type TranslateKeyOf<C extends TranslateCategory> = TranslateKeysByCategory[C]
       export const LanguageCodes = ["en", "de"] as const
       export type TranslateLanguage = (typeof LanguageCodes)[number]
+      "
+    `)
+
+    expect(normalizedContractSource).toMatchInlineSnapshot(`
+      "{
+        "schemaVersion": "1",
+        "sourceLanguage": "en",
+        "languages": [
+          "en",
+          "de"
+        ],
+        "localeByLanguage": {},
+        "entries": [
+          {
+            "category": "default",
+            "key": "a_key",
+            "description": "Text A",
+            "values": {
+              "en": "A english",
+              "de": "A deutsch"
+            }
+          },
+          {
+            "category": "default",
+            "key": "b_key",
+            "description": "Text B",
+            "values": {
+              "en": "B english",
+              "de": "B deutsch"
+            }
+          }
+        ]
+      }
       "
     `)
   })
@@ -300,6 +336,60 @@ one;Only row;One;Eins
 
     await expect(generateTranslationTable(config)).rejects.toThrow(
       /"output" and "outputKeys" must not point to the same file/
+    )
+  })
+
+  test('throws when outputContract targets the same file as output', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translations.generated.ts')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+one;Only row;One;Eins
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputContract: outputPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await expect(generateTranslationTable(config)).rejects.toThrow(
+      /"outputContract" must not point to the same file as "output" or "outputKeys"/
+    )
+  })
+
+  test('throws when localeByLanguage contains unconfigured language', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translationTable.ts')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<string> = {
+      input: [csvPath],
+      output: outputPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+      localeByLanguage: {
+        fr: 'fr-FR',
+      },
+    }
+
+    await expect(generateTranslationTable(config)).rejects.toThrow(
+      /locale mapping language "fr" is not part of "languages"/
     )
   })
 

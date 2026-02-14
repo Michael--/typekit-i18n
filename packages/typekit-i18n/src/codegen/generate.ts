@@ -2,6 +2,7 @@ import { glob } from 'glob'
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import pc from 'picocolors'
+import { createTranslationContract, toTranslationContractSource } from './contract.js'
 import { readCsvHeaders } from './csv.js'
 import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { TranslationIrProject } from './ir/types.js'
@@ -89,6 +90,24 @@ const validateLanguageConfig = <TLanguage extends string>(
     throw new Error(
       `Invalid configuration: default language "${config.defaultLanguage}" is not part of "languages".`
     )
+  }
+
+  if (!config.localeByLanguage) {
+    return
+  }
+
+  for (const [language, locale] of Object.entries(config.localeByLanguage)) {
+    if (!config.languages.includes(language as TLanguage)) {
+      throw new Error(
+        `Invalid configuration: locale mapping language "${language}" is not part of "languages".`
+      )
+    }
+
+    if (typeof locale !== 'string' || locale.trim().length === 0) {
+      throw new Error(
+        `Invalid configuration: locale mapping for "${language}" must be a non-empty string.`
+      )
+    }
   }
 }
 
@@ -357,7 +376,12 @@ const resolveInputFiles = async (
  */
 export const generateTranslationTable = async <TLanguage extends string>(
   config: TypekitI18nConfig<TLanguage>
-): Promise<{ outputPath: string; outputKeysPath: string; keyCount: number }> => {
+): Promise<{
+  outputPath: string
+  outputKeysPath: string
+  outputContractPath: string
+  keyCount: number
+}> => {
   validateLanguageConfig(config)
 
   const configuredFormat = config.format
@@ -410,6 +434,9 @@ export const generateTranslationTable = async <TLanguage extends string>(
         category: normalizeCategory(entry.category),
         key: entry.key,
         description: entry.description,
+        status: entry.status,
+        tags: entry.tags,
+        placeholders: entry.placeholders,
         values,
       })
     })
@@ -423,16 +450,25 @@ export const generateTranslationTable = async <TLanguage extends string>(
   const outputKeysPath = resolve(
     config.outputKeys ?? join(dirname(outputPath), 'translationKeys.ts')
   )
+  const outputContractPath = resolve(
+    config.outputContract ?? join(dirname(outputPath), 'translation.contract.json')
+  )
 
   if (outputPath === outputKeysPath) {
     throw new Error(
       'Invalid configuration: "output" and "outputKeys" must not point to the same file.'
     )
   }
+  if (outputPath === outputContractPath || outputKeysPath === outputContractPath) {
+    throw new Error(
+      'Invalid configuration: "outputContract" must not point to the same file as "output" or "outputKeys".'
+    )
+  }
 
   await Promise.all([
     mkdir(dirname(outputPath), { recursive: true }),
     mkdir(dirname(outputKeysPath), { recursive: true }),
+    mkdir(dirname(outputContractPath), { recursive: true }),
   ])
 
   const tableSource = toTableModuleSource(
@@ -442,21 +478,31 @@ export const generateTranslationTable = async <TLanguage extends string>(
     resolveTypeImportPath(outputPath, outputKeysPath)
   )
   const keysSource = toKeysModuleSource(files, records, config.languages)
+  const contractSource = toTranslationContractSource(
+    createTranslationContract({
+      sourceLanguage: config.defaultLanguage,
+      languages: config.languages,
+      localeByLanguage: config.localeByLanguage,
+      records,
+    })
+  )
 
   await Promise.all([
     writeFile(outputPath, tableSource, 'utf-8'),
     writeFile(outputKeysPath, keysSource, 'utf-8'),
+    writeFile(outputContractPath, contractSource, 'utf-8'),
   ])
 
   process.stdout.write(
     `${pc.green(
-      `Generated "${outputPath}" and "${outputKeysPath}" with ${records.length} keys.`
+      `Generated "${outputPath}", "${outputKeysPath}", and "${outputContractPath}" with ${records.length} keys.`
     )}\n`
   )
 
   return {
     outputPath,
     outputKeysPath,
+    outputContractPath,
     keyCount: records.length,
   }
 }
