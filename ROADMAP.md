@@ -30,6 +30,7 @@ Last sync: 2026-02-14
 - [x] IR parsing + validation with placeholder consistency checks.
 - [x] CLI commands implemented: `generate`, `validate`, `convert`.
 - [x] Shared runtime bridge artifact generation (`translation.runtime.mjs`) for native targets, backed by JS runtime (`createIcuTranslator`/`createTranslator`).
+- [x] Direct-eval runtime bridge bundle generation (`translation.runtime.bundle.js`) for JavaScriptCore/embedded engines without ESM import support.
 
 ### Quality and Documentation
 

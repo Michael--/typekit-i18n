@@ -5,6 +5,7 @@ Native targets now generate:
 - `translation.swift` or `translation.kt` (typed native API)
 - `translation.contract.json` (canonical contract)
 - `translation.runtime.mjs` (shared JS runtime bridge installer)
+- `translation.runtime.bundle.js` (direct-eval bundle for JavaScriptCore/embedded engines)
 
 The generated runtime bridge installs `globalThis.__typekitTranslate` by default and uses:
 
@@ -24,6 +25,7 @@ export default defineTypekitI18nConfig({
   outputKotlin: './generated/translation.kt',
   outputContract: './generated/translation.contract.json',
   outputRuntimeBridge: './generated/translation.runtime.mjs',
+  outputRuntimeBridgeBundle: './generated/translation.runtime.bundle.js',
   runtimeBridgeMode: 'icu',
   runtimeBridgeFunctionName: '__typekitTranslate',
   languages: ['en', 'de'] as const,
@@ -35,7 +37,7 @@ export default defineTypekitI18nConfig({
 })
 ```
 
-`outputRuntimeBridge`, `runtimeBridgeMode`, and `runtimeBridgeFunctionName` are optional.
+`outputRuntimeBridge`, `outputRuntimeBridgeBundle`, `runtimeBridgeMode`, and `runtimeBridgeFunctionName` are optional.
 
 ## Generate
 
@@ -45,7 +47,7 @@ typekit-i18n generate --target kotlin
 typekit-i18n generate --target ts,swift,kotlin
 ```
 
-When `swift` or `kotlin` is generated, `translation.runtime.mjs` is generated automatically.
+When `swift` or `kotlin` is generated, both runtime outputs are generated automatically.
 
 ## What Is Copy/Paste Ready?
 
@@ -58,7 +60,8 @@ When `swift` or `kotlin` is generated, `translation.runtime.mjs` is generated au
 ### 1. Add generated files
 
 - Add `translation.swift` to your Xcode target.
-- Bundle a built JS file produced from `translation.runtime.mjs` in `Copy Bundle Resources`.
+- Prefer `translation.runtime.bundle.js` in `Copy Bundle Resources`.
+- `translation.runtime.mjs` remains available for module-aware JS runtimes.
 
 ### 2. Initialize in minimal steps
 
@@ -69,7 +72,7 @@ import Foundation
 import JavaScriptCore
 
 let context = JSContext()!
-context.evaluateScript(runtimeBridgeBundleText) // built from translation.runtime.mjs
+context.evaluateScript(runtimeBridgeBundleText) // from generated translation.runtime.bundle.js
 let bridge = JavaScriptCoreTranslationRuntimeBridge(context: context)
 let t = TypekitTranslator(bridge: bridge)
 
@@ -87,7 +90,8 @@ let value = try t.translate(
 ### 1. Add generated files
 
 - Include `translation.kt` in your module.
-- Bundle/evaluate JS built from `translation.runtime.mjs` in your JS engine.
+- Evaluate `translation.runtime.bundle.js` in your JS engine.
+- `translation.runtime.mjs` remains available for module-aware JS runtimes.
 
 ### 2. Initialize in minimal steps
 
@@ -123,7 +127,7 @@ String value = TypekitJavaInterop.translate(t, TranslationKey.GREETING_TITLE, Tr
 
 ## Runtime Bridge Contract
 
-`translation.runtime.mjs` installs a function with payload:
+`translation.runtime.mjs` and `translation.runtime.bundle.js` install a function with payload:
 
 - `key: string`
 - `language: string`

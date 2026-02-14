@@ -210,6 +210,7 @@ interface TypekitI18nConfig<TLanguage extends string = string> {
   outputSwift?: string
   outputKotlin?: string
   outputRuntimeBridge?: string
+  outputRuntimeBridgeBundle?: string
   runtimeBridgeMode?: 'basic' | 'icu'
   runtimeBridgeFunctionName?: string
   outputContract?: string
@@ -260,6 +261,7 @@ typekit-i18n generate --target ts,swift,kotlin
 - `--target swift` also generates Swift output (path configurable via `outputSwift`)
 - `--target kotlin` also generates Kotlin output (path configurable via `outputKotlin`)
 - Native targets also generate `translation.runtime.mjs` by default (path configurable via `outputRuntimeBridge`)
+- Native targets also generate `translation.runtime.bundle.js` for direct eval runtimes (path configurable via `outputRuntimeBridgeBundle`)
 - Runtime bridge mode is configurable via `runtimeBridgeMode` (`icu` default, or `basic`)
 - If no config is found, exits successfully and skips generation
 

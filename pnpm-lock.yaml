@@ -133,6 +133,9 @@ importers:
 
   packages/typekit-i18n:
     dependencies:
+      esbuild:
+        specifier: ^0.25.10
+        version: 0.25.12
       fast-csv:
         specifier: ^5.0.5
         version: 5.0.5
@@ -158,9 +161,6 @@ importers:
 
   packages/typekit-i18n-vscode:
     dependencies:
-      tsx:
-        specifier: ^4.20.5
-        version: 4.21.0
       yaml:
         specifier: ^2.8.2
         version: 2.8.2

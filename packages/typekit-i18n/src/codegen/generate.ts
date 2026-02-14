@@ -12,7 +12,7 @@ import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { TranslationIrProject } from './ir/types.js'
 import { toIrProjectFromYamlFile } from './ir/yaml.js'
 import { generateKotlinTarget } from './targets/kotlin.js'
-import { generateRuntimeBridgeTarget } from './targets/runtimeBridge.js'
+import { bundleRuntimeBridgeTarget, generateRuntimeBridgeTarget } from './targets/runtimeBridge.js'
 import { generateSwiftTarget } from './targets/swift.js'
 import {
   RuntimeBridgeMode,
@@ -87,6 +87,10 @@ export interface GenerateTranslationsResult {
    * Optional absolute output path for generated shared runtime bridge module.
    */
   runtimeBridgePath?: string
+  /**
+   * Optional absolute output path for generated bundled runtime bridge script.
+   */
+  runtimeBridgeBundlePath?: string
 }
 
 const toTypeUnion = (values: ReadonlyArray<string>): string =>
@@ -478,6 +482,7 @@ interface KotlinOutputPaths {
 
 interface RuntimeBridgeOutputPaths {
   outputPath: string
+  bundleOutputPath: string
   mode: RuntimeBridgeMode
   functionName: string
 }
@@ -614,6 +619,12 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
   const runtimeBridgeOutputPath = shouldGenerateRuntimeBridge
     ? resolve(config.outputRuntimeBridge ?? join(dirname(outputPath), 'translation.runtime.mjs'))
     : null
+  const runtimeBridgeBundleOutputPath = shouldGenerateRuntimeBridge
+    ? resolve(
+        config.outputRuntimeBridgeBundle ??
+          join(dirname(outputPath), 'translation.runtime.bundle.js')
+      )
+    : null
   const runtimeBridgeMode = config.runtimeBridgeMode ?? 'icu'
   const runtimeBridgeFunctionName = config.runtimeBridgeFunctionName ?? '__typekitTranslate'
 
@@ -664,16 +675,57 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
       'Invalid configuration: "outputRuntimeBridge" must not point to the same file as "outputSwift" or "outputKotlin".'
     )
   }
+  if (
+    runtimeBridgeBundleOutputPath &&
+    (runtimeBridgeBundleOutputPath === outputPath ||
+      runtimeBridgeBundleOutputPath === outputKeysPath ||
+      runtimeBridgeBundleOutputPath === outputContractPath)
+  ) {
+    throw new Error(
+      'Invalid configuration: "outputRuntimeBridgeBundle" must not point to the same file as "output", "outputKeys", or "outputContract".'
+    )
+  }
+  if (
+    runtimeBridgeBundleOutputPath &&
+    ((swiftOutputPath && runtimeBridgeBundleOutputPath === swiftOutputPath) ||
+      (kotlinOutputPath && runtimeBridgeBundleOutputPath === kotlinOutputPath))
+  ) {
+    throw new Error(
+      'Invalid configuration: "outputRuntimeBridgeBundle" must not point to the same file as "outputSwift" or "outputKotlin".'
+    )
+  }
+  if (
+    runtimeBridgeOutputPath &&
+    runtimeBridgeBundleOutputPath &&
+    runtimeBridgeOutputPath === runtimeBridgeBundleOutputPath
+  ) {
+    throw new Error(
+      'Invalid configuration: "outputRuntimeBridge" and "outputRuntimeBridgeBundle" must not point to the same file.'
+    )
+  }
   if (runtimeBridgeMode !== 'basic' && runtimeBridgeMode !== 'icu') {
     throw new Error(
       `Invalid configuration: "runtimeBridgeMode" must be "basic" or "icu" (received "${runtimeBridgeMode}").`
     )
+  }
+  if (runtimeBridgeOutputPath && !runtimeBridgeBundleOutputPath) {
+    throw new Error('Runtime bridge bundling output path is missing.')
   }
   if (runtimeBridgeFunctionName.trim().length === 0) {
     throw new Error(
       'Invalid configuration: "runtimeBridgeFunctionName" must be a non-empty string.'
     )
   }
+
+  const resolvedRuntimeBridgePaths =
+    runtimeBridgeOutputPath && runtimeBridgeBundleOutputPath
+      ? {
+          outputPath: runtimeBridgeOutputPath,
+          bundleOutputPath: runtimeBridgeBundleOutputPath,
+          mode: runtimeBridgeMode,
+          functionName: runtimeBridgeFunctionName,
+        }
+      : undefined
 
   return {
     outputContractPath,
@@ -691,13 +743,7 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
           outputPath: kotlinOutputPath,
         }
       : undefined,
-    runtimeBridge: runtimeBridgeOutputPath
-      ? {
-          outputPath: runtimeBridgeOutputPath,
-          mode: runtimeBridgeMode,
-          functionName: runtimeBridgeFunctionName,
-        }
-      : undefined,
+    runtimeBridge: resolvedRuntimeBridgePaths,
   }
 }
 
@@ -769,6 +815,13 @@ export const generateTranslations = async <TLanguage extends string>(
         functionName: outputPaths.runtimeBridge.functionName,
       })
     : null
+  const runtimeBridgeBundleResult =
+    outputPaths.runtimeBridge && runtimeBridgeResult
+      ? await bundleRuntimeBridgeTarget({
+          inputPath: runtimeBridgeResult.outputPath,
+          outputPath: outputPaths.runtimeBridge.bundleOutputPath,
+        })
+      : null
 
   const targetResults: GenerateTargetResult[] = []
   for (const target of targets) {
@@ -820,6 +873,9 @@ export const generateTranslations = async <TLanguage extends string>(
   if (runtimeBridgeResult) {
     formattedTargetOutputs.push(`"${runtimeBridgeResult.outputPath}"`)
   }
+  if (runtimeBridgeBundleResult) {
+    formattedTargetOutputs.push(`"${runtimeBridgeBundleResult.outputPath}"`)
+  }
   const outputSummary =
     formattedTargetOutputs.length > 0
       ? `${formattedTargetOutputs.join(', ')}, and "${outputPaths.outputContractPath}"`
@@ -837,6 +893,7 @@ export const generateTranslations = async <TLanguage extends string>(
     targets,
     targetResults,
     runtimeBridgePath: runtimeBridgeResult?.outputPath,
+    runtimeBridgeBundlePath: runtimeBridgeBundleResult?.outputPath,
   }
 }
 

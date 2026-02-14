@@ -152,6 +152,7 @@ checkout.total;Total label;Total;Summe
     })
     expect(result.targets).toEqual(['swift'])
     expect(result.runtimeBridgePath).toBe(join(directory, 'translation.runtime.mjs'))
+    expect(result.runtimeBridgeBundlePath).toBe(join(directory, 'translation.runtime.bundle.js'))
     expect(result.targetResults).toEqual([
       {
         target: 'swift',
@@ -162,9 +163,13 @@ checkout.total;Total label;Total;Summe
     if (!result.runtimeBridgePath) {
       throw new Error('Expected runtime bridge output path to be defined for swift target.')
     }
+    if (!result.runtimeBridgeBundlePath) {
+      throw new Error('Expected runtime bridge bundle output path to be defined for swift target.')
+    }
 
     const swiftSource = await readFile(outputSwiftPath, 'utf-8')
     const runtimeBridgeSource = await readFile(result.runtimeBridgePath, 'utf-8')
+    const runtimeBridgeBundleSource = await readFile(result.runtimeBridgeBundlePath, 'utf-8')
     expect(swiftSource).toContain('public enum TranslationLanguage')
     expect(swiftSource).toContain('public enum TranslationKey')
     expect(swiftSource).toContain('public final class TypekitTranslator')
@@ -173,6 +178,7 @@ checkout.total;Total label;Total;Summe
     expect(runtimeBridgeSource).toContain('createIcuTranslator')
     expect(runtimeBridgeSource).toContain('installTypekitRuntimeBridge')
     expect(runtimeBridgeSource).toContain('__typekitTranslate')
+    expect(runtimeBridgeBundleSource).toContain('__typekitTranslate')
   })
 
   test('throws when outputSwift collides with output', async () => {
@@ -232,6 +238,7 @@ checkout.total;Total label;Total;Summe
     })
     expect(result.targets).toEqual(['kotlin'])
     expect(result.runtimeBridgePath).toBe(join(directory, 'translation.runtime.mjs'))
+    expect(result.runtimeBridgeBundlePath).toBe(join(directory, 'translation.runtime.bundle.js'))
     expect(result.targetResults).toEqual([
       {
         target: 'kotlin',
@@ -242,9 +249,13 @@ checkout.total;Total label;Total;Summe
     if (!result.runtimeBridgePath) {
       throw new Error('Expected runtime bridge output path to be defined for kotlin target.')
     }
+    if (!result.runtimeBridgeBundlePath) {
+      throw new Error('Expected runtime bridge bundle output path to be defined for kotlin target.')
+    }
 
     const kotlinSource = await readFile(outputKotlinPath, 'utf-8')
     const runtimeBridgeSource = await readFile(result.runtimeBridgePath, 'utf-8')
+    const runtimeBridgeBundleSource = await readFile(result.runtimeBridgeBundlePath, 'utf-8')
     expect(kotlinSource).toContain('enum class TranslationLanguage')
     expect(kotlinSource).toContain('enum class TranslationKey')
     expect(kotlinSource).toContain('class TypekitTranslator')
@@ -252,6 +263,7 @@ checkout.total;Total label;Total;Summe
     expect(kotlinSource).toContain('@JvmStatic')
     expect(runtimeBridgeSource).toContain('createIcuTranslator')
     expect(runtimeBridgeSource).toContain('installTypekitRuntimeBridge')
+    expect(runtimeBridgeBundleSource).toContain('__typekitTranslate')
   })
 
   test('throws when outputKotlin collides with output', async () => {
@@ -286,6 +298,7 @@ title;Main title;Welcome;Willkommen
     const outputPath = join(directory, 'translationTable.ts')
     const outputKotlinPath = join(directory, 'translation.kt')
     const outputRuntimeBridgePath = join(directory, 'typekit.bridge.mjs')
+    const outputRuntimeBridgeBundlePath = join(directory, 'typekit.bridge.bundle.js')
 
     await writeFile(
       csvPath,
@@ -300,6 +313,7 @@ title;Main title;Welcome;Willkommen
       output: outputPath,
       outputKotlin: outputKotlinPath,
       outputRuntimeBridge: outputRuntimeBridgePath,
+      outputRuntimeBridgeBundle: outputRuntimeBridgeBundlePath,
       runtimeBridgeMode: 'basic',
       runtimeBridgeFunctionName: '__translate',
       languages: ['en', 'de'],
@@ -311,10 +325,13 @@ title;Main title;Welcome;Willkommen
     })
 
     expect(result.runtimeBridgePath).toBe(outputRuntimeBridgePath)
+    expect(result.runtimeBridgeBundlePath).toBe(outputRuntimeBridgeBundlePath)
     const runtimeBridgeSource = await readFile(outputRuntimeBridgePath, 'utf-8')
+    const runtimeBridgeBundleSource = await readFile(outputRuntimeBridgeBundlePath, 'utf-8')
     expect(runtimeBridgeSource).toContain('import { createTranslator }')
     expect(runtimeBridgeSource).not.toContain('createIcuTranslator')
     expect(runtimeBridgeSource).toContain('__translate')
+    expect(runtimeBridgeBundleSource).toContain('__translate')
   })
 
   test.runIf(hasSwiftCompiler)('swift target compiles in a consumer smoke project', async () => {

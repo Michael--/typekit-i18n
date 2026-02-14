@@ -49,6 +49,13 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    */
   outputRuntimeBridge?: string
   /**
+   * Optional output file path for generated bundled runtime bridge script.
+   * The bundled script is produced from `outputRuntimeBridge` and can be evaluated directly
+   * in environments that do not support ESM imports in evaluated scripts.
+   * Defaults to `translation.runtime.bundle.js` in the same directory as `output`.
+   */
+  outputRuntimeBridgeBundle?: string
+  /**
    * Optional runtime bridge generation mode.
    * `icu` uses `createIcuTranslator`; `basic` uses `createTranslator`.
    * Defaults to `icu`.

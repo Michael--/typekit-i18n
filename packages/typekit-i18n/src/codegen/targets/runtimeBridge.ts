@@ -1,9 +1,43 @@
+import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { build } from 'esbuild'
 import { TranslationContract } from '../contract.js'
 import { RuntimeBridgeMode } from '../types.js'
 
 const DEFAULT_RUNTIME_BRIDGE_FUNCTION_NAME = '__typekitTranslate'
+const RUNTIME_ICU_IMPORT = '@number10/typekit-i18n/runtime/icu'
+const RUNTIME_BASIC_IMPORT = '@number10/typekit-i18n/runtime/basic'
+const MODULE_DIRECTORY_PATH = dirname(fileURLToPath(import.meta.url))
+const PACKAGE_ROOT_PATH = resolve(MODULE_DIRECTORY_PATH, '../../..')
+
+const resolveRuntimeImportAlias = (runtimeImportPath: string): string => {
+  if (runtimeImportPath === RUNTIME_ICU_IMPORT) {
+    const sourceCandidate = resolve(PACKAGE_ROOT_PATH, 'src/runtime/icu.ts')
+    if (existsSync(sourceCandidate)) {
+      return sourceCandidate
+    }
+    const distCandidate = resolve(PACKAGE_ROOT_PATH, 'dist/runtime-icu.js')
+    if (existsSync(distCandidate)) {
+      return distCandidate
+    }
+  }
+  if (runtimeImportPath === RUNTIME_BASIC_IMPORT) {
+    const sourceCandidate = resolve(PACKAGE_ROOT_PATH, 'src/runtime/basic.ts')
+    if (existsSync(sourceCandidate)) {
+      return sourceCandidate
+    }
+    const distCandidate = resolve(PACKAGE_ROOT_PATH, 'dist/runtime-basic.js')
+    if (existsSync(distCandidate)) {
+      return distCandidate
+    }
+  }
+
+  throw new Error(
+    `Unable to resolve runtime import "${runtimeImportPath}" for runtime bridge bundling.`
+  )
+}
 
 /**
  * Options for runtime bridge target generation.
@@ -39,6 +73,30 @@ export interface GenerateRuntimeBridgeTargetResult {
   outputPath: string
 }
 
+/**
+ * Options for bundling runtime bridge module into a direct-eval script.
+ */
+export interface BundleRuntimeBridgeTargetOptions {
+  /**
+   * Absolute input path for generated runtime bridge module.
+   */
+  inputPath: string
+  /**
+   * Absolute output path for generated bundled runtime bridge script.
+   */
+  outputPath: string
+}
+
+/**
+ * Result for generated bundled runtime bridge script.
+ */
+export interface BundleRuntimeBridgeTargetResult {
+  /**
+   * Absolute output path for generated bundled runtime bridge script.
+   */
+  outputPath: string
+}
+
 const toBridgeModuleSource = (
   contract: TranslationContract<string>,
   mode: RuntimeBridgeMode,
@@ -46,8 +104,8 @@ const toBridgeModuleSource = (
 ): string => {
   const importSource =
     mode === 'icu'
-      ? "import { createIcuTranslator } from '@number10/typekit-i18n/runtime/icu'"
-      : "import { createTranslator } from '@number10/typekit-i18n/runtime/basic'"
+      ? `import { createIcuTranslator } from '${RUNTIME_ICU_IMPORT}'`
+      : `import { createTranslator } from '${RUNTIME_BASIC_IMPORT}'`
   const createTranslatorCall =
     mode === 'icu'
       ? `const typekitTranslator = createIcuTranslator(translationTable, {
@@ -132,6 +190,42 @@ export const generateRuntimeBridgeTarget = async (
     toBridgeModuleSource(options.contract, mode, functionName),
     'utf-8'
   )
+
+  return {
+    outputPath: options.outputPath,
+  }
+}
+
+/**
+ * Bundles generated runtime bridge module into an IIFE script.
+ *
+ * @param options Runtime bridge bundling options.
+ * @returns Generated bundle output path.
+ */
+export const bundleRuntimeBridgeTarget = async (
+  options: BundleRuntimeBridgeTargetOptions
+): Promise<BundleRuntimeBridgeTargetResult> => {
+  const runtimeIcuImportAlias = resolveRuntimeImportAlias(RUNTIME_ICU_IMPORT)
+  const runtimeBasicImportAlias = resolveRuntimeImportAlias(RUNTIME_BASIC_IMPORT)
+
+  await mkdir(dirname(options.outputPath), { recursive: true })
+
+  await build({
+    entryPoints: [options.inputPath],
+    outfile: options.outputPath,
+    absWorkingDir: PACKAGE_ROOT_PATH,
+    bundle: true,
+    alias: {
+      [RUNTIME_ICU_IMPORT]: runtimeIcuImportAlias,
+      [RUNTIME_BASIC_IMPORT]: runtimeBasicImportAlias,
+    },
+    format: 'iife',
+    platform: 'browser',
+    target: ['es2020'],
+    sourcemap: false,
+    minify: false,
+    logLevel: 'silent',
+  })
 
   return {
     outputPath: options.outputPath,
