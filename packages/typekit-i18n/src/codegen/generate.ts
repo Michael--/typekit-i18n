@@ -11,6 +11,7 @@ import { readCsvHeaders } from './csv.js'
 import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { TranslationIrProject } from './ir/types.js'
 import { toIrProjectFromYamlFile } from './ir/yaml.js'
+import { generateKotlinTarget } from './targets/kotlin.js'
 import { generateSwiftTarget } from './targets/swift.js'
 import { TranslationInputFormat, TranslationRecord, TypekitI18nConfig } from './types.js'
 import { parse as parseYaml } from 'yaml'
@@ -24,7 +25,7 @@ const CSV_METADATA_COLUMNS: ReadonlySet<string> = new Set([
   'placeholders',
 ])
 const DEFAULT_CATEGORY = 'default'
-const SUPPORTED_CODEGEN_TARGETS = ['ts', 'swift'] as const
+const SUPPORTED_CODEGEN_TARGETS = ['ts', 'swift', 'kotlin'] as const
 
 /**
  * Supported generation target names.
@@ -461,10 +462,15 @@ interface SwiftOutputPaths {
   outputPath: string
 }
 
+interface KotlinOutputPaths {
+  outputPath: string
+}
+
 interface ResolvedGenerationOutputPaths {
   outputContractPath: string
   ts: TsOutputPaths
   swift?: SwiftOutputPaths
+  kotlin?: KotlinOutputPaths
 }
 
 const resolveInputFiles = async (
@@ -575,8 +581,12 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
   }
 
   const includesSwift = targets.includes('swift')
+  const includesKotlin = targets.includes('kotlin')
   const swiftOutputPath = includesSwift
     ? resolve(config.outputSwift ?? join(dirname(outputPath), 'translation.swift'))
+    : null
+  const kotlinOutputPath = includesKotlin
+    ? resolve(config.outputKotlin ?? join(dirname(outputPath), 'translation.kt'))
     : null
 
   if (swiftOutputPath && (swiftOutputPath === outputPath || swiftOutputPath === outputKeysPath)) {
@@ -589,6 +599,24 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
       'Invalid configuration: "outputSwift" must not point to the same file as "outputContract".'
     )
   }
+  if (
+    kotlinOutputPath &&
+    (kotlinOutputPath === outputPath || kotlinOutputPath === outputKeysPath)
+  ) {
+    throw new Error(
+      'Invalid configuration: "outputKotlin" must not point to the same file as "output" or "outputKeys".'
+    )
+  }
+  if (kotlinOutputPath && kotlinOutputPath === outputContractPath) {
+    throw new Error(
+      'Invalid configuration: "outputKotlin" must not point to the same file as "outputContract".'
+    )
+  }
+  if (swiftOutputPath && kotlinOutputPath && swiftOutputPath === kotlinOutputPath) {
+    throw new Error(
+      'Invalid configuration: "outputSwift" and "outputKotlin" must not point to the same file.'
+    )
+  }
 
   return {
     outputContractPath,
@@ -599,6 +627,11 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
     swift: swiftOutputPath
       ? {
           outputPath: swiftOutputPath,
+        }
+      : undefined,
+    kotlin: kotlinOutputPath
+      ? {
+          outputPath: kotlinOutputPath,
         }
       : undefined,
   }
@@ -687,6 +720,21 @@ export const generateTranslations = async <TLanguage extends string>(
       })
       targetResults.push({
         target: 'swift',
+        outputPaths: [result.outputPath],
+      })
+      continue
+    }
+
+    if (target === 'kotlin') {
+      if (!outputPaths.kotlin) {
+        throw new Error('Kotlin generation target is missing resolved output path.')
+      }
+      const result = await generateKotlinTarget({
+        contract,
+        outputPath: outputPaths.kotlin.outputPath,
+      })
+      targetResults.push({
+        target: 'kotlin',
         outputPaths: [result.outputPath],
       })
       continue

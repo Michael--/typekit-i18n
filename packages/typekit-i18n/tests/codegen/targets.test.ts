@@ -1,12 +1,45 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { delimiter, dirname, join, resolve } from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
 import { generateTranslations, resolveCodegenTargets } from '../../src/codegen/generate.js'
 import { TypekitI18nConfig } from '../../src/codegen/types.js'
+import { fileURLToPath } from 'node:url'
 
 const tempDirectories: string[] = []
+const hasSwiftCompiler = spawnSync('swiftc', ['--version'], { stdio: 'ignore' }).status === 0
+const hasKotlinCompiler = spawnSync('kotlinc', ['-version'], { stdio: 'ignore' }).status === 0
+const hasJavaCompiler = spawnSync('javac', ['-version'], { stdio: 'ignore' }).status === 0
+const hasJavaRuntime = spawnSync('java', ['-version'], { stdio: 'ignore' }).status === 0
+const fixturesRootPath = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures')
+
+const findKotlinStdlibPath = (): string | null => {
+  const candidates: string[] = []
+  const kotlinHome = process.env.KOTLIN_HOME
+  if (kotlinHome) {
+    candidates.push(join(kotlinHome, 'lib', 'kotlin-stdlib.jar'))
+  }
+
+  const whichResult = spawnSync('which', ['kotlinc'], { encoding: 'utf-8' })
+  if (whichResult.status === 0) {
+    const compilerPath = whichResult.stdout.trim()
+    if (compilerPath.length > 0) {
+      const binDir = dirname(compilerPath)
+      candidates.push(
+        join(binDir, '..', 'lib', 'kotlin-stdlib.jar'),
+        join(binDir, '..', 'libexec', 'lib', 'kotlin-stdlib.jar'),
+        join(binDir, '..', '..', 'lib', 'kotlin-stdlib.jar')
+      )
+    }
+  }
+
+  const resolved = candidates.map((candidate) => resolve(candidate))
+  return resolved.find((candidate) => existsSync(candidate)) ?? null
+}
+
+const kotlinStdlibPath = hasKotlinCompiler ? findKotlinStdlibPath() : null
 
 const createTempDirectory = async (): Promise<string> => {
   const directory = await mkdtemp(join(tmpdir(), 'typekit-i18n-targets-'))
@@ -33,9 +66,13 @@ describe('resolveCodegenTargets', () => {
     expect(resolveCodegenTargets(['swift'])).toEqual(['swift'])
   })
 
+  test('accepts supported kotlin target', () => {
+    expect(resolveCodegenTargets(['kotlin'])).toEqual(['kotlin'])
+  })
+
   test('throws for unsupported targets', () => {
-    expect(() => resolveCodegenTargets(['kotlin'])).toThrow(
-      /Unsupported generation target\(s\): kotlin/
+    expect(() => resolveCodegenTargets(['dart'])).toThrow(
+      /Unsupported generation target\(s\): dart/
     )
   })
 })
@@ -155,17 +192,145 @@ title;Main title;Welcome;Willkommen
     )
   })
 
-  test.runIf(spawnSync('swiftc', ['--version'], { stdio: 'ignore' }).status === 0)(
-    'swift target compiles in a consumer smoke project',
+  test('generates kotlin target artifact', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translationTable.ts')
+    const outputKotlinPath = join(directory, 'translation.kt')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+checkout.total;Total label;Total;Summe
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputKotlin: outputKotlinPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+      localeByLanguage: {
+        en: 'en-US',
+        de: 'de-DE',
+      },
+    }
+
+    const result = await generateTranslations(config, {
+      targets: ['kotlin'],
+    })
+    expect(result.targets).toEqual(['kotlin'])
+    expect(result.targetResults).toEqual([
+      {
+        target: 'kotlin',
+        outputPaths: [outputKotlinPath],
+      },
+    ])
+
+    const kotlinSource = await readFile(outputKotlinPath, 'utf-8')
+    expect(kotlinSource).toContain('enum class TranslationLanguage')
+    expect(kotlinSource).toContain('enum class TranslationKey')
+    expect(kotlinSource).toContain('class TypekitTranslator')
+    expect(kotlinSource).toContain('object TypekitJavaInterop')
+    expect(kotlinSource).toContain('@JvmStatic')
+  })
+
+  test('throws when outputKotlin collides with output', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translationTable.ts')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputKotlin: outputPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await expect(generateTranslations(config, { targets: ['kotlin'] })).rejects.toThrow(
+      /"outputKotlin" must not point to the same file as "output" or "outputKeys"/
+    )
+  })
+
+  test.runIf(hasSwiftCompiler)('swift target compiles in a consumer smoke project', async () => {
+    const directory = await createTempDirectory()
+    const csvPath = join(directory, 'translations.csv')
+    const outputPath = join(directory, 'translationTable.ts')
+    const outputSwiftPath = join(directory, 'translation.swift')
+    const smokePath = join(directory, 'smoke.swift')
+    const binaryPath = join(directory, 'smoke')
+    const moduleCachePath = join(directory, 'swift-module-cache')
+    const clangModuleCachePath = join(directory, 'clang-module-cache')
+
+    await writeFile(
+      csvPath,
+      `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+      'utf-8'
+    )
+
+    const config: TypekitI18nConfig<'en' | 'de'> = {
+      input: [csvPath],
+      output: outputPath,
+      outputSwift: outputSwiftPath,
+      languages: ['en', 'de'],
+      defaultLanguage: 'en',
+    }
+
+    await generateTranslations(config, { targets: ['swift'] })
+    await Promise.all([
+      mkdir(moduleCachePath, { recursive: true }),
+      mkdir(clangModuleCachePath, { recursive: true }),
+    ])
+
+    const fixtureSource = await readFile(
+      join(fixturesRootPath, 'consumer-swift', 'SmokeApp.swift'),
+      'utf-8'
+    )
+    await writeFile(smokePath, fixtureSource, 'utf-8')
+
+    const compileResult = spawnSync('swiftc', [outputSwiftPath, smokePath, '-o', binaryPath], {
+      encoding: 'utf-8',
+      env: {
+        ...process.env,
+        SWIFT_MODULECACHE_PATH: moduleCachePath,
+        CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
+        HOME: directory,
+      },
+    })
+    if (compileResult.status !== 0) {
+      throw new Error(compileResult.stderr || compileResult.stdout)
+    }
+
+    const runResult = spawnSync(binaryPath, [], { encoding: 'utf-8' })
+    if (runResult.status !== 0) {
+      throw new Error(runResult.stderr || runResult.stdout)
+    }
+
+    expect(runResult.stdout.trim()).toBe('title:de:1')
+  })
+
+  test.runIf(hasKotlinCompiler && hasJavaRuntime)(
+    'kotlin target compiles and runs in a consumer smoke project',
     async () => {
       const directory = await createTempDirectory()
       const csvPath = join(directory, 'translations.csv')
       const outputPath = join(directory, 'translationTable.ts')
-      const outputSwiftPath = join(directory, 'translation.swift')
-      const smokePath = join(directory, 'smoke.swift')
-      const binaryPath = join(directory, 'smoke')
-      const moduleCachePath = join(directory, 'swift-module-cache')
-      const clangModuleCachePath = join(directory, 'clang-module-cache')
+      const outputKotlinPath = join(directory, 'translation.kt')
+      const smokePath = join(directory, 'smoke.kt')
+      const jarPath = join(directory, 'smoke.jar')
 
       await writeFile(
         csvPath,
@@ -178,59 +343,101 @@ title;Main title;Welcome;Willkommen
       const config: TypekitI18nConfig<'en' | 'de'> = {
         input: [csvPath],
         output: outputPath,
-        outputSwift: outputSwiftPath,
+        outputKotlin: outputKotlinPath,
         languages: ['en', 'de'],
         defaultLanguage: 'en',
       }
 
-      await generateTranslations(config, { targets: ['swift'] })
-      await Promise.all([
-        mkdir(moduleCachePath, { recursive: true }),
-        mkdir(clangModuleCachePath, { recursive: true }),
-      ])
-
-      await writeFile(
-        smokePath,
-        `import Foundation
-
-@main
-struct SmokeApp {
-  static func main() throws {
-    let bridge = ClosureTranslationRuntimeBridge { key, language, placeholders in
-      return "\\(key):\\(language):\\(placeholders.count)"
-    }
-    let translator = TypekitTranslator(bridge: bridge)
-    let value = try translator.translate(
-      .title,
-      language: .de,
-      placeholders: [TranslationPlaceholder(key: "name", value: .string("Ada"))]
-    )
-    print(value)
-  }
-}
-`,
+      await generateTranslations(config, { targets: ['kotlin'] })
+      const fixtureSource = await readFile(
+        join(fixturesRootPath, 'consumer-kotlin', 'SmokeApp.kt'),
         'utf-8'
       )
+      await writeFile(smokePath, fixtureSource, 'utf-8')
 
-      const compileResult = spawnSync('swiftc', [outputSwiftPath, smokePath, '-o', binaryPath], {
-        encoding: 'utf-8',
-        env: {
-          ...process.env,
-          SWIFT_MODULECACHE_PATH: moduleCachePath,
-          CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
-          HOME: directory,
-        },
-      })
+      const compileResult = spawnSync(
+        'kotlinc',
+        [outputKotlinPath, smokePath, '-include-runtime', '-d', jarPath],
+        {
+          encoding: 'utf-8',
+        }
+      )
       if (compileResult.status !== 0) {
         throw new Error(compileResult.stderr || compileResult.stdout)
       }
 
-      const runResult = spawnSync(binaryPath, [], { encoding: 'utf-8' })
+      const runResult = spawnSync('java', ['-jar', jarPath], { encoding: 'utf-8' })
       if (runResult.status !== 0) {
         throw new Error(runResult.stderr || runResult.stdout)
       }
 
       expect(runResult.stdout.trim()).toBe('title:de:1')
+    }
+  )
+
+  test.runIf(hasKotlinCompiler && hasJavaCompiler && hasJavaRuntime && kotlinStdlibPath !== null)(
+    'kotlin target passes Java interoperability compile and runtime smoke checks',
+    async () => {
+      const directory = await createTempDirectory()
+      const csvPath = join(directory, 'translations.csv')
+      const outputPath = join(directory, 'translationTable.ts')
+      const outputKotlinPath = join(directory, 'translation.kt')
+      const classesPath = join(directory, 'classes')
+      const javaSourcePath = join(directory, 'JavaInteropSmoke.java')
+
+      await writeFile(
+        csvPath,
+        `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+        'utf-8'
+      )
+
+      const config: TypekitI18nConfig<'en' | 'de'> = {
+        input: [csvPath],
+        output: outputPath,
+        outputKotlin: outputKotlinPath,
+        languages: ['en', 'de'],
+        defaultLanguage: 'en',
+      }
+
+      await generateTranslations(config, { targets: ['kotlin'] })
+      await mkdir(classesPath, { recursive: true })
+
+      const kotlinCompileResult = spawnSync('kotlinc', [outputKotlinPath, '-d', classesPath], {
+        encoding: 'utf-8',
+      })
+      if (kotlinCompileResult.status !== 0) {
+        throw new Error(kotlinCompileResult.stderr || kotlinCompileResult.stdout)
+      }
+
+      const javaFixtureSource = await readFile(
+        join(fixturesRootPath, 'consumer-kotlin', 'JavaInteropSmoke.java'),
+        'utf-8'
+      )
+      await writeFile(javaSourcePath, javaFixtureSource, 'utf-8')
+
+      const compileClasspath = [classesPath, kotlinStdlibPath as string].join(delimiter)
+      const javaCompileResult = spawnSync(
+        'javac',
+        ['-cp', compileClasspath, '-d', classesPath, javaSourcePath],
+        {
+          encoding: 'utf-8',
+        }
+      )
+      if (javaCompileResult.status !== 0) {
+        throw new Error(javaCompileResult.stderr || javaCompileResult.stdout)
+      }
+
+      const runClasspath = [classesPath, kotlinStdlibPath as string].join(delimiter)
+      const javaRunResult = spawnSync('java', ['-cp', runClasspath, 'JavaInteropSmoke'], {
+        encoding: 'utf-8',
+      })
+      if (javaRunResult.status !== 0) {
+        throw new Error(javaRunResult.stderr || javaRunResult.stdout)
+      }
+
+      expect(javaRunResult.stdout.trim()).toBe('title:de:0')
     }
   )
 })

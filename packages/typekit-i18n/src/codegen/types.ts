@@ -32,6 +32,12 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
    */
   outputSwift?: string
   /**
+   * Optional output file path for generated Kotlin target artifacts.
+   * Used by `generate --target kotlin`.
+   * Defaults to `translation.kt` in the same directory as `output`.
+   */
+  outputKotlin?: string
+  /**
    * Optional output file path for the canonical translation contract JSON artifact.
    * Defaults to `translation.contract.json` in the same directory as `output`.
    */
