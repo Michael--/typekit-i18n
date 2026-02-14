@@ -54,6 +54,17 @@ Expected result:
 
 The default Swift JavaScriptCore bridge expects a JS function named `__typekitTranslate` (configurable via `functionName`).
 
+## Copy/Paste Rules
+
+- `COPY/PASTE READY (Smoke)`: the snippet is executable as a minimal smoke setup.
+- `PRODUCTION ADAPT REQUIRED`: replace stub parts for your real runtime integration.
+- Enum values (`TranslationKey.*`, `TranslationLanguage.*`) must match your generated files.
+
+Always verify generated enums first:
+
+- Swift: `translation.swift` (`TranslationKey`, `TranslationLanguage`)
+- Kotlin: `translation.kt` (`TranslationKey`, `TranslationLanguage`)
+
 ## Swift Integration
 
 ### 1. Add generated file
@@ -64,17 +75,21 @@ Add `translation.swift` to your Xcode target.
 
 Use `JavaScriptCoreTranslationRuntimeBridge` or your own `TranslationRuntimeBridge`.
 
+`COPY/PASTE READY (Smoke)` + `PRODUCTION ADAPT REQUIRED` on marked lines:
+
 ```swift
 import Foundation
 import JavaScriptCore
 
 let context = JSContext()!
 
-// Your app must provide the translate function expected by the bridge.
+// PRODUCTION ADAPT REQUIRED:
+// Your app must provide the real translation function expected by the bridge.
 context.evaluateScript(
   """
   globalThis.__typekitTranslate = ({ key, language, placeholders }) => {
-    // Delegate to your JS runtime integration here.
+    // PRODUCTION ADAPT REQUIRED:
+    // replace with your real JS runtime adapter call
     return `${key}:${language}:${Object.keys(placeholders ?? {}).length}`;
   };
   """
@@ -83,6 +98,8 @@ context.evaluateScript(
 let bridge = JavaScriptCoreTranslationRuntimeBridge(context: context)
 let translator = TypekitTranslator(bridge: bridge)
 
+// COPY/PASTE READY (Smoke):
+// adjust enum members only if your generated keys/languages differ.
 let text = try translator.translate(
   .greetingTitle,
   language: .de,
@@ -91,6 +108,12 @@ let text = try translator.translate(
   ]
 )
 ```
+
+Swift adaptation checklist:
+
+- Replace `__typekitTranslate` stub with your actual JS runtime call path.
+- Use a `TranslationKey` case that exists in your generated `translation.swift`.
+- Use a `TranslationLanguage` case that exists in your generated `translation.swift`.
 
 ### 3. Resource checklist
 
@@ -108,13 +131,19 @@ Include `translation.kt` in your Kotlin module.
 
 Use `LambdaTranslationRuntimeBridge` or implement `TranslationRuntimeBridge`.
 
+`COPY/PASTE READY (Smoke)` + `PRODUCTION ADAPT REQUIRED` on marked lines:
+
 ```kotlin
 val bridge = LambdaTranslationRuntimeBridge { key, language, placeholders ->
-  // Delegate to your JS runtime integration here.
+  // PRODUCTION ADAPT REQUIRED:
+  // replace with your real runtime adapter call
   "$key:$language:${placeholders.size}"
 }
 
 val translator = TypekitTranslator(bridge = bridge)
+
+// COPY/PASTE READY (Smoke):
+// adjust enum members only if your generated keys/languages differ.
 val text = translator.translate(
   key = TranslationKey.GREETING_TITLE,
   language = TranslationLanguage.DE,
@@ -124,9 +153,17 @@ val text = translator.translate(
 )
 ```
 
+Kotlin adaptation checklist:
+
+- Replace bridge lambda stub with your actual runtime adapter.
+- Use `TranslationKey` values that exist in generated `translation.kt`.
+- Use `TranslationLanguage` values that exist in generated `translation.kt`.
+
 ### 3. Java interop
 
 Use `TypekitJavaInterop` from Java code:
+
+`COPY/PASTE READY (Smoke)` + `PRODUCTION ADAPT REQUIRED` for bridge source:
 
 ```java
 TypekitTranslator translator = TypekitJavaInterop.createTranslator(bridge);
