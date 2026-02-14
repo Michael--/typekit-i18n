@@ -85,6 +85,8 @@ If no config is found, command exits successfully and skips generation.
 
 `generate` always emits canonical `translation.contract.json` plus selected target outputs.
 
+Native target integration details are documented in [Native Targets](./native-targets).
+
 ### `validate`
 
 ```bash

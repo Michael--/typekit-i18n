@@ -24,6 +24,7 @@ Type-safe internationalization toolkit for TypeScript with runtime APIs, ICU ren
 - [VSCode Extension](./vscode-extension)
 - [Runtime API](./runtime-api)
 - [Codegen + CLI](./codegen-cli)
+- [Native Targets](./native-targets)
 - [Resource Formats](./resource-formats)
 - [Translation Strategy](./translation-strategy)
 - [GitHub Pages](./github-pages)

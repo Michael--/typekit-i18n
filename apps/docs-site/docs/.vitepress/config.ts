@@ -32,6 +32,7 @@ export default withMermaid(
         { text: 'VSCode Extension', link: '/vscode-extension' },
         { text: 'Runtime API', link: '/runtime-api' },
         { text: 'Codegen + CLI', link: '/codegen-cli' },
+        { text: 'Native Targets', link: '/native-targets' },
         { text: 'Resource Formats', link: '/resource-formats' },
         { text: 'GitHub Pages', link: '/github-pages' },
         { text: 'GitHub', link: 'https://github.com/Michael--/typekit-i18n' },
@@ -53,6 +54,7 @@ export default withMermaid(
           items: [
             { text: 'Runtime API', link: '/runtime-api' },
             { text: 'Codegen + CLI', link: '/codegen-cli' },
+            { text: 'Native Targets', link: '/native-targets' },
             { text: 'Resource Formats', link: '/resource-formats' },
           ],
         },
