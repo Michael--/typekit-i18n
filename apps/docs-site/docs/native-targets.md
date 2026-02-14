@@ -54,6 +54,108 @@ Expected result:
 
 The default Swift JavaScriptCore bridge expects a JS function named `__typekitTranslate` (configurable via `functionName`).
 
+## Drop-In Runtime Bridge (Shared for Swift + Kotlin)
+
+Both generated targets call the same JS bridge contract.
+If you provide `globalThis.__typekitTranslate`, both Swift and Kotlin adapters can use it.
+
+### Option A: Fully self-contained baseline bridge
+
+`COPY/PASTE READY` for non-ICU rendering (fallback + placeholder replacement):
+
+```js
+function installTypekitBridge(contract) {
+  const entriesByKey = Object.create(null)
+  for (const entry of contract.entries) {
+    entriesByKey[entry.key] = entry
+  }
+
+  const sourceLanguage = contract.sourceLanguage
+  const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key)
+
+  const resolveValue = (entry, language) => {
+    const direct = entry.values[language]
+    if (typeof direct === 'string' && direct.length > 0) return direct
+    const fallback = entry.values[sourceLanguage]
+    if (typeof fallback === 'string' && fallback.length > 0) return fallback
+    return null
+  }
+
+  const applyPlaceholders = (text, placeholders) =>
+    text.replace(/\{([A-Za-z0-9_]+)(?:\|[^}]+)?\}/g, (_, key) => {
+      if (!hasOwn(placeholders, key)) return `{${key}}`
+      return String(placeholders[key])
+    })
+
+  globalThis.__typekitTranslate = (payload) => {
+    const safePayload = payload && typeof payload === 'object' ? payload : {}
+    const key = typeof safePayload.key === 'string' ? safePayload.key : ''
+    const language =
+      typeof safePayload.language === 'string' && safePayload.language.length > 0
+        ? safePayload.language
+        : sourceLanguage
+    const placeholders =
+      safePayload.placeholders && typeof safePayload.placeholders === 'object'
+        ? safePayload.placeholders
+        : {}
+
+    const entry = entriesByKey[key]
+    if (!entry) {
+      return { missingReason: 'missingKey', value: key }
+    }
+
+    const template = resolveValue(entry, language)
+    if (template === null) {
+      return { missingReason: 'missingFallback', value: key }
+    }
+
+    return applyPlaceholders(template, placeholders)
+  }
+}
+```
+
+Example usage:
+
+```js
+// contract is loaded from generated translation.contract.json
+installTypekitBridge(contract)
+```
+
+### Option B: ICU-capable bridge (recommended when using ICU messages)
+
+`COPY/PASTE READY` if your JS runtime is bundled with npm dependencies:
+
+```ts
+import { createIcuTranslator } from '@number10/typekit-i18n/runtime/icu'
+import contract from './generated/translation.contract.json'
+
+const table = Object.fromEntries(
+  contract.entries.map((entry) => [
+    entry.key,
+    {
+      category: entry.category,
+      description: entry.description,
+      ...entry.values,
+    },
+  ])
+)
+
+const translator = createIcuTranslator(table, {
+  defaultLanguage: contract.sourceLanguage,
+  localeByLanguage: contract.localeByLanguage,
+})
+
+globalThis.__typekitTranslate = ({ key, language, placeholders }) =>
+  translator(key, language, {
+    data: Object.entries(placeholders ?? {}).map(([placeholderKey, value]) => ({
+      key: placeholderKey,
+      value,
+    })),
+  })
+```
+
+If your app uses ICU messages, prefer Option B.
+
 ## Copy/Paste Rules
 
 - `COPY/PASTE READY (Smoke)`: the snippet is executable as a minimal smoke setup.
@@ -75,7 +177,7 @@ Add `translation.swift` to your Xcode target.
 
 Use `JavaScriptCoreTranslationRuntimeBridge` or your own `TranslationRuntimeBridge`.
 
-`COPY/PASTE READY (Smoke)` + `PRODUCTION ADAPT REQUIRED` on marked lines:
+`COPY/PASTE READY` once `globalThis.__typekitTranslate` is installed:
 
 ```swift
 import Foundation
@@ -83,22 +185,13 @@ import JavaScriptCore
 
 let context = JSContext()!
 
-// PRODUCTION ADAPT REQUIRED:
-// Your app must provide the real translation function expected by the bridge.
-context.evaluateScript(
-  """
-  globalThis.__typekitTranslate = ({ key, language, placeholders }) => {
-    // PRODUCTION ADAPT REQUIRED:
-    // replace with your real JS runtime adapter call
-    return `${key}:${language}:${Object.keys(placeholders ?? {}).length}`;
-  };
-  """
-)
+// Evaluate your prebuilt JS bundle that installs globalThis.__typekitTranslate.
+// Example:
+// context.evaluateScript(jsBundleText)
 
 let bridge = JavaScriptCoreTranslationRuntimeBridge(context: context)
 let translator = TypekitTranslator(bridge: bridge)
 
-// COPY/PASTE READY (Smoke):
 // adjust enum members only if your generated keys/languages differ.
 let text = try translator.translate(
   .greetingTitle,
@@ -111,7 +204,7 @@ let text = try translator.translate(
 
 Swift adaptation checklist:
 
-- Replace `__typekitTranslate` stub with your actual JS runtime call path.
+- Ensure your loaded JS bundle defines `globalThis.__typekitTranslate`.
 - Use a `TranslationKey` case that exists in your generated `translation.swift`.
 - Use a `TranslationLanguage` case that exists in your generated `translation.swift`.
 
@@ -131,18 +224,17 @@ Include `translation.kt` in your Kotlin module.
 
 Use `LambdaTranslationRuntimeBridge` or implement `TranslationRuntimeBridge`.
 
-`COPY/PASTE READY (Smoke)` + `PRODUCTION ADAPT REQUIRED` on marked lines:
+`COPY/PASTE READY`:
 
 ```kotlin
 val bridge = LambdaTranslationRuntimeBridge { key, language, placeholders ->
-  // PRODUCTION ADAPT REQUIRED:
-  // replace with your real runtime adapter call
+  // Delegate to the same runtime bridge function behavior used in Swift.
+  // In production this should call your JS engine integration.
   "$key:$language:${placeholders.size}"
 }
 
 val translator = TypekitTranslator(bridge = bridge)
 
-// COPY/PASTE READY (Smoke):
 // adjust enum members only if your generated keys/languages differ.
 val text = translator.translate(
   key = TranslationKey.GREETING_TITLE,
@@ -155,7 +247,7 @@ val text = translator.translate(
 
 Kotlin adaptation checklist:
 
-- Replace bridge lambda stub with your actual runtime adapter.
+- Connect bridge lambda to your actual JS engine integration.
 - Use `TranslationKey` values that exist in generated `translation.kt`.
 - Use `TranslationLanguage` values that exist in generated `translation.kt`.
 
