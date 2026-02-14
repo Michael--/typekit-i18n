@@ -10,7 +10,29 @@ const DEFAULT_RUNTIME_BRIDGE_FUNCTION_NAME = '__typekitTranslate'
 const RUNTIME_ICU_IMPORT = '@number10/typekit-i18n/runtime/icu'
 const RUNTIME_BASIC_IMPORT = '@number10/typekit-i18n/runtime/basic'
 const MODULE_DIRECTORY_PATH = dirname(fileURLToPath(import.meta.url))
-const PACKAGE_ROOT_PATH = resolve(MODULE_DIRECTORY_PATH, '../../..')
+
+const PACKAGE_ROOT_CANDIDATES: ReadonlyArray<string> = [
+  // Source layout: src/codegen/targets -> package root
+  resolve(MODULE_DIRECTORY_PATH, '../../..'),
+  // Dist layout: dist/src/codegen/targets -> package root
+  resolve(MODULE_DIRECTORY_PATH, '../../../..'),
+]
+
+const resolvePackageRootPath = (): string => {
+  const existingRoot = PACKAGE_ROOT_CANDIDATES.find((candidate) => {
+    const hasSourceRuntime = existsSync(resolve(candidate, 'src/runtime/icu.ts'))
+    const hasDistRuntime = existsSync(resolve(candidate, 'dist/runtime-icu.js'))
+    return hasSourceRuntime || hasDistRuntime
+  })
+
+  if (!existingRoot) {
+    throw new Error('Unable to resolve package root path for runtime bridge bundling.')
+  }
+
+  return existingRoot
+}
+
+const PACKAGE_ROOT_PATH = resolvePackageRootPath()
 
 const resolveRuntimeImportAlias = (runtimeImportPath: string): string => {
   if (runtimeImportPath === RUNTIME_ICU_IMPORT) {
