@@ -1,18 +1,18 @@
 # Typekit i18n - Roadmap
 
-Last sync: 2026-02-11
+Last sync: 2026-02-14
 
 ## Status Summary
 
-- Completed baseline: Monorepo setup, TS runtime, CSV/YAML codegen, IR validation, CLI (`generate|validate|convert`), test baseline, docs-site + GitHub Pages workflow.
-- New complexity driver: ICU runtime is now a core subsystem (parser + renderer + formatters + locale behavior).
-- Primary gap: no consolidated single source of truth for language + locale + target metadata across TS runtime, CLI/codegen, and future non-TS targets.
+- Completed baseline: monorepo setup, TS runtime, CSV/YAML codegen, IR validation, CLI (`generate|validate|convert`), tests, docs-site + GitHub Pages workflow.
+- Major complexity driver: ICU runtime is now core behavior (parser + renderer + formatters + locale mapping).
+- Primary strategic gap: missing canonical target contract for multi-runtime output (TS + Swift + Kotlin/Java + other environments).
 
 ## Completed (verified against current repository)
 
 ### Foundation and Package Layout
 
-- [x] Workspace split into `packages/typekit-i18n`, `apps/playground-ts`, `apps/docs-site`.
+- [x] Workspace split into `packages/typekit-i18n`, `packages/typekit-i18n-vscode`, `apps/playground-ts`, `apps/docs-site`.
 - [x] Root scripts for `gen/build/lint/typecheck/test/check` are in place.
 - [x] `packages/typekit-i18n` is the consolidated publishable package target.
 
@@ -21,93 +21,147 @@ Last sync: 2026-02-11
 - [x] Stable translator API via `createTranslator(...)`.
 - [x] Missing translation strategy (`fallback` / `strict`) with reporting hooks.
 - [x] Runtime configuration and missing-event collection API.
-- [x] ICU translator implemented (`createIcuTranslator(...)`) with:
-  - `select`, `plural`, `selectordinal`
-  - `number`, `date`, `time` argument formatting
-  - plural `offset`
-  - apostrophe escaping and detailed syntax errors
+- [x] ICU translator implemented (`createIcuTranslator(...)`) with `select`, `plural`, `selectordinal`, number/date/time formatting, plural `offset`, escaping, and detailed syntax errors.
 
 ### Codegen, IR, Validation, CLI
 
 - [x] Typed config helper + config auto-discovery.
-- [x] Deterministic multi-file generation.
-- [x] CSV and YAML IR parsing + validation.
-- [x] Placeholder consistency validation across locales.
+- [x] Deterministic multi-file generation from CSV and YAML.
+- [x] IR parsing + validation with placeholder consistency checks.
 - [x] CLI commands implemented: `generate`, `validate`, `convert`.
 
 ### Quality and Documentation
 
-- [x] Runtime and codegen test suites present and expanded.
-- [x] Docs site structure and content updated to current API.
-- [x] Root README and package README updated as baseline docs.
+- [x] Runtime and codegen test suites are present and expanded.
+- [x] Docs site and package docs reflect current runtime/codegen APIs.
 - [x] GitHub Pages workflow for docs deployment is present (`.github/workflows/pages.yml`).
 
-## Corrected / Obsolete Items from Previous Plan
+## Legacy Multi-Target Audit (2026-02-14)
 
-- [obsolete] Former references to `FORMAT_IR_PLAN.md` and `MIGRATION_MAP.md` were intentionally removed.
-- [obsolete] Assumption that IR and multi-format are only in planning stage; these are already implemented.
-- [corrected] "SemVer + release process set up" was marked done earlier but is not yet complete as an operational release pipeline.
+### Findings
+
+- `scripts/codegen/generate-api-manifest.mjs` and `scripts/codegen/generate-swift-api.mjs` are tied to legacy paths and assumptions (`ts/...`, Helio-specific output paths), not to current IR/codegen APIs.
+- `scripts/codegen/build-all.sh` depends on legacy files (`ts/main.ts`, legacy translation generation, legacy iOS copy flow) and is not part of current package scripts.
+- `scripts/ios/copy-js-bundle.sh` is Helio-specific and not integrated into the current `packages/typekit-i18n` release/build contract.
+- Result: current Swift/Xcode fragments are useful as historical reference only, but are not a safe base for new platform support.
+
+### Decision
+
+- [x] Freeze legacy scripts as reference-only.
+- [ ] Reintroduce Swift/Xcode only via the modern IR/codegen pipeline (no direct continuation of legacy script outputs).
+
+## Architecture Direction: Single Source of Truth
+
+### Canonical artifact
+
+- [ ] Add a target-neutral generated artifact from IR, for example `translation.contract.json`.
+- [ ] Contract v1 includes:
+  - schema version
+  - languages and source language
+  - optional locale mapping per language
+  - keys + categories
+  - placeholder metadata per key
+  - optional workflow metadata (`status`, `tags`)
+
+### Code ownership boundaries
+
+- [ ] Keep parsing, validation, placeholder rules, and ICU scope in one core implementation (`packages/typekit-i18n`).
+- [ ] Target generators only transform the canonical contract into target-specific API layers.
+- [ ] Do not duplicate ICU parsing/formatting logic per target in v1; adapters call shared JS runtime unless explicitly promoted to native runtime later.
+
+### Generator extensibility
+
+- [ ] Add generator plugin entry points, for example:
+  - `typekit-i18n generate --target ts`
+  - `typekit-i18n generate --target swift`
+  - `typekit-i18n generate --target kotlin`
+- [ ] Add deterministic snapshot tests for each target based on the same contract fixture.
+
+## Swift/Xcode Reintroduction Plan
+
+### P0 - Contract and CLI foundation
+
+- [ ] Implement canonical contract emission in codegen (`generate` writes TS artifacts + contract).
+- [ ] Define compatibility policy for contract versioning and generator minimum supported version.
+- [ ] Add fixture-based tests that prove TS outputs and contract outputs remain aligned.
+
+### P1 - Swift MVP (Xcode-first, no duplicated business logic)
+
+- [ ] Implement `swift` generator from contract:
+  - strongly typed key/language/category definitions
+  - typed placeholder models
+  - translation access API surface compatible with existing TS behavior contracts
+- [ ] Add a Swift runtime adapter layer for JavaScript execution (`JavaScriptCore`) that consumes generated metadata and calls the shared JS runtime bundle.
+- [ ] Define error and missing-translation mapping from JS runtime events into Swift-native error/event types.
+- [ ] Add sample iOS app integration and CI smoke test for generated Swift code compilation.
+
+### P2 - Swift hardening
+
+- [ ] Package generated Swift artifacts as Swift Package Manager-friendly output.
+- [ ] Add versioned migration notes for contract/schema changes.
+- [ ] Evaluate optional native Swift ICU execution only after parity tests pass and duplication risk is accepted.
+
+## Additional Target Environments to Prioritize
+
+### Priority 1 (immediate after Swift contract foundation)
+
+- [ ] Android Studio (`kotlin` generator) with Java interop:
+  - generate Kotlin data classes/enums + API wrapper
+  - ensure Java-callable facade for mixed Kotlin/Java projects
+  - reuse same JS-runtime bridge strategy first (WebView/JS engine or host-provided bridge)
+- [ ] Kotlin Multiplatform (shared core model):
+  - keep Android and server/desktop Kotlin consumers on one generated contract model
+
+### Priority 2 (high adoption, lower core risk)
+
+- [ ] React Native / Expo helper package:
+  - generated typed key/language modules for mobile TS apps
+  - optional bridge helpers for native screen integrations
+- [ ] Flutter (`dart` generator):
+  - generate typed key constants/models
+  - runtime adapter strategy decision (JS bridge vs native Dart runtime) behind explicit milestone gate
+
+### Priority 3 (ecosystem expansion)
+
+- [ ] .NET (`csharp` generator) for MAUI/ASP.NET hybrid products.
+- [ ] JVM server generator profile (Spring/Ktor) for backend-driven localization validation.
+- [ ] Edge/server runtime packaging profiles for Bun/Deno/Cloudflare Workers.
 
 ## Open Priorities (re-ranked)
 
-### P0 - Single Source of Truth for Language and Target Contracts
+### P0 - Canonical Contract + Multi-Target Safety
 
-Problem:
-
-- Language + locale definitions are currently distributed across runtime defaults, config files, generated artifacts, and app-level setup.
-- This becomes high-risk with ICU behavior and future Swift/multi-target output.
-
-Planned actions:
-
-- [ ] Define one canonical contract artifact from IR/codegen (languages, sourceLanguage, locale mapping, keys, placeholder metadata).
-- [ ] Generate TS runtime-facing metadata from that artifact (no hardcoded language arrays in runtime defaults).
-- [ ] Define target-neutral manifest schema versioning for non-TS generators.
-- [ ] Decide where locale mapping lives (config vs generated artifact) and keep it deterministic.
+- [ ] Canonical contract artifact and schema versioning in codegen.
+- [ ] TS runtime metadata derived from contract outputs, not duplicated literals.
+- [ ] Per-target snapshot and conformance tests from identical fixtures.
 
 ### P0 - ICU Runtime Hardening and Scope Guardrails
 
-Problem:
-
-- ICU support adds substantial parser/runtime complexity and cross-locale behavior variance.
-
-Planned actions:
-
-- [ ] Formalize "supported ICU subset" as a versioned compatibility contract.
-- [ ] Add negative/edge-case regression matrix per locale category behavior.
-- [ ] Add performance guardrails for parser/renderer cache behavior.
-- [ ] Document explicit non-goals (unsupported ICU constructs) to prevent uncontrolled scope growth.
+- [ ] Freeze supported ICU subset as a versioned compatibility contract.
+- [ ] Add negative/edge-case matrix across locale behaviors.
+- [ ] Add parser/renderer performance guardrails.
+- [ ] Document explicit unsupported ICU features.
 
 ### P1 - Release and Distribution Maturity
 
 - [ ] Add release workflow (versioning + changelog + publish gates).
-- [ ] Ensure npm publish artifact contract is explicit (`dist`, exports, CLI entry checks).
-- [ ] Add pre-publish validation target that includes codegen drift and docs build.
+- [ ] Lock npm artifact contract (`dist`, exports, CLI entry checks).
+- [ ] Add pre-publish validation including codegen drift + docs build.
 
-### P1 - Migration and Adoption Assets
+### P1 - Adoption Assets
 
 - [ ] Add `CONTRIBUTING.md` with contributor workflow and quality gates.
-- [ ] Add architecture page for runtime/codegen/IR boundaries.
+- [ ] Add architecture documentation for runtime/codegen/IR/target-generator boundaries.
 
 ### P2 - Translation Workflow Integrations
 
-- [ ] Define provider interface for external translation services (kept out of core runtime).
-- [ ] Define review workflow metadata policy (`status`, `tags`, ownership).
-- [ ] Evaluate optional automation around missing key extraction and review reports.
-
-### Multi-Target (Swift and others)
-
-Current reality:
-
-- `scripts/codegen/generate-swift-api.mjs` exists but is legacy-coupled to old paths (`ts/translations/...`) and not aligned with current IR/codegen contracts.
-
-Decision checkpoint:
-
-- [ ] Keep Swift support as post-v1 track (v1.1/v2) and base it on the canonical IR manifest.
-- [ ] Do not evolve legacy Swift script further before contract alignment.
+- [ ] Provider interface for external translation services (outside runtime core).
+- [ ] Metadata policy for `status`, `tags`, and ownership.
+- [ ] Optional automation for missing key extraction and review reports.
 
 ## Next Concrete Steps
 
-1. Implement the canonical contract artifact (P0) and wire TS runtime defaults to it.
-2. Freeze and document ICU subset contract (P0) with explicit supported/unsupported syntax table.
-3. Add release workflow and publish gates (P1).
-4. Add contributing guide and architecture documentation (P1).
+1. Implement canonical contract artifact emission and schema tests.
+2. Add generator plugin architecture and wire `--target ts` as baseline target.
+3. Implement Swift generator MVP from contract + JavaScriptCore adapter smoke test.
+4. Implement Kotlin generator MVP with Java interoperability checks.
