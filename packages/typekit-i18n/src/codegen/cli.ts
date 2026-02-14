@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
 import pc from 'picocolors'
 import { loadTypekitI18nConfig } from './config.js'
-import { generateTranslationTable } from './generate.js'
+import { generateTranslations, resolveCodegenTargets, type CodegenTarget } from './generate.js'
 import { writeCsvFileFromIrProject } from './ir/csv.js'
 import { writeYamlFileFromIrProject } from './ir/yaml.js'
 import { validateTranslationFile } from './validate.js'
@@ -70,6 +70,42 @@ const parseLanguages = (value: string): ReadonlyArray<string> =>
     .map((language) => language.trim())
     .filter((language) => language.length > 0)
 
+const resolveArgValues = (args: ReadonlyArray<string>, name: string): ReadonlyArray<string> => {
+  const prefixed = `${name}=`
+  const inlineValues = args
+    .filter((arg) => arg.startsWith(prefixed))
+    .map((arg) => arg.slice(prefixed.length))
+  const separatedValues = args.flatMap((arg, index) => {
+    if (arg !== name) {
+      return []
+    }
+    const value = args[index + 1]
+    return value ? [value] : []
+  })
+
+  return [...inlineValues, ...separatedValues]
+}
+
+const resolveGenerateTargets = (
+  args: ReadonlyArray<string>
+): ReadonlyArray<CodegenTarget> | undefined => {
+  const rawTargetValues = resolveArgValues(args, '--target')
+  if (rawTargetValues.length === 0) {
+    return undefined
+  }
+
+  const splitTargets = rawTargetValues
+    .flatMap((value) => value.split(','))
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+
+  if (splitTargets.length === 0) {
+    throw new Error('Invalid "--target": expected at least one target name.')
+  }
+
+  return resolveCodegenTargets(splitTargets)
+}
+
 const resolveCsvContextArgs = (
   args: ReadonlyArray<string>
 ): {
@@ -121,6 +157,7 @@ const loadProject = async (
 
 const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
   const configArg = resolveArgValue(args, '--config')
+  const targets = resolveGenerateTargets(args)
   const loaded = await loadTypekitI18nConfig(configArg)
 
   if (!loaded) {
@@ -130,7 +167,7 @@ const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> 
     return 0
   }
 
-  await generateTranslationTable(loaded.config)
+  await generateTranslations(loaded.config, { targets })
   return 0
 }
 
