@@ -1,0 +1,15 @@
+version: '1'
+sourceLanguage: en
+languages:
+  - en
+  - de
+  - es
+
+entries:
+  - key: welcome
+    description: Welcome message for Swift runtime smoke app.
+    status: approved
+    values:
+      en: 'Hello World'
+      de: 'Herzlich Willkommen'
+      es: 'Hola Mundo'

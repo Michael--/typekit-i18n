@@ -393,6 +393,86 @@ title;Main title;Welcome;Willkommen
     expect(runResult.stdout.trim()).toBe('title:de:1')
   })
 
+  test.runIf(hasSwiftCompiler)(
+    'swift target compiles and runs with generated runtime bridge bundle',
+    async () => {
+      const directory = await createTempDirectory()
+      const translationDirectoryPath = join(directory, 'translations')
+      const generatedDirectoryPath = join(directory, 'generated')
+      const yamlPath = join(translationDirectoryPath, 'ui.yaml')
+      const outputPath = join(generatedDirectoryPath, 'translationTable.ts')
+      const outputSwiftPath = join(generatedDirectoryPath, 'translation.swift')
+      const outputRuntimeBridgePath = join(generatedDirectoryPath, 'translation.runtime.mjs')
+      const outputRuntimeBridgeBundlePath = join(
+        generatedDirectoryPath,
+        'translation.runtime.bundle.js'
+      )
+      const smokePath = join(directory, 'smoke.swift')
+      const binaryPath = join(directory, 'smoke')
+      const moduleCachePath = join(directory, 'swift-module-cache')
+      const clangModuleCachePath = join(directory, 'clang-module-cache')
+
+      await Promise.all([
+        mkdir(translationDirectoryPath, { recursive: true }),
+        mkdir(moduleCachePath, { recursive: true }),
+        mkdir(clangModuleCachePath, { recursive: true }),
+      ])
+
+      const fixtureYamlSource = await readFile(
+        join(fixturesRootPath, 'consumer-swift-runtime', 'translations', 'ui.yaml'),
+        'utf-8'
+      )
+      await writeFile(yamlPath, fixtureYamlSource, 'utf-8')
+
+      const config: TypekitI18nConfig<'en' | 'de' | 'es'> = {
+        input: [yamlPath],
+        output: outputPath,
+        outputSwift: outputSwiftPath,
+        outputRuntimeBridge: outputRuntimeBridgePath,
+        outputRuntimeBridgeBundle: outputRuntimeBridgeBundlePath,
+        languages: ['en', 'de', 'es'],
+        defaultLanguage: 'en',
+        localeByLanguage: {
+          en: 'en-US',
+          de: 'de-DE',
+          es: 'es-ES',
+        },
+      }
+
+      const result = await generateTranslations(config, { targets: ['swift'] })
+      expect(result.runtimeBridgePath).toBe(outputRuntimeBridgePath)
+      expect(result.runtimeBridgeBundlePath).toBe(outputRuntimeBridgeBundlePath)
+
+      const fixtureSource = await readFile(
+        join(fixturesRootPath, 'consumer-swift-runtime', 'SmokeApp.swift'),
+        'utf-8'
+      )
+      await writeFile(smokePath, fixtureSource, 'utf-8')
+
+      const compileResult = spawnSync('swiftc', [outputSwiftPath, smokePath, '-o', binaryPath], {
+        encoding: 'utf-8',
+        env: {
+          ...process.env,
+          SWIFT_MODULECACHE_PATH: moduleCachePath,
+          CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
+          HOME: directory,
+        },
+      })
+      if (compileResult.status !== 0) {
+        throw new Error(compileResult.stderr || compileResult.stdout)
+      }
+
+      const runResult = spawnSync(binaryPath, [], { encoding: 'utf-8', cwd: directory })
+      if (runResult.status !== 0) {
+        throw new Error(runResult.stderr || runResult.stdout)
+      }
+
+      expect(runResult.stdout.trim()).toBe(
+        ['en: Hello World', 'de: Herzlich Willkommen', 'es: Hola Mundo'].join('\n')
+      )
+    }
+  )
+
   test.runIf(hasKotlinCompiler && hasJavaRuntime)(
     'kotlin target compiles and runs in a consumer smoke project',
     async () => {

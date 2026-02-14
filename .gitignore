@@ -6,6 +6,7 @@ AGENTS.md
 /build/
 /coverage/
 /.vscode/
+.tmp/
 *.tsbuildinfo
 **/.vitepress/cache/
 **/.vitepress/dist/
