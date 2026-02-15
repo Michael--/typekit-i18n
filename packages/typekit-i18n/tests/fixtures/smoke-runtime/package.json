@@ -1,9 +1,10 @@
 {
-  "name": "@typekit-i18n/consumer-swift-runtime",
+  "name": "@typekit-i18n/smoke-runtime",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "clean": "rimraf generated .tmp",
     "gen": "node --import tsx ../../../src/codegen/cli.ts generate --config ./typekit.config.ts --target swift",
     "start": "node ./run-swift-smoke.mjs"
   }

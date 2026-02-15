@@ -419,7 +419,7 @@ title;Main title;Welcome;Willkommen
       ])
 
       const fixtureYamlSource = await readFile(
-        join(fixturesRootPath, 'consumer-swift-runtime', 'translations', 'ui.yaml'),
+        join(fixturesRootPath, 'smoke-runtime', 'translations', 'ui.yaml'),
         'utf-8'
       )
       await writeFile(yamlPath, fixtureYamlSource, 'utf-8')
@@ -444,7 +444,7 @@ title;Main title;Welcome;Willkommen
       expect(result.runtimeBridgeBundlePath).toBe(outputRuntimeBridgeBundlePath)
 
       const fixtureSource = await readFile(
-        join(fixturesRootPath, 'consumer-swift-runtime', 'SmokeApp.swift'),
+        join(fixturesRootPath, 'smoke-runtime', 'SmokeApp.swift'),
         'utf-8'
       )
       await writeFile(smokePath, fixtureSource, 'utf-8')
