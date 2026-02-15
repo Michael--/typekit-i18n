@@ -24,6 +24,7 @@ struct SmokeApp {
     let bridge = JavaScriptCoreTranslationRuntimeBridge(context: context)
     let translator = TypekitTranslator(bridge: bridge)
 
+    print("Translating welcome message for all supported languages:")
     for language in TranslationLanguage.allCases {
       let text = try translator.translate(.welcome, language: language)
       print("\(language.rawValue): \(text)")
