@@ -10,6 +10,7 @@ enum SmokeRuntimeError: Error {
 @main
 struct SmokeApp {
   static func main() throws {
+    print("\nStarting Swift SmokeApp...")
     #if canImport(JavaScriptCore)
     let runtimeBundlePath = "./generated/translation.runtime.bundle.js"
     let runtimeBundleSource = try String(contentsOfFile: runtimeBundlePath, encoding: .utf8)

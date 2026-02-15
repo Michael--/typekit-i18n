@@ -1,4 +1,7 @@
 fun main() {
+  println("")
+  println("Starting Kotlin SmokeApp...")
+
   val valuesByLanguage = mapOf(
     "en" to "Hello World",
     "de" to "Herzlich Willkommen",
