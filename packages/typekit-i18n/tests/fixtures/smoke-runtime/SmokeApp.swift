@@ -24,18 +24,21 @@ struct SmokeApp {
     let bridge = JavaScriptCoreTranslationRuntimeBridge(context: context)
     let translator = TypekitTranslator(bridge: bridge)
 
-    print("Translating welcome message for all supported languages:")
+    print("\nTranslating welcome message for all supported languages:")
     for language in TranslationLanguage.allCases {
       let text = try translator.translate(.welcome, language: language)
       print("\(language.rawValue): \(text)")
     }
 
-    // use default language
-    let icuSample = try translator.translate(
-      .itemCountIcu,
-      placeholders: [TranslationPlaceholder(key: "count", value: .number(2))]
-    )
-    print("ICU sample: \(icuSample)")
+    // use default language in a loop 0..2 items to show pluralization
+    print("\nTranslating ICU plural examples:")
+    for count in 0...2 {
+      let icuSample = try translator.translate(
+        .itemCountIcu,
+        placeholders: [TranslationPlaceholder(key: "count", value: .number(Double(count)))]
+      )
+      print("\(icuSample)")
+    }
     #else
     print("JavaScriptCore is not available on this platform.")
     #endif
