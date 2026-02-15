@@ -1,12 +1,12 @@
 # Typekit i18n - Roadmap
 
-Last sync: 2026-02-14
+Last sync: 2026-02-15
 
 ## Status Summary
 
 - Completed baseline: monorepo setup, TS runtime, CSV/YAML codegen, IR validation, CLI (`generate|validate|convert`), tests, docs-site + GitHub Pages workflow.
 - Major complexity driver: ICU runtime is now core behavior (parser + renderer + formatters + locale mapping).
-- Primary strategic gap: missing canonical target contract for multi-runtime output (TS + Swift + Kotlin/Java + other environments).
+- Primary strategic gap: release/distribution maturity and explicit cross-target parity hardening for native/runtime fixtures.
 
 ## Completed (verified against current repository)
 
@@ -37,6 +37,7 @@ Last sync: 2026-02-14
 - [x] Runtime and codegen test suites are present and expanded.
 - [x] Docs site and package docs reflect current runtime/codegen APIs.
 - [x] GitHub Pages workflow for docs deployment is present (`.github/workflows/pages.yml`).
+- [x] Native runtime smoke fixtures exist for Swift, Kotlin, and Java (`tests/fixtures/smoke-runtime`) and are executable via shared runner.
 
 ## Legacy Multi-Target Audit (2026-02-14)
 
@@ -98,9 +99,9 @@ flowchart TB
 
 ### Code ownership boundaries
 
-- [ ] Keep parsing, validation, placeholder rules, and ICU scope in one core implementation (`packages/typekit-i18n`).
-- [ ] Target generators only transform the canonical contract into target-specific API layers.
-- [ ] Do not duplicate ICU parsing/formatting logic per target in v1; adapters call shared JS runtime unless explicitly promoted to native runtime later.
+- [x] Keep parsing, validation, placeholder rules, and ICU scope in one core implementation (`packages/typekit-i18n`).
+- [x] Target generators only transform the canonical contract into target-specific API layers.
+- [x] Do not duplicate ICU parsing/formatting logic per target in v1; adapters call shared JS runtime unless explicitly promoted to native runtime later.
 
 ### Generator extensibility
 
@@ -205,7 +206,7 @@ flowchart LR
 - [ ] Add runtime smoke scenarios per fixture:
   - [x] basic translation
   - [x] placeholder rendering
-  - [ ] ICU plural/select behavior
+  - [x] ICU plural/select behavior
   - [ ] missing/fallback behavior parity with JS reference runtime
 - [x] Add release gate: no publish when any enabled target consumer smoke test fails.
 
