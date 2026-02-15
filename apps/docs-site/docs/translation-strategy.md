@@ -80,3 +80,5 @@ Use ICU when language rules require branching or locale formatting:
 Use plain placeholders for simple static replacement.
 
 This keeps templates readable while enabling rich locale behavior only where needed.
+
+The built-in ICU support is intentionally a subset, not full ICU parity. If you need unsupported ICU features, use a dedicated full-ICU pipeline/runtime externally and pass resolved strings to Typekit.

@@ -95,7 +95,17 @@ Supported ICU subset:
 - `#` replacement in plural/selectordinal branches
 - apostrophe escaping (`''`, quoted literals)
 
+Explicitly unsupported ICU features:
+
+- expression types outside the supported subset, for example `choice`
+- `select` numeric selectors like `=1` (numeric selectors are only supported in `plural`/`selectordinal`)
+- full ICU number skeleton support (only documented tokens are supported)
+- full ICU date/time skeleton support (only documented pattern letters are supported)
+- MessageFormat-2 syntax
+
 Invalid ICU expressions throw detailed syntax errors with key, language, line, and column.
+
+If you require full ICU feature coverage, use a dedicated external ICU pipeline/runtime and feed resolved strings into Typekit instead of relying on the built-in subset.
 
 ## Placeholder Replacement
 

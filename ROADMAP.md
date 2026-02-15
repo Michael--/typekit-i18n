@@ -178,7 +178,7 @@ flowchart TB
 - [ ] Freeze supported ICU subset as a versioned compatibility contract.
 - [ ] Add negative/edge-case matrix across locale behaviors.
 - [ ] Add parser/renderer performance guardrails.
-- [ ] Document explicit unsupported ICU features.
+- [x] Document explicit unsupported ICU features.
 
 ### P1 - Release and Distribution Maturity
 
