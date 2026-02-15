@@ -6,6 +6,6 @@
   "scripts": {
     "clean": "rimraf generated .tmp",
     "gen": "node --import tsx ../../../src/codegen/cli.ts generate --config ./typekit.config.ts --target swift",
-    "start": "node ./run-swift-smoke.mjs"
+    "start": "node ./run-smoke.mjs"
   }
 }

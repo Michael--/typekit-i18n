@@ -48,17 +48,6 @@ if (!hasSwiftCompiler) {
   process.exit(0)
 }
 
-runCommand('node', [
-  '--import',
-  'tsx',
-  '../../../src/codegen/cli.ts',
-  'generate',
-  '--config',
-  './typekit.config.ts',
-  '--target',
-  'swift',
-])
-
 mkdirSync(swiftModuleCachePath, { recursive: true })
 mkdirSync(clangModuleCachePath, { recursive: true })
 
