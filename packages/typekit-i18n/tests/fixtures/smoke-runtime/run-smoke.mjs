@@ -29,6 +29,27 @@ const runCommand = (command, args, options = {}) => {
 const hasCommand = (command, versionArgs = ['--version']) =>
   spawnSync(command, versionArgs, { stdio: 'ignore' }).status === 0
 
+const resolveKotlinCompiler = () => {
+  const candidates = [
+    { command: 'kotlinc', args: [] },
+    { command: 'kotlinc-jvm', args: [] },
+    {
+      command: 'bash',
+      args: ['/Applications/Android Studio.app/Contents/plugins/Kotlin/kotlinc/bin/kotlinc'],
+    },
+    {
+      command: 'bash',
+      args: ['/Applications/Android Studio.app/Contents/plugins/Kotlin/kotlinc/bin/kotlinc-jvm'],
+    },
+  ]
+
+  return (
+    candidates.find((candidate) =>
+      hasCommand(candidate.command, [...candidate.args, '-version'])
+    ) ?? null
+  )
+}
+
 if (process.platform === 'win32') {
   console.log('Skipping native smoke apps on Windows.')
   process.exit(0)
@@ -48,7 +69,8 @@ if (process.platform === 'darwin' && !hasSwiftCompiler) {
   process.exit(1)
 }
 
-const hasKotlinCompiler = hasCommand('kotlinc')
+const kotlinCompiler = resolveKotlinCompiler()
+const hasKotlinCompiler = kotlinCompiler !== null
 const hasJavaRuntime = hasCommand('java', ['-version'])
 const canRunKotlin = hasKotlinCompiler && hasJavaRuntime
 
@@ -91,9 +113,20 @@ if (hasSwiftCompiler) {
 }
 
 if (canRunKotlin) {
+  if (kotlinCompiler === null) {
+    console.error('Kotlin compiler detection failed unexpectedly.')
+    process.exit(1)
+  }
   runCommand(
-    'kotlinc',
-    ['./generated/translation.kt', './SmokeApp.kt', '-include-runtime', '-d', kotlinJarPath]
+    kotlinCompiler.command,
+    [
+      ...kotlinCompiler.args,
+      './generated/translation.kt',
+      './SmokeApp.kt',
+      '-include-runtime',
+      '-d',
+      kotlinJarPath,
+    ]
   )
   runCommand('java', ['-jar', kotlinJarPath])
 } else {
