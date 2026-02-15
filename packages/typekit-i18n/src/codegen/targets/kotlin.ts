@@ -424,6 +424,16 @@ class TypekitTranslator @JvmOverloads constructor(
 
   fun getLanguage(): TranslationLanguage = languageState
 
+  @Throws(Exception::class)
+  fun translate(
+    key: TranslationKey,
+    placeholders: List<TranslationPlaceholder>
+  ): String = translate(
+    key = key,
+    language = languageState,
+    placeholders = placeholders
+  )
+
   @JvmOverloads
   @Throws(Exception::class)
   fun translate(
@@ -437,6 +447,18 @@ class TypekitTranslator @JvmOverloads constructor(
       placeholders = placeholders
     )
   }
+
+  @Throws(Exception::class)
+  fun translate(
+    category: TranslationCategory,
+    key: TranslationKey,
+    placeholders: List<TranslationPlaceholder>
+  ): String = translate(
+    category = category,
+    key = key,
+    language = languageState,
+    placeholders = placeholders
+  )
 
   @JvmOverloads
   @Throws(Exception::class)

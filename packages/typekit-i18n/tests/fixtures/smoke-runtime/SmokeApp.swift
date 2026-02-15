@@ -30,9 +30,9 @@ struct SmokeApp {
       print("\(language.rawValue): \(text)")
     }
 
+    // use default language
     let icuSample = try translator.translate(
       .itemCountIcu,
-      language: .en,
       placeholders: [TranslationPlaceholder(key: "count", value: .number(2))]
     )
     print("ICU sample: \(icuSample)")

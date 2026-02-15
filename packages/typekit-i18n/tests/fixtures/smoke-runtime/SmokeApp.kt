@@ -13,9 +13,9 @@ fun main() {
     println("${language.code}: $text")
   }
 
+  // use default language
   val icuSample = translator.translate(
     TranslationKey.ITEM_COUNT_ICU,
-    TranslationLanguage.EN,
     listOf(TranslationPlaceholder("count", TranslationPlaceholderValue.Number(2.0)))
   )
   println("ICU sample: $icuSample")
