@@ -468,16 +468,21 @@ title;Main title;Welcome;Willkommen
         throw new Error(runResult.stderr || runResult.stdout)
       }
 
-      expect(runResult.stdout.trim()).toBe(
-        [
-          'Starting Swift SmokeApp...',
-          'Translating welcome message for all supported languages:',
-          'en: Hello World',
-          'de: Herzlich Willkommen',
-          'es: Hola Mundo',
-          'ICU sample: 2 items',
-        ].join('\n')
-      )
+      const outputLines = runResult.stdout
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+      expect(outputLines).toEqual([
+        'Starting Swift SmokeApp...',
+        'Translating welcome message for all supported languages:',
+        'en: Hello World',
+        'de: Herzlich Willkommen',
+        'es: Hola Mundo',
+        'Translating ICU plural examples:',
+        'No items',
+        'One item',
+        '2 items',
+      ])
     }
   )
 

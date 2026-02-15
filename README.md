@@ -48,6 +48,7 @@ Useful targeted commands:
 pnpm --filter @number10/typekit-i18n run build
 pnpm --filter @typekit-i18n/playground-ts run gen
 pnpm --filter @typekit-i18n/docs-site run docs:build
+node packages/typekit-i18n/tests/fixtures/smoke-runtime/run-smoke.mjs
 ```
 
 ## Quick Local Workflow

@@ -1,16 +1,17 @@
-# Native Targets (Swift + Kotlin)
+# Native Targets (Swift + Kotlin + Java Interop)
 
-Native targets now generate:
+Native target generation produces:
 
-- `translation.swift` or `translation.kt` (typed native API)
+- `translation.swift` (typed Swift API)
+- `translation.kt` (typed Kotlin API with Java interop support)
 - `translation.contract.json` (canonical contract)
 - `translation.runtime.mjs` (shared JS runtime bridge installer)
 - `translation.runtime.bundle.js` (direct-eval bundle for JavaScriptCore/embedded engines)
 
 The generated runtime bridge installs `globalThis.__typekitTranslate` by default and uses:
 
-- `createIcuTranslator` (default)
-- or `createTranslator` when `runtimeBridgeMode: 'basic'`
+- `createIcuTranslator` by default (`runtimeBridgeMode: 'icu'`)
+- `createTranslator` when `runtimeBridgeMode: 'basic'`
 
 ## Config
 
@@ -49,12 +50,6 @@ typekit-i18n generate --target ts,swift,kotlin
 
 When `swift` or `kotlin` is generated, both runtime outputs are generated automatically.
 
-## What Is Copy/Paste Ready?
-
-- `COPY/PASTE READY`: use exactly as shown.
-- `PRODUCTION ADAPT REQUIRED`: replace engine-specific loading code only.
-- Enum members like `TranslationKey.*` and `TranslationLanguage.*` come from your generated files and can differ.
-
 ## Swift (JavaScriptCore)
 
 ### 1. Add generated files
@@ -65,14 +60,12 @@ When `swift` or `kotlin` is generated, both runtime outputs are generated automa
 
 ### 2. Initialize in minimal steps
 
-`COPY/PASTE READY` (only key/language enum values may differ):
-
 ```swift
 import Foundation
 import JavaScriptCore
 
 let context = JSContext()!
-context.evaluateScript(runtimeBridgeBundleText) // from generated translation.runtime.bundle.js
+context.evaluateScript(runtimeBridgeBundleText) // generated translation.runtime.bundle.js
 let bridge = JavaScriptCoreTranslationRuntimeBridge(context: context)
 let t = TypekitTranslator(bridge: bridge)
 
@@ -83,46 +76,63 @@ let value = try t.translate(
 )
 ```
 
-`PRODUCTION ADAPT REQUIRED`: how `runtimeBridgeBundleText` is loaded from app resources.
+`runtimeBridgeBundleText` loading is app-specific.
 
-## Kotlin (Android/JVM)
+## Kotlin (JVM/Android)
 
 ### 1. Add generated files
 
 - Include `translation.kt` in your module.
-- Evaluate `translation.runtime.bundle.js` in your JS engine.
-- `translation.runtime.mjs` remains available for module-aware JS runtimes.
+- Make `translation.runtime.bundle.js` available at runtime.
 
 ### 2. Initialize in minimal steps
 
-`COPY/PASTE READY` once your JS engine can call `__typekitTranslate`:
-
 ```kotlin
-val bridge = LambdaTranslationRuntimeBridge { key, language, placeholders ->
-  jsEngine.callTypekitTranslate(
-    key = key,
-    language = language,
-    placeholders = placeholders.associate { entry -> entry.key to entry.value.bridgeValue() }
-  )
-}
+val bridge = NodeTranslationRuntimeBridge(
+  runtimeBundlePath = "./generated/translation.runtime.bundle.js"
+)
 val t = TypekitTranslator(bridge = bridge)
 
 val value = t.translate(
-  key = TranslationKey.GREETING_TITLE,
-  language = TranslationLanguage.DE,
-  placeholders = listOf(TranslationPlaceholder("name", TranslationPlaceholderValue.Text("Ada")))
+  TranslationKey.GREETING_TITLE,
+  placeholders = listOf(
+    TranslationPlaceholder("name", TranslationPlaceholderValue.Text("Ada"))
+  )
 )
 ```
 
-`PRODUCTION ADAPT REQUIRED`: `jsEngine.callTypekitTranslate(...)` is app-specific.
+`NodeTranslationRuntimeBridge` executes the generated JS runtime bridge through `node` and calls `__typekitTranslate`.
 
 ## Java Interop
 
-`COPY/PASTE READY`:
+Java can consume the same generated Kotlin API:
 
 ```java
+TranslationRuntimeBridge bridge =
+    new NodeTranslationRuntimeBridge("./generated/translation.runtime.bundle.js");
 TypekitTranslator t = TypekitJavaInterop.createTranslator(bridge);
-String value = TypekitJavaInterop.translate(t, TranslationKey.GREETING_TITLE, TranslationLanguage.DE);
+
+String value = t.translate(
+    TranslationKey.GREETING_TITLE,
+    java.util.List.of(
+        new TranslationPlaceholder("name", new TranslationPlaceholderValue.Text("Ada"))
+    )
+);
+```
+
+## Native Smoke Fixtures
+
+Repository fixtures validating native runtime integration:
+
+- `packages/typekit-i18n/tests/fixtures/smoke-runtime/SmokeApp.swift`
+- `packages/typekit-i18n/tests/fixtures/smoke-runtime/SmokeApp.kt`
+- `packages/typekit-i18n/tests/fixtures/smoke-runtime/SmokeApp.java`
+- `packages/typekit-i18n/tests/fixtures/smoke-runtime/run-smoke.mjs`
+
+Run from repository root:
+
+```bash
+node packages/typekit-i18n/tests/fixtures/smoke-runtime/run-smoke.mjs
 ```
 
 ## Runtime Bridge Contract
@@ -133,7 +143,7 @@ String value = TypekitJavaInterop.translate(t, TranslationKey.GREETING_TITLE, Tr
 - `language: string`
 - `placeholders: Record<string, unknown>`
 
-and returns `string`.
+and return `string`.
 
 ## Notes
 

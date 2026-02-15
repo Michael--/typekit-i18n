@@ -265,6 +265,23 @@ typekit-i18n generate --target ts,swift,kotlin
 - Runtime bridge mode is configurable via `runtimeBridgeMode` (`icu` default, or `basic`)
 - If no config is found, exits successfully and skips generation
 
+### Native Runtime Smokes (Swift, Kotlin, Java)
+
+Native integration smoke fixtures are part of this repository:
+
+- `tests/fixtures/smoke-runtime/SmokeApp.swift`
+- `tests/fixtures/smoke-runtime/SmokeApp.kt`
+- `tests/fixtures/smoke-runtime/SmokeApp.java`
+- runner: `tests/fixtures/smoke-runtime/run-smoke.mjs`
+
+From repository root:
+
+```bash
+node packages/typekit-i18n/tests/fixtures/smoke-runtime/run-smoke.mjs
+```
+
+The smoke run generates artifacts and executes Swift, Kotlin, and Java examples against the same generated runtime bridge bundle.
+
 ### `validate`
 
 ```bash
