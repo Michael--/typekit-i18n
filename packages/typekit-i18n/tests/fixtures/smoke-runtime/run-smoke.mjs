@@ -13,6 +13,7 @@ const swiftModuleCachePath = join(tempDirectoryPath, 'swift-module-cache')
 const clangModuleCachePath = join(tempDirectoryPath, 'clang-module-cache')
 const swiftBinaryPath = join(tempDirectoryPath, 'smoke-app-swift')
 const kotlinJarPath = join(tempDirectoryPath, 'smoke-app-kotlin.jar')
+const javaClassesPath = join(tempDirectoryPath, 'java-classes')
 
 const runCommand = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
@@ -72,9 +73,11 @@ if (process.platform === 'darwin' && !hasSwiftCompiler) {
 const kotlinCompiler = resolveKotlinCompiler()
 const hasKotlinCompiler = kotlinCompiler !== null
 const hasJavaRuntime = hasCommand('java', ['-version'])
+const hasJavaCompiler = hasCommand('javac', ['-version'])
 const canRunKotlin = hasKotlinCompiler && hasJavaRuntime
+const canRunJava = canRunKotlin && hasJavaCompiler
 
-if (!hasSwiftCompiler && !canRunKotlin) {
+if (!hasSwiftCompiler && !canRunKotlin && !canRunJava) {
   console.log('Skipping native smoke apps because no supported compiler was found.')
   process.exit(0)
 }
@@ -135,5 +138,21 @@ if (canRunKotlin) {
   }
   if (!hasJavaRuntime) {
     console.log('Skipping Kotlin smoke app because java runtime is not available.')
+  }
+}
+
+if (canRunJava) {
+  mkdirSync(javaClassesPath, { recursive: true })
+
+  runCommand('javac', ['-cp', kotlinJarPath, '-d', javaClassesPath, './SmokeApp.java'])
+
+  const classpath = [kotlinJarPath, javaClassesPath].join(process.platform === 'win32' ? ';' : ':')
+  runCommand('java', ['-cp', classpath, 'SmokeApp'])
+} else {
+  if (!hasJavaCompiler) {
+    console.log('Skipping Java smoke app because javac is not available.')
+  }
+  if (!canRunKotlin) {
+    console.log('Skipping Java smoke app because Kotlin artifacts are unavailable.')
   }
 }

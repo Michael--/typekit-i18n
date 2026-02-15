@@ -484,6 +484,7 @@ object TypekitJavaInterop {
   fun category(rawValue: String): TranslationCategory? = TranslationCategory.fromRawValue(rawValue)
 
   @JvmStatic
+  @JvmOverloads
   fun createTranslator(
     bridge: TranslationRuntimeBridge,
     defaultLanguage: TranslationLanguage = TranslationContractInfo.sourceLanguage
