@@ -29,6 +29,13 @@ struct SmokeApp {
       let text = try translator.translate(.welcome, language: language)
       print("\(language.rawValue): \(text)")
     }
+
+    let icuSample = try translator.translate(
+      .itemCountIcu,
+      language: .en,
+      placeholders: [TranslationPlaceholder(key: "count", value: .number(2))]
+    )
+    print("ICU sample: \(icuSample)")
     #else
     print("JavaScriptCore is not available on this platform.")
     #endif

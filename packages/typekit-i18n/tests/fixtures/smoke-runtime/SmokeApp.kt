@@ -12,5 +12,11 @@ fun main() {
     val text = translator.translate(TranslationKey.WELCOME, language)
     println("${language.code}: $text")
   }
-  translator.translate(TranslationKey.WELCOME)
+
+  val icuSample = translator.translate(
+    TranslationKey.ITEM_COUNT_ICU,
+    TranslationLanguage.EN,
+    listOf(TranslationPlaceholder("count", TranslationPlaceholderValue.Number(2.0)))
+  )
+  println("ICU sample: $icuSample")
 }

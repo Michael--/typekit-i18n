@@ -469,7 +469,14 @@ title;Main title;Welcome;Willkommen
       }
 
       expect(runResult.stdout.trim()).toBe(
-        ['en: Hello World', 'de: Herzlich Willkommen', 'es: Hola Mundo'].join('\n')
+        [
+          'Starting Swift SmokeApp...',
+          'Translating welcome message for all supported languages:',
+          'en: Hello World',
+          'de: Herzlich Willkommen',
+          'es: Hola Mundo',
+          'ICU sample: 2 items',
+        ].join('\n')
       )
     }
   )

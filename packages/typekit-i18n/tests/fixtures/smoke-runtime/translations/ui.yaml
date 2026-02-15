@@ -13,3 +13,10 @@ entries:
       en: 'Hello World'
       de: 'Herzlich Willkommen'
       es: 'Hola Mundo'
+  - key: item_count_icu
+    description: Simple ICU plural example used by smoke apps.
+    status: approved
+    values:
+      en: '{count, plural, =0 {No items} one {One item} other {# items}}'
+      de: '{count, plural, =0 {Keine Elemente} one {Ein Element} other {# Elemente}}'
+      es: '{count, plural, =0 {Ningun elemento} one {Un elemento} other {# elementos}}'
