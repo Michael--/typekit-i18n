@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "clean": "rimraf generated .tmp",
-    "gen": "node --import tsx ../../../src/codegen/cli.ts generate --config ./typekit.config.ts --target swift",
+    "gen": "node --import tsx ../../../src/codegen/cli.ts generate --config ./typekit.config.ts --target swift,kotlin",
     "start": "node ./run-smoke.mjs"
   }
 }

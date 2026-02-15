@@ -11,7 +11,8 @@ const fixtureDirectoryPath = dirname(fileURLToPath(import.meta.url))
 const tempDirectoryPath = join(fixtureDirectoryPath, '.tmp')
 const swiftModuleCachePath = join(tempDirectoryPath, 'swift-module-cache')
 const clangModuleCachePath = join(tempDirectoryPath, 'clang-module-cache')
-const binaryPath = join(tempDirectoryPath, 'smoke-app')
+const swiftBinaryPath = join(tempDirectoryPath, 'smoke-app-swift')
+const kotlinJarPath = join(tempDirectoryPath, 'smoke-app-kotlin.jar')
 
 const runCommand = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
@@ -25,8 +26,11 @@ const runCommand = (command, args, options = {}) => {
   }
 }
 
+const hasCommand = (command, versionArgs = ['--version']) =>
+  spawnSync(command, versionArgs, { stdio: 'ignore' }).status === 0
+
 if (process.platform === 'win32') {
-  console.log('Skipping swift smoke app on Windows.')
+  console.log('Skipping native smoke apps on Windows.')
   process.exit(0)
 }
 
@@ -38,26 +42,65 @@ if (process.platform === 'darwin') {
   }
 }
 
-const hasSwiftCompiler = spawnSync('swiftc', ['--version'], { stdio: 'ignore' }).status === 0
-if (!hasSwiftCompiler) {
-  if (process.platform === 'darwin') {
-    console.error('swiftc was not found. Please install Xcode command line tools.')
-    process.exit(1)
-  }
-  console.log('Skipping swift smoke app because swiftc is not available.')
+const hasSwiftCompiler = hasCommand('swiftc')
+if (process.platform === 'darwin' && !hasSwiftCompiler) {
+  console.error('swiftc was not found. Please install Xcode command line tools.')
+  process.exit(1)
+}
+
+const hasKotlinCompiler = hasCommand('kotlinc')
+const hasJavaRuntime = hasCommand('java', ['-version'])
+const canRunKotlin = hasKotlinCompiler && hasJavaRuntime
+
+if (!hasSwiftCompiler && !canRunKotlin) {
+  console.log('Skipping native smoke apps because no supported compiler was found.')
   process.exit(0)
 }
 
-mkdirSync(swiftModuleCachePath, { recursive: true })
-mkdirSync(clangModuleCachePath, { recursive: true })
+const targets = [hasSwiftCompiler ? 'swift' : null, canRunKotlin ? 'kotlin' : null]
+  .filter((target) => target !== null)
+  .join(',')
 
-runCommand('swiftc', ['./generated/translation.swift', './SmokeApp.swift', '-o', binaryPath], {
-  env: {
-    ...process.env,
-    SWIFT_MODULECACHE_PATH: swiftModuleCachePath,
-    CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
-    HOME: fixtureDirectoryPath,
-  },
-})
+runCommand('node', [
+  '--import',
+  'tsx',
+  '../../../src/codegen/cli.ts',
+  'generate',
+  '--config',
+  './typekit.config.ts',
+  '--target',
+  targets,
+])
 
-runCommand(binaryPath, [])
+if (hasSwiftCompiler) {
+  mkdirSync(swiftModuleCachePath, { recursive: true })
+  mkdirSync(clangModuleCachePath, { recursive: true })
+
+  runCommand('swiftc', ['./generated/translation.swift', './SmokeApp.swift', '-o', swiftBinaryPath], {
+    env: {
+      ...process.env,
+      SWIFT_MODULECACHE_PATH: swiftModuleCachePath,
+      CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
+      HOME: fixtureDirectoryPath,
+    },
+  })
+
+  runCommand(swiftBinaryPath, [])
+} else {
+  console.log('Skipping Swift smoke app because swiftc is not available.')
+}
+
+if (canRunKotlin) {
+  runCommand(
+    'kotlinc',
+    ['./generated/translation.kt', './SmokeApp.kt', '-include-runtime', '-d', kotlinJarPath]
+  )
+  runCommand('java', ['-jar', kotlinJarPath])
+} else {
+  if (!hasKotlinCompiler) {
+    console.log('Skipping Kotlin smoke app because kotlinc is not available.')
+  }
+  if (!hasJavaRuntime) {
+    console.log('Skipping Kotlin smoke app because java runtime is not available.')
+  }
+}
