@@ -259,6 +259,7 @@ checkout.total;Total label;Total;Summe
     expect(kotlinSource).toContain('enum class TranslationLanguage')
     expect(kotlinSource).toContain('enum class TranslationKey')
     expect(kotlinSource).toContain('class TypekitTranslator')
+    expect(kotlinSource).toContain('class NodeTranslationRuntimeBridge')
     expect(kotlinSource).toContain('object TypekitJavaInterop')
     expect(kotlinSource).toContain('@JvmStatic')
     expect(runtimeBridgeSource).toContain('createIcuTranslator')
