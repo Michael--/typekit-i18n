@@ -232,7 +232,7 @@ interface TypekitI18nConfig<TLanguage extends string = string> {
   outputKotlin?: string
   outputRuntimeBridge?: string
   outputRuntimeBridgeBundle?: string
-  runtimeBridgeMode?: 'basic' | 'icu'
+  runtimeBridgeMode?: 'basic' | 'icu' | 'icu-formatjs'
   runtimeBridgeFunctionName?: string
   outputContract?: string
   languages: ReadonlyArray<TLanguage>
@@ -283,7 +283,8 @@ typekit-i18n generate --target ts,swift,kotlin
 - `--target kotlin` also generates Kotlin output (path configurable via `outputKotlin`)
 - Native targets also generate `translation.runtime.mjs` by default (path configurable via `outputRuntimeBridge`)
 - Native targets also generate `translation.runtime.bundle.js` for direct eval runtimes (path configurable via `outputRuntimeBridgeBundle`)
-- Runtime bridge mode is configurable via `runtimeBridgeMode` (`icu` default, or `basic`)
+- Runtime bridge mode is configurable via `runtimeBridgeMode` (`icu` default, `basic`, or `icu-formatjs`)
+- `runtimeBridgeMode: 'icu-formatjs'` requires the optional peer dependency `intl-messageformat`
 - If no config is found, exits successfully and skips generation
 
 ### Native Runtime Smokes (Swift, Kotlin, Java)
@@ -301,7 +302,13 @@ From repository root:
 node packages/typekit-i18n/tests/fixtures/smoke-runtime/run-smoke.mjs
 ```
 
-The smoke run generates artifacts and executes Swift, Kotlin, and Java examples against the same generated runtime bridge bundle.
+The smoke run generates artifacts and executes Swift, Kotlin, and Java examples against the generated runtime bridge bundle for each runtime bridge mode: `basic`, `icu`, and `icu-formatjs`.
+
+To run a single runtime bridge mode:
+
+```bash
+TYPEKIT_RUNTIME_BRIDGE_MODE=icu-formatjs node packages/typekit-i18n/tests/fixtures/smoke-runtime/run-smoke.mjs
+```
 
 ### `validate`
 

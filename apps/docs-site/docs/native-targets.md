@@ -12,6 +12,9 @@ The generated runtime bridge installs `globalThis.__typekitTranslate` by default
 
 - `createIcuTranslator` by default (`runtimeBridgeMode: 'icu'`)
 - `createTranslator` when `runtimeBridgeMode: 'basic'`
+- `createFormatjsIcuTranslator` when `runtimeBridgeMode: 'icu-formatjs'`
+
+For `runtimeBridgeMode: 'icu-formatjs'`, install optional peer dependency `intl-messageformat`.
 
 ## Config
 

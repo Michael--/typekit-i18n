@@ -28,7 +28,7 @@ Config fields:
 - `outputKotlin?`: generated Kotlin output path (used by `--target kotlin`)
 - `outputRuntimeBridge?`: generated runtime bridge module path (`translation.runtime.mjs` by default when native targets are generated)
 - `outputRuntimeBridgeBundle?`: generated bundled runtime bridge script path (`translation.runtime.bundle.js` by default when native targets are generated)
-- `runtimeBridgeMode?`: runtime bridge mode (`icu` default, `basic` optional)
+- `runtimeBridgeMode?`: runtime bridge mode (`icu` default, `basic` and `icu-formatjs` optional)
 - `runtimeBridgeFunctionName?`: runtime bridge function name on `globalThis` (`__typekitTranslate` default)
 - `outputContract?`: generated canonical contract JSON path
 - `languages`: supported languages
@@ -41,6 +41,7 @@ Rules:
 - `defaultLanguage` must be part of `languages`
 - `output` and `outputKeys` must not be identical
 - duplicate keys across merged files fail generation
+- `runtimeBridgeMode: 'icu-formatjs'` requires optional peer dependency `intl-messageformat`
 
 ## Config Discovery
 

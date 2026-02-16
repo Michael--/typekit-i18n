@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
 import { generateTranslations, resolveCodegenTargets } from '../../src/codegen/generate.js'
-import { TypekitI18nConfig } from '../../src/codegen/types.js'
+import { RuntimeBridgeMode, TypekitI18nConfig } from '../../src/codegen/types.js'
 import { fileURLToPath } from 'node:url'
 
 const tempDirectories: string[] = []
@@ -293,13 +293,80 @@ title;Main title;Welcome;Willkommen
     )
   })
 
-  test('supports basic runtime bridge mode and custom function name', async () => {
+  test('supports all runtime bridge modes and custom function name', async () => {
+    const modeExpectations: ReadonlyArray<{
+      mode: RuntimeBridgeMode
+      expectedImport: string
+      unexpectedImports: ReadonlyArray<string>
+    }> = [
+      {
+        mode: 'basic',
+        expectedImport: "import { createTranslator } from '@number10/typekit-i18n/runtime/basic'",
+        unexpectedImports: ['createIcuTranslator', 'createFormatjsIcuTranslator'],
+      },
+      {
+        mode: 'icu',
+        expectedImport: "import { createIcuTranslator } from '@number10/typekit-i18n/runtime/icu'",
+        unexpectedImports: ['import { createTranslator }', 'createFormatjsIcuTranslator'],
+      },
+      {
+        mode: 'icu-formatjs',
+        expectedImport:
+          "import { createFormatjsIcuTranslator } from '@number10/typekit-i18n/runtime/icu-formatjs'",
+        unexpectedImports: ['import { createTranslator }', 'createIcuTranslator'],
+      },
+    ]
+
+    for (const expectation of modeExpectations) {
+      const directory = await createTempDirectory()
+      const csvPath = join(directory, 'translations.csv')
+      const outputPath = join(directory, 'translationTable.ts')
+      const outputKotlinPath = join(directory, 'translation.kt')
+      const outputRuntimeBridgePath = join(directory, 'typekit.bridge.mjs')
+      const outputRuntimeBridgeBundlePath = join(directory, 'typekit.bridge.bundle.js')
+
+      await writeFile(
+        csvPath,
+        `key;description;en;de
+title;Main title;Welcome;Willkommen
+`,
+        'utf-8'
+      )
+
+      const config: TypekitI18nConfig<'en' | 'de'> = {
+        input: [csvPath],
+        output: outputPath,
+        outputKotlin: outputKotlinPath,
+        outputRuntimeBridge: outputRuntimeBridgePath,
+        outputRuntimeBridgeBundle: outputRuntimeBridgeBundlePath,
+        runtimeBridgeMode: expectation.mode,
+        runtimeBridgeFunctionName: '__translate',
+        languages: ['en', 'de'],
+        defaultLanguage: 'en',
+      }
+
+      const result = await generateTranslations(config, {
+        targets: ['kotlin'],
+      })
+
+      expect(result.runtimeBridgePath).toBe(outputRuntimeBridgePath)
+      expect(result.runtimeBridgeBundlePath).toBe(outputRuntimeBridgeBundlePath)
+      const runtimeBridgeSource = await readFile(outputRuntimeBridgePath, 'utf-8')
+      const runtimeBridgeBundleSource = await readFile(outputRuntimeBridgeBundlePath, 'utf-8')
+      expect(runtimeBridgeSource).toContain(expectation.expectedImport)
+      expectation.unexpectedImports.forEach((unexpectedImport) => {
+        expect(runtimeBridgeSource).not.toContain(unexpectedImport)
+      })
+      expect(runtimeBridgeSource).toContain('__translate')
+      expect(runtimeBridgeBundleSource).toContain('__translate')
+    }
+  })
+
+  test('rejects unsupported runtime bridge mode', async () => {
     const directory = await createTempDirectory()
     const csvPath = join(directory, 'translations.csv')
     const outputPath = join(directory, 'translationTable.ts')
     const outputKotlinPath = join(directory, 'translation.kt')
-    const outputRuntimeBridgePath = join(directory, 'typekit.bridge.mjs')
-    const outputRuntimeBridgeBundlePath = join(directory, 'typekit.bridge.bundle.js')
 
     await writeFile(
       csvPath,
@@ -313,26 +380,14 @@ title;Main title;Welcome;Willkommen
       input: [csvPath],
       output: outputPath,
       outputKotlin: outputKotlinPath,
-      outputRuntimeBridge: outputRuntimeBridgePath,
-      outputRuntimeBridgeBundle: outputRuntimeBridgeBundlePath,
-      runtimeBridgeMode: 'basic',
-      runtimeBridgeFunctionName: '__translate',
+      runtimeBridgeMode: 'invalid' as unknown as RuntimeBridgeMode,
       languages: ['en', 'de'],
       defaultLanguage: 'en',
     }
 
-    const result = await generateTranslations(config, {
-      targets: ['kotlin'],
-    })
-
-    expect(result.runtimeBridgePath).toBe(outputRuntimeBridgePath)
-    expect(result.runtimeBridgeBundlePath).toBe(outputRuntimeBridgeBundlePath)
-    const runtimeBridgeSource = await readFile(outputRuntimeBridgePath, 'utf-8')
-    const runtimeBridgeBundleSource = await readFile(outputRuntimeBridgeBundlePath, 'utf-8')
-    expect(runtimeBridgeSource).toContain('import { createTranslator }')
-    expect(runtimeBridgeSource).not.toContain('createIcuTranslator')
-    expect(runtimeBridgeSource).toContain('__translate')
-    expect(runtimeBridgeBundleSource).toContain('__translate')
+    await expect(generateTranslations(config, { targets: ['kotlin'] })).rejects.toThrow(
+      /"runtimeBridgeMode" must be "basic", "icu", or "icu-formatjs"/
+    )
   })
 
   test.runIf(hasSwiftCompiler)('swift target compiles in a consumer smoke project', async () => {

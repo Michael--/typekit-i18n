@@ -14,6 +14,7 @@ const clangModuleCachePath = join(tempDirectoryPath, 'clang-module-cache')
 const swiftBinaryPath = join(tempDirectoryPath, 'smoke-app-swift')
 const kotlinJarPath = join(tempDirectoryPath, 'smoke-app-kotlin.jar')
 const javaClassesPath = join(tempDirectoryPath, 'java-classes')
+const runtimeBridgeModes = ['basic', 'icu', 'icu-formatjs']
 
 const runCommand = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
@@ -29,6 +30,19 @@ const runCommand = (command, args, options = {}) => {
 
 const hasCommand = (command, versionArgs = ['--version']) =>
   spawnSync(command, versionArgs, { stdio: 'ignore' }).status === 0
+
+const resolveRequestedModes = () => {
+  const modeFromEnv = process.env.TYPEKIT_RUNTIME_BRIDGE_MODE
+  if (!modeFromEnv) {
+    return runtimeBridgeModes
+  }
+  if (!runtimeBridgeModes.includes(modeFromEnv)) {
+    throw new Error(
+      `Invalid TYPEKIT_RUNTIME_BRIDGE_MODE "${modeFromEnv}". Expected one of: ${runtimeBridgeModes.join(', ')}.`
+    )
+  }
+  return [modeFromEnv]
+}
 
 const resolveKotlinCompiler = () => {
   const candidates = [
@@ -86,73 +100,92 @@ const targets = [hasSwiftCompiler ? 'swift' : null, canRunKotlin ? 'kotlin' : nu
   .filter((target) => target !== null)
   .join(',')
 
-runCommand('node', [
-  '--import',
-  'tsx',
-  '../../../src/codegen/cli.ts',
-  'generate',
-  '--config',
-  './typekit.config.ts',
-  '--target',
-  targets,
-])
+const requestedModes = resolveRequestedModes()
 
-if (hasSwiftCompiler) {
-  mkdirSync(swiftModuleCachePath, { recursive: true })
-  mkdirSync(clangModuleCachePath, { recursive: true })
+for (const runtimeBridgeMode of requestedModes) {
+  console.log(`\nRunning smoke runtime with runtimeBridgeMode="${runtimeBridgeMode}"`)
 
-  runCommand('swiftc', ['./generated/translation.swift', './SmokeApp.swift', '-o', swiftBinaryPath], {
-    env: {
-      ...process.env,
-      SWIFT_MODULECACHE_PATH: swiftModuleCachePath,
-      CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
-      HOME: fixtureDirectoryPath,
-    },
-  })
-
-  runCommand(swiftBinaryPath, [])
-} else {
-  console.log('Skipping Swift smoke app because swiftc is not available.')
-}
-
-if (canRunKotlin) {
-  if (kotlinCompiler === null) {
-    console.error('Kotlin compiler detection failed unexpectedly.')
-    process.exit(1)
-  }
   runCommand(
-    kotlinCompiler.command,
+    'node',
     [
-      ...kotlinCompiler.args,
-      './generated/translation.kt',
-      './SmokeApp.kt',
-      '-include-runtime',
-      '-d',
-      kotlinJarPath,
-    ]
+      '--import',
+      'tsx',
+      '../../../src/codegen/cli.ts',
+      'generate',
+      '--config',
+      './typekit.config.ts',
+      '--target',
+      targets,
+    ],
+    {
+      env: {
+        ...process.env,
+        TYPEKIT_RUNTIME_BRIDGE_MODE: runtimeBridgeMode,
+      },
+    }
   )
-  runCommand('java', ['-jar', kotlinJarPath])
-} else {
-  if (!hasKotlinCompiler) {
-    console.log('Skipping Kotlin smoke app because kotlinc is not available.')
-  }
-  if (!hasJavaRuntime) {
-    console.log('Skipping Kotlin smoke app because java runtime is not available.')
-  }
-}
 
-if (canRunJava) {
-  mkdirSync(javaClassesPath, { recursive: true })
+  if (hasSwiftCompiler) {
+    mkdirSync(swiftModuleCachePath, { recursive: true })
+    mkdirSync(clangModuleCachePath, { recursive: true })
 
-  runCommand('javac', ['-cp', kotlinJarPath, '-d', javaClassesPath, './SmokeApp.java'])
+    runCommand(
+      'swiftc',
+      ['./generated/translation.swift', './SmokeApp.swift', '-o', swiftBinaryPath],
+      {
+        env: {
+          ...process.env,
+          SWIFT_MODULECACHE_PATH: swiftModuleCachePath,
+          CLANG_MODULE_CACHE_PATH: clangModuleCachePath,
+          HOME: fixtureDirectoryPath,
+        },
+      }
+    )
 
-  const classpath = [kotlinJarPath, javaClassesPath].join(process.platform === 'win32' ? ';' : ':')
-  runCommand('java', ['-cp', classpath, 'SmokeApp'])
-} else {
-  if (!hasJavaCompiler) {
-    console.log('Skipping Java smoke app because javac is not available.')
+    runCommand(swiftBinaryPath, [])
+  } else {
+    console.log('Skipping Swift smoke app because swiftc is not available.')
   }
-  if (!canRunKotlin) {
-    console.log('Skipping Java smoke app because Kotlin artifacts are unavailable.')
+
+  if (canRunKotlin) {
+    if (kotlinCompiler === null) {
+      console.error('Kotlin compiler detection failed unexpectedly.')
+      process.exit(1)
+    }
+    runCommand(
+      kotlinCompiler.command,
+      [
+        ...kotlinCompiler.args,
+        './generated/translation.kt',
+        './SmokeApp.kt',
+        '-include-runtime',
+        '-d',
+        kotlinJarPath,
+      ]
+    )
+    runCommand('java', ['-jar', kotlinJarPath])
+  } else {
+    if (!hasKotlinCompiler) {
+      console.log('Skipping Kotlin smoke app because kotlinc is not available.')
+    }
+    if (!hasJavaRuntime) {
+      console.log('Skipping Kotlin smoke app because java runtime is not available.')
+    }
+  }
+
+  if (canRunJava) {
+    mkdirSync(javaClassesPath, { recursive: true })
+
+    runCommand('javac', ['-cp', kotlinJarPath, '-d', javaClassesPath, './SmokeApp.java'])
+
+    const classpath = [kotlinJarPath, javaClassesPath].join(process.platform === 'win32' ? ';' : ':')
+    runCommand('java', ['-cp', classpath, 'SmokeApp'])
+  } else {
+    if (!hasJavaCompiler) {
+      console.log('Skipping Java smoke app because javac is not available.')
+    }
+    if (!canRunKotlin) {
+      console.log('Skipping Java smoke app because Kotlin artifacts are unavailable.')
+    }
   }
 }

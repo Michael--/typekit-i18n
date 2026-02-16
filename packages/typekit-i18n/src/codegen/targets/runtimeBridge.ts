@@ -9,6 +9,7 @@ import { RuntimeBridgeMode } from '../types.js'
 const DEFAULT_RUNTIME_BRIDGE_FUNCTION_NAME = '__typekitTranslate'
 const RUNTIME_ICU_IMPORT = '@number10/typekit-i18n/runtime/icu'
 const RUNTIME_BASIC_IMPORT = '@number10/typekit-i18n/runtime/basic'
+const RUNTIME_ICU_FORMATJS_IMPORT = '@number10/typekit-i18n/runtime/icu-formatjs'
 const MODULE_DIRECTORY_PATH = dirname(fileURLToPath(import.meta.url))
 
 const resolvePackageRootPath = (): string => {
@@ -49,6 +50,16 @@ const resolveRuntimeImportAlias = (runtimeImportPath: string): string => {
       return sourceCandidate
     }
     const distCandidate = resolve(packageRootPath, 'dist/runtime-basic.js')
+    if (existsSync(distCandidate)) {
+      return distCandidate
+    }
+  }
+  if (runtimeImportPath === RUNTIME_ICU_FORMATJS_IMPORT) {
+    const sourceCandidate = resolve(packageRootPath, 'src/runtime/icuFormatjs.ts')
+    if (existsSync(sourceCandidate)) {
+      return sourceCandidate
+    }
+    const distCandidate = resolve(packageRootPath, 'dist/runtime-icu-formatjs.js')
     if (existsSync(distCandidate)) {
       return distCandidate
     }
@@ -122,19 +133,26 @@ const toBridgeModuleSource = (
   mode: RuntimeBridgeMode,
   functionName: string
 ): string => {
-  const importSource =
-    mode === 'icu'
-      ? `import { createIcuTranslator } from '${RUNTIME_ICU_IMPORT}'`
-      : `import { createTranslator } from '${RUNTIME_BASIC_IMPORT}'`
-  const createTranslatorCall =
-    mode === 'icu'
-      ? `const typekitTranslator = createIcuTranslator(translationTable, {
+  const importSourceByMode: Record<RuntimeBridgeMode, string> = {
+    basic: `import { createTranslator } from '${RUNTIME_BASIC_IMPORT}'`,
+    icu: `import { createIcuTranslator } from '${RUNTIME_ICU_IMPORT}'`,
+    'icu-formatjs': `import { createFormatjsIcuTranslator } from '${RUNTIME_ICU_FORMATJS_IMPORT}'`,
+  }
+  const createTranslatorCallByMode: Record<RuntimeBridgeMode, string> = {
+    basic: `const typekitTranslator = createTranslator(translationTable, {
+  defaultLanguage,
+})`,
+    icu: `const typekitTranslator = createIcuTranslator(translationTable, {
   defaultLanguage,
   localeByLanguage,
-})`
-      : `const typekitTranslator = createTranslator(translationTable, {
+})`,
+    'icu-formatjs': `const typekitTranslator = createFormatjsIcuTranslator(translationTable, {
   defaultLanguage,
-})`
+  localeByLanguage,
+})`,
+  }
+  const importSource = importSourceByMode[mode]
+  const createTranslatorCall = createTranslatorCallByMode[mode]
 
   const tableSource = JSON.stringify(
     Object.fromEntries(
@@ -228,6 +246,7 @@ export const bundleRuntimeBridgeTarget = async (
   const packageRootPath = resolvePackageRootPath()
   const runtimeIcuImportAlias = resolveRuntimeImportAlias(RUNTIME_ICU_IMPORT)
   const runtimeBasicImportAlias = resolveRuntimeImportAlias(RUNTIME_BASIC_IMPORT)
+  const runtimeIcuFormatjsImportAlias = resolveRuntimeImportAlias(RUNTIME_ICU_FORMATJS_IMPORT)
 
   await mkdir(dirname(options.outputPath), { recursive: true })
 
@@ -239,6 +258,7 @@ export const bundleRuntimeBridgeTarget = async (
     alias: {
       [RUNTIME_ICU_IMPORT]: runtimeIcuImportAlias,
       [RUNTIME_BASIC_IMPORT]: runtimeBasicImportAlias,
+      [RUNTIME_ICU_FORMATJS_IMPORT]: runtimeIcuFormatjsImportAlias,
     },
     format: 'iife',
     platform: 'browser',

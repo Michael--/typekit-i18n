@@ -6,7 +6,7 @@ export type TranslationInputFormat = 'csv' | 'yaml'
 /**
  * Runtime bridge generation mode used for native target integrations.
  */
-export type RuntimeBridgeMode = 'basic' | 'icu'
+export type RuntimeBridgeMode = 'basic' | 'icu' | 'icu-formatjs'
 
 /**
  * Generator configuration used to transform translation resources into a typed table module.
@@ -57,7 +57,8 @@ export interface TypekitI18nConfig<TLanguage extends string = string> {
   outputRuntimeBridgeBundle?: string
   /**
    * Optional runtime bridge generation mode.
-   * `icu` uses `createIcuTranslator`; `basic` uses `createTranslator`.
+   * `icu` uses `createIcuTranslator`; `basic` uses `createTranslator`;
+   * `icu-formatjs` uses `createFormatjsIcuTranslator`.
    * Defaults to `icu`.
    */
   runtimeBridgeMode?: RuntimeBridgeMode

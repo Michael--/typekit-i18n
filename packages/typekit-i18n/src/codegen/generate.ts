@@ -703,9 +703,13 @@ const resolveGenerationOutputPaths = <TLanguage extends string>(
       'Invalid configuration: "outputRuntimeBridge" and "outputRuntimeBridgeBundle" must not point to the same file.'
     )
   }
-  if (runtimeBridgeMode !== 'basic' && runtimeBridgeMode !== 'icu') {
+  if (
+    runtimeBridgeMode !== 'basic' &&
+    runtimeBridgeMode !== 'icu' &&
+    runtimeBridgeMode !== 'icu-formatjs'
+  ) {
     throw new Error(
-      `Invalid configuration: "runtimeBridgeMode" must be "basic" or "icu" (received "${runtimeBridgeMode}").`
+      `Invalid configuration: "runtimeBridgeMode" must be "basic", "icu", or "icu-formatjs" (received "${runtimeBridgeMode}").`
     )
   }
   if (runtimeBridgeOutputPath && !runtimeBridgeBundleOutputPath) {
