@@ -25,7 +25,7 @@ import { LanguageCodes, type TranslateKey, type TranslateLanguage } from '@gen/t
 import { translationTable } from '@gen/translationTable'
 
 type TranslationMode = 'fallback' | 'strict'
-type ScenarioGroup = 'all' | 'core' | 'icu' | 'divergence' | 'fallback'
+type ScenarioGroup = 'all' | 'core' | 'icu' | 'fallback'
 type RuntimeId = 'basic' | 'icu-subset' | 'icu-formatjs'
 
 interface ScenarioDefinition {
@@ -78,7 +78,6 @@ const scenarioGroups: { value: ScenarioGroup; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'core', label: 'Core' },
   { value: 'icu', label: 'ICU' },
-  { value: 'divergence', label: 'Divergence' },
   { value: 'fallback', label: 'Fallback' },
 ]
 
@@ -222,9 +221,9 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   },
   {
     id: 'divergence-sign',
-    group: 'divergence',
-    title: 'Divergence: sign-always skeleton',
-    description: 'FormatJS supports ::sign-always compact-short, built-in subset rejects it.',
+    group: 'icu',
+    title: 'ICU++ sign-always skeleton',
+    description: '::sign-always compact-short; runtime differences are visible side by side.',
     key: 'icu_formatjs_sign_demo',
     placeholder: {
       data: [{ key: 'amount', value: 1234 }],
@@ -232,9 +231,9 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   },
   {
     id: 'divergence-unit',
-    group: 'divergence',
-    title: 'Divergence: unit skeleton',
-    description: 'FormatJS supports ::unit/kilometer, built-in subset rejects it.',
+    group: 'icu',
+    title: 'ICU++ unit skeleton',
+    description: '::unit/kilometer; runtime differences are visible side by side.',
     key: 'icu_formatjs_unit_demo',
     placeholder: {
       data: [{ key: 'distance', value: 5 }],
