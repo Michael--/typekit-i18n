@@ -128,3 +128,75 @@ entries:
       fr: 'Format unite de distance: {distance, number, ::unit/kilometer}'
       ar: 'Tanseeq wahdat al-masafa: {distance, number, ::unit/kilometer}'
       pl: 'Format jednostki odleglosci: {distance, number, ::unit/kilometer}'
+
+  - key: icu_formatjs_accounting_demo
+    description: ICU number skeleton with accounting sign display (FormatJS extension demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Accounting currency: {amount, number, ::sign-accounting currency/USD}'
+      de: 'Accounting waehrung: {amount, number, ::sign-accounting currency/USD}'
+      es: 'Moneda contable: {amount, number, ::sign-accounting currency/USD}'
+      fr: 'Monnaie comptable: {amount, number, ::sign-accounting currency/USD}'
+      ar: 'Amla muhasebiya: {amount, number, ::sign-accounting currency/USD}'
+      pl: 'Waluta ksiegowa: {amount, number, ::sign-accounting currency/USD}'
+
+  - key: icu_formatjs_precision_demo
+    description: ICU number skeleton fixed fraction precision (FormatJS extension demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Fixed fraction precision: {amount, number, ::.00}'
+      de: 'Feste nachkommastellen: {amount, number, ::.00}'
+      es: 'Precision fraccion fija: {amount, number, ::.00}'
+      fr: 'Precision fraction fixe: {amount, number, ::.00}'
+      ar: 'Diqat kasriya thabita: {amount, number, ::.00}'
+      pl: 'Stala precyzja dziesietna: {amount, number, ::.00}'
+
+  - key: icu_formatjs_rounding_floor_demo
+    description: ICU number skeleton rounding mode floor (FormatJS extension demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Rounding floor mode: {amount, number, ::.00 rounding-mode-floor}'
+      de: 'Abrunden mit floor: {amount, number, ::.00 rounding-mode-floor}'
+      es: 'Redondeo floor: {amount, number, ::.00 rounding-mode-floor}'
+      fr: 'Arrondi floor: {amount, number, ::.00 rounding-mode-floor}'
+      ar: 'Taqrib floor: {amount, number, ::.00 rounding-mode-floor}'
+      pl: 'Zaokraglenie floor: {amount, number, ::.00 rounding-mode-floor}'
+
+  - key: icu_formatjs_scientific_demo
+    description: ICU number skeleton scientific notation (FormatJS extension demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Scientific notation: {amount, number, ::scientific}'
+      de: 'Wissenschaftliche notation: {amount, number, ::scientific}'
+      es: 'Notacion cientifica: {amount, number, ::scientific}'
+      fr: 'Notation scientifique: {amount, number, ::scientific}'
+      ar: 'Sigha ilmia: {amount, number, ::scientific}'
+      pl: 'Notacja naukowa: {amount, number, ::scientific}'
+
+  - key: icu_formatjs_grouping_demo
+    description: ICU number skeleton grouping off (FormatJS extension demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Grouping disabled: {amount, number, ::group-off}'
+      de: 'Gruppierung deaktiviert: {amount, number, ::group-off}'
+      es: 'Agrupacion desactivada: {amount, number, ::group-off}'
+      fr: 'Groupement desactive: {amount, number, ::group-off}'
+      ar: 'Iiqaf altajmie: {amount, number, ::group-off}'
+      pl: 'Grupowanie wylaczone: {amount, number, ::group-off}'
+
+  - key: icu_formatjs_unit_width_demo
+    description: ICU number skeleton unit width full-name (FormatJS extension demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Distance unit full name: {distance, number, ::unit/kilometer unit-width-full-name}'
+      de: 'Distanz einheit voller name: {distance, number, ::unit/kilometer unit-width-full-name}'
+      es: 'Nombre completo de unidad: {distance, number, ::unit/kilometer unit-width-full-name}'
+      fr: 'Nom complet unite distance: {distance, number, ::unit/kilometer unit-width-full-name}'
+      ar: 'Ism wahdat almasafa alkamil: {distance, number, ::unit/kilometer unit-width-full-name}'
+      pl: 'Pelna nazwa jednostki odleglosci: {distance, number, ::unit/kilometer unit-width-full-name}'

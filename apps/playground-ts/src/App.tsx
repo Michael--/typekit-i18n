@@ -240,6 +240,66 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
     },
   },
   {
+    id: 'icu-plus-accounting',
+    group: 'icu',
+    title: 'ICU++ accounting sign',
+    description: '::sign-accounting currency/USD for accounting-style negatives.',
+    key: 'icu_formatjs_accounting_demo',
+    placeholder: {
+      data: [{ key: 'amount', value: -1234.56 }],
+    },
+  },
+  {
+    id: 'icu-plus-precision',
+    group: 'icu',
+    title: 'ICU++ fixed fraction precision',
+    description: '::.00 enforces exactly two fractional digits.',
+    key: 'icu_formatjs_precision_demo',
+    placeholder: {
+      data: [{ key: 'amount', value: 1234.5 }],
+    },
+  },
+  {
+    id: 'icu-plus-rounding-floor',
+    group: 'icu',
+    title: 'ICU++ rounding mode floor',
+    description: '::.00 rounding-mode-floor rounds down instead of standard rounding.',
+    key: 'icu_formatjs_rounding_floor_demo',
+    placeholder: {
+      data: [{ key: 'amount', value: 1.239 }],
+    },
+  },
+  {
+    id: 'icu-plus-scientific',
+    group: 'icu',
+    title: 'ICU++ scientific notation',
+    description: '::scientific formats values in exponent notation.',
+    key: 'icu_formatjs_scientific_demo',
+    placeholder: {
+      data: [{ key: 'amount', value: 12345 }],
+    },
+  },
+  {
+    id: 'icu-plus-grouping-off',
+    group: 'icu',
+    title: 'ICU++ grouping off',
+    description: '::group-off disables thousands grouping.',
+    key: 'icu_formatjs_grouping_demo',
+    placeholder: {
+      data: [{ key: 'amount', value: 12345 }],
+    },
+  },
+  {
+    id: 'icu-plus-unit-width',
+    group: 'icu',
+    title: 'ICU++ unit width full name',
+    description: '::unit/kilometer unit-width-full-name spells out the unit.',
+    key: 'icu_formatjs_unit_width_demo',
+    placeholder: {
+      data: [{ key: 'distance', value: 5 }],
+    },
+  },
+  {
     id: 'fallback-missing-language',
     group: 'fallback',
     title: 'Missing language fallback',
