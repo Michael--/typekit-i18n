@@ -32,7 +32,8 @@ import {
  * Decision context:
  * - The project intentionally keeps a proprietary ICU subset for predictable API behavior
  *   and small runtime footprint.
- * - External ICU engines remain a valid option for full ICU compatibility.
+ * - An optional external ICU runtime is available via
+ *   `@number10/typekit-i18n/runtime/icu-formatjs` when full ICU compatibility is needed.
  * - See: `/packages/typekit-i18n/docs/icu-implementation-decision.md`
  */
 

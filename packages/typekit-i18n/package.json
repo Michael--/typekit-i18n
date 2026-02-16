@@ -47,6 +47,10 @@
       "types": "./dist/src/runtime/icu.d.ts",
       "import": "./dist/runtime-icu.js"
     },
+    "./runtime/icu-formatjs": {
+      "types": "./dist/src/runtime/icuFormatjs.d.ts",
+      "import": "./dist/runtime-icu-formatjs.js"
+    },
     "./codegen": {
       "types": "./dist/src/codegen/index.d.ts",
       "import": "./dist/codegen.js"
@@ -71,7 +75,16 @@
     "tsx": "^4.20.5",
     "yaml": "^2.8.2"
   },
+  "peerDependencies": {
+    "intl-messageformat": "^11.1.2"
+  },
+  "peerDependenciesMeta": {
+    "intl-messageformat": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "intl-messageformat": "^11.1.2",
     "typescript": "^5.9.3",
     "vite": "^6.2.0"
   }

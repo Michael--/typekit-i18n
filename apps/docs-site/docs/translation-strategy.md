@@ -81,4 +81,4 @@ Use plain placeholders for simple static replacement.
 
 This keeps templates readable while enabling rich locale behavior only where needed.
 
-The built-in ICU support is intentionally a subset, not full ICU parity. If you need unsupported ICU features, use a dedicated full-ICU pipeline/runtime externally and pass resolved strings to Typekit.
+The built-in ICU support is intentionally a subset, not full ICU parity. If you need broader ICU coverage, use `createFormatjsIcuTranslator` from `@number10/typekit-i18n/runtime/icu-formatjs` (optional `intl-messageformat` peer dependency).

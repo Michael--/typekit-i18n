@@ -105,7 +105,20 @@ Explicitly unsupported ICU features:
 
 Invalid ICU expressions throw detailed syntax errors with key, language, line, and column.
 
-If you require full ICU feature coverage, use a dedicated external ICU pipeline/runtime and feed resolved strings into Typekit instead of relying on the built-in subset.
+## `createFormatjsIcuTranslator(table, options?)`
+
+Runtime import:
+
+```ts
+import { createFormatjsIcuTranslator } from '@number10/typekit-i18n/runtime/icu-formatjs'
+```
+
+Behavior:
+
+- same translator API shape as `createIcuTranslator`
+- ICU rendering delegated to `intl-messageformat` (FormatJS)
+- supports legacy `{name|formatter}` placeholders for backward compatibility
+- `intl-messageformat` is an optional peer dependency and only needed for this import path
 
 ## Placeholder Replacement
 

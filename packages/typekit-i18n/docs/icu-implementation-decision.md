@@ -1,8 +1,15 @@
 # ICU Implementation Decision Notes
 
 Date: 2026-02-12
-Status: Informational (for future decision making)
+Status: Informational (updated after optional external runtime adoption)
 Scope: `packages/typekit-i18n/src/runtime/icuTranslator.ts` and related ICU runtime modules
+
+Update (2026-02-16):
+
+- The package now ships an optional external ICU runtime entry:
+  - `@number10/typekit-i18n/runtime/icu-formatjs`
+  - powered by `intl-messageformat` as optional peer dependency
+- The proprietary ICU subset remains the default runtime path.
 
 ## Why the project currently uses a proprietary ICU subset
 

@@ -43,6 +43,12 @@ Runtime APIs:
 import { createTranslator, createIcuTranslator } from '@number10/typekit-i18n'
 ```
 
+Optional full-ICU runtime (external engine via peer dependency):
+
+```ts
+import { createFormatjsIcuTranslator } from '@number10/typekit-i18n/runtime/icu-formatjs'
+```
+
 Codegen APIs:
 
 ```ts
@@ -165,6 +171,21 @@ Supported ICU subset:
 - Apostrophe escaping (`''`, quoted literals)
 
 If ICU syntax is invalid, detailed runtime errors include key, language, and line/column location.
+
+### `createFormatjsIcuTranslator(table, options?)`
+
+Creates a typed translator backed by `intl-messageformat` (FormatJS) for broader ICU compatibility.
+
+Import path:
+
+```ts
+import { createFormatjsIcuTranslator } from '@number10/typekit-i18n/runtime/icu-formatjs'
+```
+
+Notes:
+
+- `intl-messageformat` is an optional peer dependency and is only required when using this runtime.
+- Existing `{name|formatter}` placeholders remain supported for backward compatibility.
 
 ### Placeholder Types
 
