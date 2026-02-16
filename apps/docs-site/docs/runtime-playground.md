@@ -1,7 +1,7 @@
 # Runtime Playground
 
 Public docs can now run a Vue-based demo that mirrors selected runtime scenarios from
-`apps/playground-ts` without copying translation resources.
+`apps/playground-ts`.
 
 ## Interactive Demo
 

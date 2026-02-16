@@ -274,6 +274,9 @@ const scenarioRows = computed<ReadonlyArray<ScenarioRow>>(() =>
       Public Vue demo based on the same generated keys/table and translation resources used by
       <code>apps/playground-ts</code>.
     </p>
+    <p>
+      It contains a subset of scenarios focused on ICU features and missing translation handling, with side-by-side result comparisons between the three runtimes. The "basic" runtime uses the core lookup and formatting logic without ICU support, while the "icu-subset" and "icu-formatjs" runtimes use different approaches to support ICU message syntax and features. Use the controls below to switch languages, toggle missing translation strategies, and filter scenarios by group.
+    </p>
 
     <div class="control-grid">
       <label>
