@@ -494,9 +494,12 @@ export const App = (): JSX.Element => {
             <Text fw={600}>Runtime Labels</Text>
             <Group gap="xs">
               {runtimeDescriptors.map((runtime) => (
-                <Badge key={runtime.id} color={runtime.color} variant="light">
-                  {runtime.label}: {runtime.subtitle}
-                </Badge>
+                <Group key={runtime.id} gap={6}>
+                  <Badge color={runtime.color} variant="light">
+                    {runtime.label}
+                  </Badge>
+                  <Code>{runtime.subtitle}</Code>
+                </Group>
               ))}
             </Group>
           </Stack>
@@ -547,9 +550,9 @@ export const App = (): JSX.Element => {
                               <Badge color={runtime.color} variant="light">
                                 {runtime.label}
                               </Badge>
-                              <Text size="xs" c="dimmed">
+                              <Code c="dimmed" fz="xs">
                                 {runtime.subtitle}
-                              </Text>
+                              </Code>
                             </Group>
                             {result.status === 'ok' ? (
                               <Text ff="monospace" size="sm">
