@@ -104,3 +104,27 @@ entries:
       fr: "{count, plural, zero {zero element} one {un element} two {deux elements} few {quelques elements} many {beaucoup d''elements} other {# elements}}"
       ar: '{count, plural, zero {sifr anasir} one {unsur wahid} two {unsuran} few {qillat anasir} many {adad kabir min alanasir} other {# unsur}}'
       pl: '{count, plural, zero {zero elementow} one {jeden element} two {dwa elementy} few {kilka elementow} many {wiele elementow} other {# elementu}}'
+
+  - key: icu_formatjs_sign_demo
+    description: ICU number skeleton with sign display (FormatJS divergence demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Signed compact amount: {amount, number, ::sign-always compact-short}'
+      de: 'Kompakter Betrag mit Vorzeichen: {amount, number, ::sign-always compact-short}'
+      es: 'Cantidad compacta con signo: {amount, number, ::sign-always compact-short}'
+      fr: 'Montant compact avec signe: {amount, number, ::sign-always compact-short}'
+      ar: 'Mablagh mokhtasar maa alalamat: {amount, number, ::sign-always compact-short}'
+      pl: 'Kwota skrocona ze znakiem: {amount, number, ::sign-always compact-short}'
+
+  - key: icu_formatjs_unit_demo
+    description: ICU number skeleton with measurement unit (FormatJS divergence demo)
+    status: approved
+    tags: [demo, icu, divergence, skeleton]
+    values:
+      en: 'Distance unit formatting: {distance, number, ::unit/kilometer}'
+      de: 'Einheitenformatierung Distanz: {distance, number, ::unit/kilometer}'
+      es: 'Formato de unidad de distancia: {distance, number, ::unit/kilometer}'
+      fr: 'Format unite de distance: {distance, number, ::unit/kilometer}'
+      ar: 'Tanseeq wahdat al-masafa: {distance, number, ::unit/kilometer}'
+      pl: 'Format jednostki odleglosci: {distance, number, ::unit/kilometer}'
