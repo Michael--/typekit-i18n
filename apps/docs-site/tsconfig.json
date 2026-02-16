@@ -1,8 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "paths": {
+      "@playground-gen/*": ["../playground-ts/generated/*"]
+    },
     "types": ["node"]
   },
   "include": [

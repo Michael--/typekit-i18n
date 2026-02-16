@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@playground-gen/*": ["../../../playground-ts/generated/*"]
+    },
+    "types": ["node"]
+  },
+  "include": ["config.ts", "theme/**/*.ts", "theme/**/*.vue", "types/**/*.d.ts"]
+}
