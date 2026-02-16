@@ -61,6 +61,7 @@
     "build:cli": "vite build --config vite.cli.config.ts",
     "gen": "node --import tsx src/codegen/cli.ts generate",
     "validate:yaml-example": "node --import tsx src/codegen/cli.ts validate --input resources/translations/translationTableExample.yaml --format yaml",
+    "prebuild": "pnpm run gen",
     "build": "vite build && pnpm run build:cli && tsc -p tsconfig.build.json",
     "dev": "vite build --watch",
     "lint": "eslint \"src/**/*.ts\"",
