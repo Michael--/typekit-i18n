@@ -63,11 +63,11 @@ entries:
     tags: [demo, icu, selectordinal]
     values:
       en: 'You finished {place, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}.'
-      de: 'Du wurdest {place, selectordinal, one {#.} two {#.} few {#.} other {#.}}.'
+      de: 'Du hast den {place, selectordinal, one {#.} two {#.} few {#.} other {#.}} Platz erreicht.'
       es: 'Terminaste en {place, selectordinal, one {#.} two {#.} few {#.} other {#.}} lugar.'
       fr: 'Tu as fini {place, selectordinal, one {#er} two {#e} few {#e} other {#e}}.'
       ar: 'Anhayta fi al-markaz {place, selectordinal, one {#} two {#} few {#} other {#}}.'
-      pl: 'Ukonczyles na miejscu {place, selectordinal, one {#.} two {#.} few {#.} other {#.}}.'
+      pl: 'Osiagnales {place, selectordinal, one {#.} two {#.} few {#.} other {#.}} miejsce.'
 
   - key: group_invite
     description: ICU plural offset demo
