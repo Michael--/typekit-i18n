@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "clean": "rimraf docs/.vitepress/dist",
-    "docs:dev": "vitepress dev docs --port 4174",
+    "docs:sync-playground": "pnpm --filter @typekit-i18n/playground-ts run gen",
+    "docs:dev": "pnpm run docs:sync-playground && vitepress dev docs --port 4174",
     "gen": "echo \"No code generation defined for docs-site\"",
     "build": "pnpm run docs:build",
-    "docs:build": "vitepress build docs",
+    "docs:build": "pnpm run docs:sync-playground && vitepress build docs",
     "docs:preview": "vitepress preview docs --port 4175",
     "lint": "eslint --no-error-on-unmatched-pattern \"docs/**/*.ts\"",
     "test": "vitest run --passWithNoTests",

@@ -5,5 +5,9 @@
     "moduleResolution": "NodeNext",
     "types": ["node"]
   },
-  "include": ["docs/.vitepress/config.ts"]
+  "include": [
+    "docs/.vitepress/config.ts",
+    "docs/.vitepress/theme/index.ts",
+    "docs/.vitepress/types/**/*.d.ts"
+  ]
 }
