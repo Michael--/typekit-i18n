@@ -26,7 +26,6 @@ interface ScenarioDefinition {
 interface RuntimeDescriptor {
   id: RuntimeId
   label: string
-  subtitle: string
 }
 
 interface RuntimeResult {
@@ -47,17 +46,14 @@ const runtimeDescriptors: ReadonlyArray<RuntimeDescriptor> = [
   {
     id: 'basic',
     label: 'basic',
-    subtitle: 'createTranslator',
   },
   {
     id: 'icu-subset',
     label: 'icu-subset',
-    subtitle: 'createIcuTranslator',
   },
   {
     id: 'icu-formatjs',
     label: 'icu-formatjs',
-    subtitle: 'createFormatjsIcuTranslator',
   },
 ]
 
@@ -336,8 +332,7 @@ const scenarioRows = computed<ReadonlyArray<ScenarioRow>>(() =>
         <tbody>
           <tr v-for="entry in row.results" :key="entry.runtime.id">
             <td>
-              <strong>{{ entry.runtime.label }}</strong>
-              <div class="subtitle">{{ entry.runtime.subtitle }}</div>
+              <strong style="white-space: nowrap;">{{ entry.runtime.label }}</strong>
             </td>
             <td :class="entry.result.status">
               <code>{{ entry.result.value }}</code>
