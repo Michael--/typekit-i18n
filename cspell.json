@@ -28,6 +28,7 @@
     "elit",
     "esmoduleinterop",
     "externalize",
+    "Formatjs",
     "hookable",
     "invokecontrol",
     "invokeget",

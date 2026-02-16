@@ -222,7 +222,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'divergence-sign',
     group: 'icu',
-    title: 'ICU++ sign-always skeleton',
+    title: 'ICU sign-always skeleton',
     description: '::sign-always compact-short; runtime differences are visible side by side.',
     key: 'icu_formatjs_sign_demo',
     placeholder: {
@@ -232,7 +232,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'divergence-unit',
     group: 'icu',
-    title: 'ICU++ unit skeleton',
+    title: 'ICU unit skeleton',
     description: '::unit/kilometer; runtime differences are visible side by side.',
     key: 'icu_formatjs_unit_demo',
     placeholder: {
@@ -242,7 +242,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'icu-plus-accounting',
     group: 'icu',
-    title: 'ICU++ accounting sign',
+    title: 'ICU accounting sign',
     description: '::sign-accounting currency/USD for accounting-style negatives.',
     key: 'icu_formatjs_accounting_demo',
     placeholder: {
@@ -252,7 +252,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'icu-plus-precision',
     group: 'icu',
-    title: 'ICU++ fixed fraction precision',
+    title: 'ICU fixed fraction precision',
     description: '::.00 enforces exactly two fractional digits.',
     key: 'icu_formatjs_precision_demo',
     placeholder: {
@@ -262,7 +262,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'icu-plus-rounding-floor',
     group: 'icu',
-    title: 'ICU++ rounding mode floor',
+    title: 'ICU rounding mode floor',
     description: '::.00 rounding-mode-floor rounds down instead of standard rounding.',
     key: 'icu_formatjs_rounding_floor_demo',
     placeholder: {
@@ -272,7 +272,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'icu-plus-scientific',
     group: 'icu',
-    title: 'ICU++ scientific notation',
+    title: 'ICU scientific notation',
     description: '::scientific formats values in exponent notation.',
     key: 'icu_formatjs_scientific_demo',
     placeholder: {
@@ -282,7 +282,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'icu-plus-grouping-off',
     group: 'icu',
-    title: 'ICU++ grouping off',
+    title: 'ICU grouping off',
     description: '::group-off disables thousands grouping.',
     key: 'icu_formatjs_grouping_demo',
     placeholder: {
@@ -292,7 +292,7 @@ const scenarios: ReadonlyArray<ScenarioDefinition> = [
   {
     id: 'icu-plus-unit-width',
     group: 'icu',
-    title: 'ICU++ unit width full name',
+    title: 'ICU unit width full name',
     description: '::unit/kilometer unit-width-full-name spells out the unit.',
     key: 'icu_formatjs_unit_width_demo',
     placeholder: {
