@@ -42,6 +42,7 @@ Rules:
 - `output` and `outputKeys` must not be identical
 - duplicate keys across merged files fail generation
 - `runtimeBridgeMode: 'icu-formatjs'` requires optional peer dependency `intl-messageformat`
+- use `runtimeBridgeMode: 'basic'` for the smallest runtime footprint when ICU features are not needed
 
 ## Config Discovery
 

@@ -70,6 +70,19 @@ typekit-i18n
 - Translation generation from mixed CSV and YAML files
 - Validation and format conversion via CLI
 
+## Runtime Footprint Guide
+
+Choose runtime based on required ICU feature set vs runtime footprint:
+
+- `createTranslator` / `runtimeBridgeMode: 'basic'`:
+  Smallest runtime footprint. No ICU expression parsing/rendering.
+- `createIcuTranslator` / `runtimeBridgeMode: 'icu'` (default):
+  Medium footprint with built-in ICU subset support.
+- `createFormatjsIcuTranslator` / `runtimeBridgeMode: 'icu-formatjs'`:
+  Largest footprint, broadest ICU compatibility via `intl-messageformat` (optional peer dependency).
+
+If your translations do not require ICU features, use `basic` for the smallest bundle/runtime footprint.
+
 ## Quick Start
 
 ### 1. Create config (`typekit.config.ts`)
