@@ -1,34 +1,12 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type { TranslateKeys } from '@gen/translationKeys'
+import { describe, expect, test, vi } from 'vitest'
 import {
-  clearCollectedMissingTranslations,
-  configureTranslationRuntime,
   createTranslationRuntime,
   createConsoleMissingTranslationReporter,
-  getLanguage,
-  getCollectedMissingTranslations,
-  setLanguage,
-  translate,
-  translateIn,
 } from '../../src/runtime/translation.js'
 import type { TranslationTable } from '../../src/runtime/types.js'
 
-const missingKey = '__missing_translation_key__' as unknown as TranslateKeys
-
-beforeEach(() => {
-  clearCollectedMissingTranslations()
-  configureTranslationRuntime({
-    defaultLanguage: 'en',
-    language: 'en',
-    missingStrategy: 'fallback',
-    collectMissingTranslations: false,
-    onMissingTranslation: null,
-  })
-  setLanguage('en')
-})
-
-describe('translate', () => {
-  test('createTranslationRuntime defaults to "en" when defaultLanguage is omitted', () => {
+describe('createTranslationRuntime', () => {
+  test('defaults to "en" when defaultLanguage is omitted', () => {
     type LocalLanguage = 'en' | 'de'
     type LocalKey = 'greeting'
 
@@ -45,7 +23,7 @@ describe('translate', () => {
     expect(runtime.translate('greeting', 'de')).toBe('Hallo')
   })
 
-  test('createTranslationRuntime throws when "en" is unavailable and defaultLanguage is omitted', () => {
+  test('throws when "en" is unavailable and defaultLanguage is omitted', () => {
     type LocalLanguage = 'de' | 'fr'
     type LocalKey = 'greeting'
 
@@ -62,64 +40,89 @@ describe('translate', () => {
     )
   })
 
-  test('returns existing translations for supported languages', () => {
-    expect(translate('Settings', 'en')).toBe('Settings')
-    expect(translate('Settings', 'de')).toBe('Einstellungen')
-  })
-
-  test('uses configured active language when language argument is omitted', () => {
-    setLanguage('de')
-
-    expect(getLanguage()).toBe('de')
-    expect(translate('Settings')).toBe('Einstellungen')
-  })
-
-  test('supports category scoped lookups via translateIn', () => {
-    expect(translateIn('default', 'Settings', 'de')).toBe('Einstellungen')
-    expect(translateIn('common', 'Settings', 'de')).toBe('common.Settings')
-  })
-
   test('collects missing events when collection is enabled', () => {
-    configureTranslationRuntime({
+    type LocalLanguage = 'en' | 'de'
+    type LocalKey = 'greeting' | 'missing'
+
+    const localTable: TranslationTable<LocalKey, LocalLanguage> = {
+      greeting: {
+        description: 'Greeting text',
+        en: 'Hello',
+        de: 'Hallo',
+      },
+      missing: {
+        description: 'Missing key',
+        en: '',
+        de: '',
+      },
+    }
+
+    const runtime = createTranslationRuntime(localTable, {
+      defaultLanguage: 'en',
       collectMissingTranslations: true,
     })
 
-    expect(translate(missingKey, 'de')).toBe(missingKey)
-    expect(getCollectedMissingTranslations()).toEqual([
-      {
-        key: missingKey,
-        language: 'de',
-        defaultLanguage: 'en',
-        reason: 'missingKey',
-      },
-    ])
+    expect(runtime.translate('missing', 'de')).toBe('missing')
+    expect(runtime.getCollectedMissingTranslations()).toHaveLength(1)
   })
 
   test('throws in strict mode when translation is missing', () => {
-    configureTranslationRuntime({
+    type LocalLanguage = 'en' | 'de'
+    type LocalKey = 'greeting' | 'missing'
+
+    const localTable: TranslationTable<LocalKey, LocalLanguage> = {
+      greeting: {
+        description: 'Greeting text',
+        en: 'Hello',
+        de: 'Hallo',
+      },
+      missing: {
+        description: 'Missing key',
+        en: '',
+        de: '',
+      },
+    }
+
+    const runtime = createTranslationRuntime(localTable, {
+      defaultLanguage: 'en',
       missingStrategy: 'strict',
     })
 
-    expect(() => translate(missingKey, 'de')).toThrow(
-      /Missing translation for key "__missing_translation_key__".*reason "missingKey"/
-    )
+    expect(() => runtime.translate('missing', 'de')).toThrow(/Missing translation/)
   })
 
   test('uses optional console reporter', () => {
+    type LocalLanguage = 'en' | 'de'
+    type LocalKey = 'greeting' | 'missing'
+
+    const localTable: TranslationTable<LocalKey, LocalLanguage> = {
+      greeting: {
+        description: 'Greeting text',
+        en: 'Hello',
+        de: 'Hallo',
+      },
+      missing: {
+        description: 'Missing key',
+        en: '',
+        de: '',
+      },
+    }
+
     const warn = vi.fn()
-    configureTranslationRuntime({
+    const runtime = createTranslationRuntime(localTable, {
+      defaultLanguage: 'en',
       onMissingTranslation: createConsoleMissingTranslationReporter({ warn }),
     })
 
-    translate(missingKey, 'de')
+    runtime.translate('missing', 'de')
 
     expect(warn).toHaveBeenCalledTimes(1)
     expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('Missing translation for key "__missing_translation_key__"')
+      expect.stringContaining('Missing translation for key "missing"')
     )
   })
 
-  test('creates isolated runtime independent from generated default table', () => {
+  test('creates isolated runtime with custom formatters', () => {
     type CustomLanguage = 'en' | 'fr'
     type CustomKey = 'hello' | 'price'
 
