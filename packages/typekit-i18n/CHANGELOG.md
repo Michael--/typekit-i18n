@@ -2,6 +2,19 @@
 
 All notable changes to `@number10/typekit-i18n` are documented in this file.
 
+## 0.3.1 - 2026-06-15
+
+Changes since `v.0.3.0`
+
+### Changed
+
+- Added npm package description and keywords for improved package discoverability.
+- Updated package dependencies and build tooling versions.
+
+### Fixed
+
+- Removed deprecated TypeScript `baseUrl` usage from package build configuration.
+
 ## 0.3.0 - 2026-02-16
 
 Changes since `v0.2.0` (last publish baseline commit `d985522c`).

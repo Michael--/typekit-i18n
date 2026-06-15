@@ -1,6 +1,6 @@
 {
   "name": "@number10/typekit-i18n",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Type-safe internationalization toolkit for TypeScript — runtime APIs, ICU message rendering, and code generation from CSV/YAML resources",
   "private": false,
   "license": "MIT",
