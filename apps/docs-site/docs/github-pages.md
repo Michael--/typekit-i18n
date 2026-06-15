@@ -1,7 +1,7 @@
 ---
 description: >-
-  Deploy the typekit-i18n documentation site to GitHub Pages — base path
-  configuration and CI setup.
+  Deploy the typekit-i18n documentation site to GitHub Pages with a custom
+  domain and CI setup.
 ---
 
 # GitHub Pages
@@ -10,15 +10,16 @@ description: >-
 
 ## Base Path
 
-The VitePress config reads `DOCS_BASE_PATH` and normalizes trailing slash.
+The production site is deployed to the custom domain:
 
-- unset: base is `/`
-- set (project pages): base should be `/<repo>/`
+- `https://typekit-i18n.number10.de/`
+
+The VitePress config reads `DOCS_BASE_PATH` and normalizes trailing slash. For the production custom domain, leave it unset so the base is `/`.
 
 Build example for this repository:
 
 ```bash
-DOCS_BASE_PATH=/typekit-i18n/ pnpm --filter @typekit-i18n/docs-site run docs:build
+pnpm --filter @typekit-i18n/docs-site run docs:build
 ```
 
 ## Local Preview
@@ -37,12 +38,12 @@ Deployment workflow file:
 Workflow behavior:
 
 - triggers on pushes to `main` for docs/package/workflow paths
-- builds docs with `DOCS_BASE_PATH=/typekit-i18n/`
+- builds docs with the default `/` base path for the custom domain
 - uploads `apps/docs-site/docs/.vitepress/dist`
 - deploys via `actions/deploy-pages`
 
 ## Common Failure Points
 
-- wrong base path for project pages
+- wrong base path for the configured Pages domain
 - missing build artifacts in `docs/.vitepress/dist`
-- links that assume root `/` while using project base path
+- links or sitemap entries that point to an old Pages URL

@@ -5,7 +5,7 @@ Type-safe i18n runtime and code generator for TypeScript.
 ## Links
 
 - GitHub: https://github.com/Michael--/typekit-i18n
-- Documentation: https://michael--.github.io/typekit-i18n/
+- Documentation: https://typekit-i18n.number10.de/
 - npm: https://www.npmjs.com/package/@number10/typekit-i18n
 
 ## Installation

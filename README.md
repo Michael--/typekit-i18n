@@ -17,7 +17,7 @@ This repository is a `pnpm` workspace with four targets:
 ## Project Links
 
 - GitHub: https://github.com/Michael--/typekit-i18n
-- Documentation: https://michael--.github.io/typekit-i18n/
+- Documentation: https://typekit-i18n.number10.de/
 - npm: https://www.npmjs.com/package/@number10/typekit-i18n
 
 ## Requirements
@@ -166,10 +166,10 @@ pnpm --filter @typekit-i18n/docs-site run docs:build
 pnpm --filter @typekit-i18n/docs-site run docs:preview
 ```
 
-Build docs for GitHub Pages project path:
+Build docs for GitHub Pages custom domain:
 
 ```bash
-DOCS_BASE_PATH=/typekit-i18n/ pnpm --filter @typekit-i18n/docs-site run docs:build
+pnpm --filter @typekit-i18n/docs-site run docs:build
 ```
 
 The repository includes a Pages workflow at `.github/workflows/pages.yml` that publishes `apps/docs-site/docs/.vitepress/dist`.

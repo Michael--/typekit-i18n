@@ -4,7 +4,7 @@
   "description": "VS Code extension for typekit-i18n — inline key suggestions, diagnostics, hover previews, and translation workflow support for TypeScript/JavaScript projects",
   "version": "0.2.1",
   "publisher": "number10",
-  "homepage": "https://michael--.github.io/typekit-i18n/vscode-extension.html",
+  "homepage": "https://typekit-i18n.number10.de/vscode-extension",
   "repository": {
     "type": "git",
     "url": "https://github.com/Michael--/typekit-i18n.git",

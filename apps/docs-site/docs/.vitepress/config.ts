@@ -15,7 +15,7 @@ const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version: string }
 const envBase = process.env.DOCS_BASE_PATH ?? '/'
 const normalizedBase = envBase.endsWith('/') ? envBase : `${envBase}/`
 
-const PROD_HOSTNAME = 'https://michael--.github.io'
+const PROD_HOSTNAME = 'https://typekit-i18n.number10.de'
 const PROD_URL = `${PROD_HOSTNAME}${normalizedBase}`
 
 export default withMermaid(

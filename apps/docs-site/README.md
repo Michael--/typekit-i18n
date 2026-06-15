@@ -17,13 +17,13 @@ pnpm --filter @typekit-i18n/docs-site run docs:preview
 
 ## GitHub Pages
 
-Build with repository base path:
+Build for the configured custom domain:
 
 ```bash
-DOCS_BASE_PATH=/typekit-i18n/ pnpm --filter @typekit-i18n/docs-site run docs:build
+pnpm --filter @typekit-i18n/docs-site run docs:build
 ```
 
-Without `DOCS_BASE_PATH`, base defaults to `/`.
+The production custom domain uses the default `/` base path.
 
 Deployment workflow:
 
