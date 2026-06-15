@@ -51,7 +51,7 @@ export default withMermaid(
     },
     cleanUrls: true,
     sitemap: {
-      hostname: PROD_HOSTNAME,
+      hostname: PROD_URL,
     },
     head: [
       ['meta', { name: 'robots', content: 'index, follow' }],
