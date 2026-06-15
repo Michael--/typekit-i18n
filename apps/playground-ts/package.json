@@ -9,6 +9,7 @@
     "pregen": "pnpm --filter @number10/typekit-i18n run build",
     "gen": "node ../../packages/typekit-i18n/dist/cli.js generate --config ./typekit.config.ts",
     "gen:intern": "typekit-i18n",
+    "lint:i18n": "node ../../packages/typekit-i18n/dist/cli.js lint --config ./typekit.config.ts --source 'src/**/*.tsx'",
     "build": "pnpm run gen && vite build",
     "build:analyze": "pnpm run gen && vite build --mode analyze",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
