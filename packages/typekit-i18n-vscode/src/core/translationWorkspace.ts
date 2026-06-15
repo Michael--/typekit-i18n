@@ -799,12 +799,15 @@ const parseYamlTranslationDocument = (
  * @param content Raw file content.
  * @returns Indexed document plus diagnostics.
  */
-const parseJsonTranslationDocument = (document, content) => {
-  const diagnostics = []
-  const entries = []
+const parseJsonTranslationDocument = (
+  document: vscode.TextDocument,
+  content: string
+): ParsedDocumentResult => {
+  const diagnostics: vscode.Diagnostic[] = []
+  const entries: TranslationEntry[] = []
   const lines = content.split('\n')
-  let languages = []
-  let sourceLanguage
+  let languages: string[] = []
+  let sourceLanguage: string | undefined
 
   let parsed
   try {
@@ -832,7 +835,8 @@ const parseJsonTranslationDocument = (document, content) => {
 
   const root = parsed
   if (typeof root.sourceLanguage === 'string') sourceLanguage = root.sourceLanguage
-  if (Array.isArray(root.languages)) languages = root.languages.filter((l) => typeof l === 'string')
+  if (Array.isArray(root.languages))
+    languages = root.languages.filter((l: unknown) => typeof l === 'string') as string[]
   if (!Array.isArray(root.entries)) {
     diagnostics.push(
       createDiagnostic(
@@ -855,7 +859,7 @@ const parseJsonTranslationDocument = (document, content) => {
     }
   }
 
-  const findLine = (text, from) => {
+  const findLine = (text: string, from: number): number => {
     for (let i = from; i < lines.length; i++) if (lines[i].includes(text)) return i
     return from
   }
