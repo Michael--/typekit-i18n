@@ -799,24 +799,21 @@ const parseYamlTranslationDocument = (
  * @param content Raw file content.
  * @returns Indexed document plus diagnostics.
  */
-const parseJsonTranslationDocument = (
-  document: vscode.TextDocument,
-  content: string
-): ParsedDocumentResult => {
-  const diagnostics: vscode.Diagnostic[] = []
-  const entries: TranslationEntry[] = []
-  let languages: string[] = []
-  let sourceLanguage: string | undefined
+const parseJsonTranslationDocument = (document, content) => {
+  const diagnostics = []
+  const entries = []
+  const lines = content.split('\n')
+  let languages = []
+  let sourceLanguage
 
-  let parsed: unknown
+  let parsed
   try {
     parsed = JSON.parse(content)
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Invalid JSON syntax.'
+  } catch {
     diagnostics.push(
       createDiagnostic(
         new vscode.Range(0, 0, 0, 1),
-        message,
+        'Invalid JSON syntax.',
         vscode.DiagnosticSeverity.Error,
         DIAGNOSTIC_CODES.parseError
       )
@@ -833,46 +830,9 @@ const parseJsonTranslationDocument = (
     }
   }
 
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    diagnostics.push(
-      createDiagnostic(
-        new vscode.Range(0, 0, 0, 1),
-        'JSON root must be an object.',
-        vscode.DiagnosticSeverity.Error,
-        DIAGNOSTIC_CODES.invalidSchema
-      )
-    )
-    return {
-      document: {
-        uri: document.uri,
-        format: 'json',
-        languages: [],
-        entries: [],
-        appendPosition: document.positionAt(content.length),
-      },
-      diagnostics,
-    }
-  }
-
-  const root = parsed as Record<string, unknown>
-
-  if (typeof root.sourceLanguage === 'string') {
-    sourceLanguage = root.sourceLanguage
-  }
-
-  if (Array.isArray(root.languages)) {
-    languages = root.languages.filter((l): l is string => typeof l === 'string')
-  } else if (root.languages !== undefined) {
-    diagnostics.push(
-      createDiagnostic(
-        new vscode.Range(0, 0, 0, 1),
-        '"languages" must be an array.',
-        vscode.DiagnosticSeverity.Error,
-        DIAGNOSTIC_CODES.invalidSchema
-      )
-    )
-  }
-
+  const root = parsed
+  if (typeof root.sourceLanguage === 'string') sourceLanguage = root.sourceLanguage
+  if (Array.isArray(root.languages)) languages = root.languages.filter((l) => typeof l === 'string')
   if (!Array.isArray(root.entries)) {
     diagnostics.push(
       createDiagnostic(
@@ -895,75 +855,66 @@ const parseJsonTranslationDocument = (
     }
   }
 
-  const keySet = new Set<string>()
-  const rawEntries = root.entries as unknown[]
+  const findLine = (text, from) => {
+    for (let i = from; i < lines.length; i++) if (lines[i].includes(text)) return i
+    return from
+  }
+  const keySet = new Set()
+  const rawEntries = root.entries
+  let searchLine = 0
 
-  rawEntries.forEach((rawEntry, index) => {
-    if (typeof rawEntry !== 'object' || rawEntry === null) {
-      return
-    }
-    const entry = rawEntry as Record<string, unknown>
+  for (const rawEntry of rawEntries) {
+    if (typeof rawEntry !== 'object' || rawEntry === null) continue
+    const entry = rawEntry
     const key = typeof entry.key === 'string' ? entry.key : undefined
-    if (!key) {
-      return
-    }
+    if (!key) continue
+
     if (keySet.has(key)) {
+      const line = findLine('"' + key + '"', searchLine)
       diagnostics.push(
         createDiagnostic(
-          new vscode.Range(0, 0, 0, 0),
-          `Duplicate key "${key}".`,
+          new vscode.Range(line, 0, line, lines[line]?.length ?? 1),
+          'Duplicate key "' + key + '".',
           vscode.DiagnosticSeverity.Error,
           DIAGNOSTIC_CODES.duplicateKey
         )
       )
-      return
+      continue
     }
     keySet.add(key)
 
-    const values =
-      typeof entry.values === 'object' && entry.values !== null
-        ? (entry.values as Record<string, unknown>)
-        : {}
-    const valueMap = new Map<string, string>()
-    const valueRanges = new Map<string, vscode.Range>()
-    const placeholdersByLocale = new Map<string, readonly string[]>()
+    const keyLine = findLine('"' + key + '"', searchLine)
+    const keyRange = new vscode.Range(keyLine, 0, keyLine, lines[keyLine]?.length ?? 1)
+    searchLine = keyLine + 1
+
+    const values = typeof entry.values === 'object' && entry.values !== null ? entry.values : {}
+    const valueMap = new Map()
+    const valueRanges = new Map()
+    const placeholdersByLocale = new Map()
+    let lastLine = keyLine
 
     for (const [locale, value] of Object.entries(values)) {
-      if (typeof value === 'string') {
-        valueMap.set(locale, value)
-        valueRanges.set(locale, new vscode.Range(0, 0, 0, 0))
-        placeholdersByLocale.set(locale, extractPlaceholderNames(value))
-      }
-    }
-
-    // Check for missing locale values
-    for (const locale of languages) {
-      if (!valueMap.has(locale)) {
-        diagnostics.push(
-          createDiagnosticWithPayload(
-            new vscode.Range(0, 0, 0, 0),
-            `Missing translation value for locale "${locale}" in key "${key}".`,
-            vscode.DiagnosticSeverity.Warning,
-            DIAGNOSTIC_CODES.missingLocale,
-            { key, locale }
-          )
-        )
-      }
+      const vt = typeof value === 'string' ? value : ''
+      valueMap.set(locale, vt)
+      const ll = findLine('"' + locale + '"', lastLine)
+      valueRanges.set(locale, new vscode.Range(ll, 0, ll, lines[ll]?.length ?? 1))
+      placeholdersByLocale.set(locale, extractPlaceholderNames(vt))
+      lastLine = Math.max(lastLine, ll)
     }
 
     entries.push({
       key,
       uri: document.uri,
       format: 'json',
-      keyRange: new vscode.Range(0, 0, 0, 0),
-      entryRange: new vscode.Range(0, 0, 0, 0),
+      keyRange,
+      entryRange: new vscode.Range(keyLine, 0, lastLine, lines[lastLine]?.length ?? 1),
       values: valueMap,
       valueRanges,
       placeholdersByLocale,
       declaredPlaceholders: [],
-      valueInsertPosition: null,
+      valueInsertPosition: document.positionAt(content.length),
     })
-  })
+  }
 
   return {
     document: {

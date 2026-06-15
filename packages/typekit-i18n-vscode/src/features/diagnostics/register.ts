@@ -17,7 +17,8 @@ const translationSelector: vscode.DocumentSelector = [
   { language: 'json', scheme: 'file' },
 ]
 const codeFileGlob = '**/*.{ts,tsx,js,jsx}'
-const excludeGlob = '**/{node_modules,dist,build,.git}/**'
+const excludeGlob = '**/{node_modules,dist,build,.git,tests,__tests__,test,spec}/**'
+const testFilePattern = /[/\\](tests?|__tests__|spec)[/\\]|\.(test|spec)\.(ts|tsx|js|jsx)$/
 
 /**
  * Registers missing-key diagnostics and quick fixes.
@@ -31,6 +32,11 @@ export const registerDiagnostics = (workspace: TranslationWorkspace): vscode.Dis
 
   const runDocumentDiagnostics = (document: vscode.TextDocument): void => {
     if (!isCodeDocument(document)) {
+      diagnosticsCollection.delete(document.uri)
+      return
+    }
+
+    if (testFilePattern.test(document.uri.fsPath)) {
       diagnosticsCollection.delete(document.uri)
       return
     }

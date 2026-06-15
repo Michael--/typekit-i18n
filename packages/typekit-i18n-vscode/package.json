@@ -2,7 +2,7 @@
   "name": "typekit-i18n-vscode",
   "displayName": "typekit-i18n",
   "description": "VS Code extension for typekit-i18n — inline key suggestions, diagnostics, hover previews, and translation workflow support for TypeScript/JavaScript projects",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "number10",
   "homepage": "https://typekit-i18n.number10.de/vscode-extension",
   "repository": {
@@ -81,7 +81,7 @@
           "type": "array",
           "description": "Workspace globs used to discover translation source files.",
           "default": [
-            "**/translations/**/*.{yaml,yml,csv}"
+            "**/translations/**/*.{yaml,yml,csv,json}"
           ],
           "items": {
             "type": "string"
