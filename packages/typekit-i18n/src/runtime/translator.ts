@@ -18,6 +18,24 @@ import {
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+const placeholderPatternCache = new Map<string, RegExp>()
+
+/**
+ * Returns a cached RegExp for matching a placeholder key with optional formatter.
+ *
+ * @param key Placeholder key without curly braces.
+ * @returns Cached RegExp matching `{key}` and `{key|formatter}`.
+ */
+const getPlaceholderPattern = (key: string): RegExp => {
+  const cached = placeholderPatternCache.get(key)
+  if (cached) {
+    return cached
+  }
+  const pattern = new RegExp(`\\{${escapeRegExp(key)}(?:\\|([a-zA-Z0-9_-]+))?\\}`, 'g')
+  placeholderPatternCache.set(key, pattern)
+  return pattern
+}
+
 const applyPlaceholders = <TKey extends string, TLanguage extends string>(
   template: string,
   placeholder: Placeholder | undefined,
@@ -33,7 +51,7 @@ const applyPlaceholders = <TKey extends string, TLanguage extends string>(
   let output = template
   placeholder.data.forEach((entry) => {
     const fallbackValue = String(entry.value)
-    const matcher = new RegExp(`\\{${escapeRegExp(entry.key)}(?:\\|([a-zA-Z0-9_-]+))?\\}`, 'g')
+    const matcher = getPlaceholderPattern(entry.key)
     output = output.replace(matcher, (_match: string, formatterName?: string) => {
       if (!formatterName) {
         return fallbackValue
