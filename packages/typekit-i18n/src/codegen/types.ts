@@ -1,7 +1,7 @@
 /**
  * Supported input resource formats for generation.
  */
-export type TranslationInputFormat = 'csv' | 'yaml'
+export type TranslationInputFormat = 'csv' | 'yaml' | 'json'
 
 /**
  * Runtime bridge generation mode used for native target integrations.

@@ -6,6 +6,7 @@ const config = defineTypekitI18nConfig({
     './translations/features.yaml',
     './translations/diagnostics.csv',
     './translations/icu.yaml',
+    './translations/social-media.json',
   ],
   output: './generated/translationTable.ts',
   outputKeys: './generated/translationKeys.ts',

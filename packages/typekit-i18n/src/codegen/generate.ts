@@ -9,6 +9,7 @@ import {
 } from './contract.js'
 import { readCsvHeaders } from './csv.js'
 import { toIrProjectFromCsvFile } from './ir/csv.js'
+import { toIrProjectFromJsonFile } from './ir/json.js'
 import { TranslationIrProject } from './ir/types.js'
 import { toIrProjectFromYamlFile } from './ir/yaml.js'
 import { generateKotlinTarget } from './targets/kotlin.js'
@@ -326,6 +327,9 @@ const inferInputFormatFromPath = (filePath: string): TranslationInputFormat => {
   if (extension === '.yaml' || extension === '.yml') {
     return 'yaml'
   }
+  if (extension === '.json') {
+    return 'json'
+  }
   return 'csv'
 }
 
@@ -343,6 +347,12 @@ const loadProjectFromFile = async <TLanguage extends string>(
       const message = error instanceof Error ? error.message : String(error)
       throw new Error(normalizeCsvIrErrorMessage(message))
     })
+  }
+
+  if (format === 'json') {
+    const project = await toIrProjectFromJsonFile(filePath)
+    validateYamlProjectLanguageConfig(project, config, filePath)
+    return project
   }
 
   await validateYamlLanguageDeclaration(filePath, config)

@@ -8,12 +8,13 @@ import pc from 'picocolors'
 import { loadTypekitI18nConfig } from './config.js'
 import { generateTranslations, resolveCodegenTargets, type CodegenTarget } from './generate.js'
 import { writeCsvFileFromIrProject } from './ir/csv.js'
+import { writeJsonFileFromIrProject } from './ir/json.js'
 import { writeYamlFileFromIrProject } from './ir/yaml.js'
 import { validateTranslationFile } from './validate.js'
 import type { TypekitI18nConfig } from './types.js'
 
 type CliCommand = 'generate' | 'validate' | 'convert'
-type TranslationFormat = 'csv' | 'yaml'
+type TranslationFormat = 'csv' | 'yaml' | 'json'
 
 const PACKAGE_NAME = '@number10/typekit-i18n'
 
@@ -57,13 +58,13 @@ ${pc.underline('Generate Options:')}
 
 ${pc.underline('Validate Options:')}
   --input <path>          Path to translation resource file.
-  --format <csv|yaml>     Resource format (inferred from extension when omitted).
+  --format <csv|yaml|json> Resource format (inferred from extension when omitted).
   --languages <codes>     Comma-separated language codes (CSV only).
   --source-language <code> Source language code (CSV only).
 
 ${pc.underline('Convert Options:')}
-  --from <csv|yaml>       Source format.
-  --to <csv|yaml>         Target format.
+  --from <csv|yaml|json>  Source format.
+  --to <csv|yaml|json>    Target format.
   --input <path>          Path to source resource file.
   --output <path>         Path to output file.
   --languages <codes>     Comma-separated language codes (CSV only).
@@ -141,16 +142,19 @@ const resolveCliAction = (argv: ReadonlyArray<string>): ResolvedCliAction => {
 }
 
 const toFormat = (value: string, argumentName: string): TranslationFormat => {
-  if (value === 'csv' || value === 'yaml') {
+  if (value === 'csv' || value === 'yaml' || value === 'json') {
     return value
   }
-  throw new Error(`Invalid value for "${argumentName}": "${value}". Use "csv" or "yaml".`)
+  throw new Error(`Invalid value for "${argumentName}": "${value}". Use "csv", "yaml", or "json".`)
 }
 
 const inferFormatFromPath = (filePath: string): TranslationFormat => {
   const extension = extname(filePath).toLowerCase()
   if (extension === '.yaml' || extension === '.yml') {
     return 'yaml'
+  }
+  if (extension === '.json') {
+    return 'json'
   }
   return 'csv'
 }
@@ -242,7 +246,7 @@ const loadProject = async (
   }
   return validateTranslationFile({
     inputPath: filePath,
-    format: 'yaml',
+    format,
   })
 }
 
@@ -408,6 +412,8 @@ const runConvertCommand = async (args: ReadonlyArray<string>): Promise<number> =
 
   if (to === 'csv') {
     await writeCsvFileFromIrProject(outputPath, project)
+  } else if (to === 'json') {
+    await writeJsonFileFromIrProject(outputPath, project)
   } else {
     await writeYamlFileFromIrProject(outputPath, project)
   }

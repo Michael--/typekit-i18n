@@ -1,0 +1,52 @@
+{
+  "version": "1",
+  "sourceLanguage": "en",
+  "languages": ["en", "de", "es", "fr", "ar", "pl"],
+  "entries": [
+    {
+      "key": "share_button",
+      "category": "playground",
+      "description": "Label for social share button",
+      "status": "approved",
+      "tags": ["demo", "social"],
+      "values": {
+        "en": "Share",
+        "de": "Teilen",
+        "es": "Compartir",
+        "fr": "Partager",
+        "ar": "Musharaka",
+        "pl": "Udostepnij"
+      }
+    },
+    {
+      "key": "like_count",
+      "description": "Like count with ICU plural",
+      "status": "approved",
+      "tags": ["demo", "social", "icu"],
+      "placeholders": [{ "name": "count", "type": "number", "formatHint": "integer" }],
+      "values": {
+        "en": "{count, plural, =0 {No likes yet} one {# like} other {# likes}}",
+        "de": "{count, plural, =0 {Noch keine Likes} one {# Like} other {# Likes}}",
+        "es": "{count, plural, =0 {Sin likes} one {# like} other {# likes}}",
+        "fr": "{count, plural, =0 {Aucun like} one {# like} other {# likes}}",
+        "ar": "{count, plural, =0 {La yujad iijabat} one {# iijab} other {# iijabat}}",
+        "pl": "{count, plural, =0 {Brak polubien} one {# polubienie} few {# polubienia} other {# polubien}}"
+      }
+    },
+    {
+      "key": "comment_placeholder",
+      "description": "Placeholder text for comment input field",
+      "status": "review",
+      "tags": ["demo", "social"],
+      "placeholders": [{ "name": "user", "type": "string" }],
+      "values": {
+        "en": "Write a comment, {user}…",
+        "de": "Schreibe einen Kommentar, {user}…",
+        "es": "Escribe un comentario, {user}…",
+        "fr": "Ecris un commentaire, {user}…",
+        "ar": "Uktub ta''liqan, {user}…",
+        "pl": "Napisz komentarz, {user}…"
+      }
+    }
+  ]
+}
