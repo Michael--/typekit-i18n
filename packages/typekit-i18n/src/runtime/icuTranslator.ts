@@ -2,6 +2,7 @@ import {
   IcuTranslatorOptions,
   MissingTranslationEvent,
   Placeholder,
+  TranslationErrorEvent,
   TranslationTable,
 } from './types.js'
 import { CompiledIcuTemplate, IcuRenderContext, renderIcuMessage } from './icuRenderer.js'
@@ -99,6 +100,30 @@ export const createIcuTranslator = <TTable extends TranslationTable<string, stri
     }
   }
 
+  const handleError = (key: TKey, language: TLanguage, error: unknown): string => {
+    const wrapped = error instanceof Error ? error : new Error(String(error))
+    const event: TranslationErrorEvent<TKey, TLanguage> = {
+      key,
+      language,
+      defaultLanguage,
+      reason: 'icuParseError',
+      error: wrapped,
+    }
+    if (resolvedOptions.onError) {
+      resolvedOptions.onError(event)
+      return key
+    }
+    throw wrapped
+  }
+
+  const renderSafely = (template: string, context: IcuRenderContext<TKey, TLanguage>): string => {
+    try {
+      return renderIcuMessage(template, context)
+    } catch (error: unknown) {
+      return handleError(context.key, context.language, error)
+    }
+  }
+
   const translateByKey = (key: TKey, language: TLanguage, placeholder?: Placeholder): string => {
     const translation = table[key]
     if (!translation) {
@@ -125,7 +150,7 @@ export const createIcuTranslator = <TTable extends TranslationTable<string, stri
         dateTimeFormatCache,
         compiledTemplateCache,
       }
-      return renderIcuMessage(requestedText, context)
+      return renderSafely(requestedText, context)
     }
 
     const fallbackText = translation[defaultLanguage]
@@ -152,7 +177,7 @@ export const createIcuTranslator = <TTable extends TranslationTable<string, stri
         dateTimeFormatCache,
         compiledTemplateCache,
       }
-      return renderIcuMessage(fallbackText, context)
+      return renderSafely(fallbackText, context)
     }
 
     return key

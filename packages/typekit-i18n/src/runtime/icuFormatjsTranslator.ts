@@ -6,6 +6,7 @@ import {
   MissingTranslationEvent,
   Placeholder,
   PlaceholderValue,
+  TranslationErrorEvent,
   TranslationTable,
 } from './types.js'
 import type { TranslatorApi } from './translator.js'
@@ -224,6 +225,35 @@ export const createFormatjsIcuTranslator = <TTable extends TranslationTable<stri
     }
   }
 
+  const handleError = (key: TKey, language: TLanguage, error: unknown): string => {
+    const wrapped = error instanceof Error ? error : new Error(String(error))
+    const event: TranslationErrorEvent<TKey, TLanguage> = {
+      key,
+      language,
+      defaultLanguage,
+      reason: 'icuParseError',
+      error: wrapped,
+    }
+    if (resolvedOptions.onError) {
+      resolvedOptions.onError(event)
+      return key
+    }
+    throw wrapped
+  }
+
+  const renderSafely = (
+    template: string,
+    key: TKey,
+    language: TLanguage,
+    placeholder?: Placeholder
+  ): string => {
+    try {
+      return renderTemplate(template, key, language, placeholder)
+    } catch (error: unknown) {
+      return handleError(key, language, error)
+    }
+  }
+
   const renderTemplate = (
     template: string,
     key: TKey,
@@ -319,7 +349,7 @@ export const createFormatjsIcuTranslator = <TTable extends TranslationTable<stri
 
     const requestedText = translation[language]
     if (requestedText.length > 0) {
-      return renderTemplate(requestedText, key, language, placeholder)
+      return renderSafely(requestedText, key, language, placeholder)
     }
 
     const fallbackText = translation[defaultLanguage]
@@ -334,7 +364,7 @@ export const createFormatjsIcuTranslator = <TTable extends TranslationTable<stri
     })
 
     if (typeof fallbackText === 'string' && fallbackText.length > 0) {
-      return renderTemplate(fallbackText, key, language, placeholder)
+      return renderSafely(fallbackText, key, language, placeholder)
     }
 
     return key

@@ -73,6 +73,37 @@ export interface MissingTranslationEvent<TKey extends string, TLanguage extends 
 }
 
 /**
+ * Reason for a translation error event.
+ */
+export type TranslationErrorReason = 'icuParseError' | 'icuRenderError'
+
+/**
+ * Metadata about a translation error event.
+ */
+export interface TranslationErrorEvent<TKey extends string, TLanguage extends string> {
+  /**
+   * Requested key.
+   */
+  key: TKey
+  /**
+   * Requested language.
+   */
+  language: TLanguage
+  /**
+   * Fallback language.
+   */
+  defaultLanguage: TLanguage
+  /**
+   * Error reason category.
+   */
+  reason: TranslationErrorReason
+  /**
+   * Original error object.
+   */
+  error: Error
+}
+
+/**
  * Missing translation reason categories.
  */
 export type MissingTranslationReason = 'missingKey' | 'missingLanguage' | 'missingFallback'
@@ -163,4 +194,10 @@ export interface IcuTranslatorOptions<
    * Optional locale overrides per language code used for ICU plural selection.
    */
   localeByLanguage?: Partial<Record<TLanguage, string>>
+  /**
+   * Optional callback for ICU parse or render errors.
+   * When provided, errors are reported via this callback instead of throwing.
+   * The translation returns the raw key as fallback value.
+   */
+  onError?: (event: TranslationErrorEvent<TKey, TLanguage>) => void
 }
