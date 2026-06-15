@@ -81,6 +81,7 @@ ${pc.underline('Convert Options:')}
 ${pc.underline('Lint Options:')}
   --source <pattern>      Source file glob pattern (repeatable, required).
   --config <path>         Path to config file (default: auto-discovery).
+  --strict                Exit with code 1 when dead keys are found (CI mode).
 
 ${pc.underline('Examples:')}
   ${pc.dim('# Generate typed modules')}
@@ -453,6 +454,7 @@ const runLintCommand = async (args: ReadonlyArray<string>): Promise<number> => {
   const configArg = resolveArgValue(args, '--config')
   const sourceValues = resolveArgValues(args, '--source')
   const sourcePatterns = sourceValues.length > 0 ? sourceValues : ['src/**/*.ts', 'src/**/*.tsx']
+  const strictMode = hasFlag(args, '--strict')
 
   const loaded = await loadTypekitI18nConfig(configArg)
   if (!loaded) {
@@ -472,7 +474,8 @@ const runLintCommand = async (args: ReadonlyArray<string>): Promise<number> => {
   )
 
   if (result.deadKeys.length > 0) {
-    process.stdout.write(`${pc.bold(pc.yellow('Dead keys'))} (defined but unused in source):\n`)
+    const label = strictMode ? pc.red('Dead keys') : pc.yellow('Dead keys')
+    process.stdout.write(`${pc.bold(label)} (defined but unused in source):\n`)
     for (const dead of result.deadKeys) {
       process.stdout.write(`  ${pc.dim(`[${dead.category}]`)} ${dead.key}\n`)
     }
@@ -495,7 +498,7 @@ const runLintCommand = async (args: ReadonlyArray<string>): Promise<number> => {
     )
   }
 
-  return result.deadKeys.length > 0 ? 1 : 0
+  return strictMode && result.deadKeys.length > 0 ? 1 : 0
 }
 
 const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
