@@ -4,7 +4,7 @@ import { basename, dirname, extname, isAbsolute, relative, resolve } from 'node:
 import * as vscode from 'vscode'
 import { parse as parseYaml } from 'yaml'
 
-const DEFAULT_TRANSLATION_GLOBS = ['**/translations/**/*.{yaml,yml,csv}'] as const
+const DEFAULT_TRANSLATION_GLOBS = ['**/translations/**/*.{yaml,yml,csv,json}'] as const
 const EXCLUDE_GLOB = '**/{node_modules,dist,build,.git}/**'
 const CONFIG_FILE_CANDIDATES = [
   'typekit.config.ts',

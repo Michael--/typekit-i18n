@@ -55,7 +55,8 @@
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
     "onLanguage:yaml",
-    "onLanguage:csv"
+    "onLanguage:csv",
+    "onLanguage:json"
   ],
   "main": "./dist/extension.cjs",
   "contributes": {

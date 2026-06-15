@@ -9,7 +9,7 @@ import { extractPlaceholderNames } from './placeholders'
 /**
  * Supported raw translation file formats.
  */
-export type TranslationFormat = 'yaml' | 'yml' | 'csv'
+export type TranslationFormat = 'yaml' | 'yml' | 'csv' | 'json'
 
 /**
  * One indexed translation entry from YAML or CSV input.
@@ -307,6 +307,17 @@ class DefaultTranslationWorkspace implements TranslationWorkspace {
       return edit
     }
 
+    if (target.format === 'json') {
+      const escapedKey = key.replace(/"/g, '\\"')
+      const valuesBlock =
+        locales.length > 0
+          ? locales.map((locale) => `    "${locale}": ""`).join(',\n')
+          : '    "en": ""'
+      const newEntryBlock = `,\n  {\n    "key": "${escapedKey}",\n    "values": {\n${valuesBlock}\n    }\n  }\n`
+      edit.insert(target.uri, target.appendPosition, newEntryBlock)
+      return edit
+    }
+
     const headers = target.csvHeaders ?? ['key']
     const localeHeaders = target.csvLocaleHeaders ?? []
     const delimiter = target.csvDelimiter ?? ','
@@ -575,7 +586,9 @@ const parseTranslationDocument = async (
   const content = document.getText()
   return format === 'csv'
     ? parseCsvTranslationDocument(document, content)
-    : parseYamlTranslationDocument(document, content, format)
+    : format === 'json'
+      ? parseJsonTranslationDocument(document, content)
+      : parseYamlTranslationDocument(document, content, format)
 }
 
 const parseYamlTranslationDocument = (
@@ -775,6 +788,192 @@ const parseYamlTranslationDocument = (
 
   return {
     document: parsedDocument,
+    diagnostics,
+  }
+}
+
+/**
+ * Parses one JSON translation resource file into indexed workspace entries.
+ *
+ * @param document VS Code text document for the JSON file.
+ * @param content Raw file content.
+ * @returns Indexed document plus diagnostics.
+ */
+const parseJsonTranslationDocument = (
+  document: vscode.TextDocument,
+  content: string
+): ParsedDocumentResult => {
+  const diagnostics: vscode.Diagnostic[] = []
+  const entries: TranslationEntry[] = []
+  let languages: string[] = []
+  let sourceLanguage: string | undefined
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Invalid JSON syntax.'
+    diagnostics.push(
+      createDiagnostic(
+        new vscode.Range(0, 0, 0, 1),
+        message,
+        vscode.DiagnosticSeverity.Error,
+        DIAGNOSTIC_CODES.parseError
+      )
+    )
+    return {
+      document: {
+        uri: document.uri,
+        format: 'json',
+        languages: [],
+        entries: [],
+        appendPosition: document.positionAt(content.length),
+      },
+      diagnostics,
+    }
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    diagnostics.push(
+      createDiagnostic(
+        new vscode.Range(0, 0, 0, 1),
+        'JSON root must be an object.',
+        vscode.DiagnosticSeverity.Error,
+        DIAGNOSTIC_CODES.invalidSchema
+      )
+    )
+    return {
+      document: {
+        uri: document.uri,
+        format: 'json',
+        languages: [],
+        entries: [],
+        appendPosition: document.positionAt(content.length),
+      },
+      diagnostics,
+    }
+  }
+
+  const root = parsed as Record<string, unknown>
+
+  if (typeof root.sourceLanguage === 'string') {
+    sourceLanguage = root.sourceLanguage
+  }
+
+  if (Array.isArray(root.languages)) {
+    languages = root.languages.filter((l): l is string => typeof l === 'string')
+  } else if (root.languages !== undefined) {
+    diagnostics.push(
+      createDiagnostic(
+        new vscode.Range(0, 0, 0, 1),
+        '"languages" must be an array.',
+        vscode.DiagnosticSeverity.Error,
+        DIAGNOSTIC_CODES.invalidSchema
+      )
+    )
+  }
+
+  if (!Array.isArray(root.entries)) {
+    diagnostics.push(
+      createDiagnostic(
+        new vscode.Range(0, 0, 0, 1),
+        '"entries" must be an array.',
+        vscode.DiagnosticSeverity.Error,
+        DIAGNOSTIC_CODES.invalidSchema
+      )
+    )
+    return {
+      document: {
+        uri: document.uri,
+        format: 'json',
+        languages,
+        sourceLanguage,
+        entries: [],
+        appendPosition: document.positionAt(content.length),
+      },
+      diagnostics,
+    }
+  }
+
+  const keySet = new Set<string>()
+  const rawEntries = root.entries as unknown[]
+
+  rawEntries.forEach((rawEntry, index) => {
+    if (typeof rawEntry !== 'object' || rawEntry === null) {
+      return
+    }
+    const entry = rawEntry as Record<string, unknown>
+    const key = typeof entry.key === 'string' ? entry.key : undefined
+    if (!key) {
+      return
+    }
+    if (keySet.has(key)) {
+      diagnostics.push(
+        createDiagnostic(
+          new vscode.Range(0, 0, 0, 0),
+          `Duplicate key "${key}".`,
+          vscode.DiagnosticSeverity.Error,
+          DIAGNOSTIC_CODES.duplicateKey
+        )
+      )
+      return
+    }
+    keySet.add(key)
+
+    const values =
+      typeof entry.values === 'object' && entry.values !== null
+        ? (entry.values as Record<string, unknown>)
+        : {}
+    const valueMap = new Map<string, string>()
+    const valueRanges = new Map<string, vscode.Range>()
+    const placeholdersByLocale = new Map<string, readonly string[]>()
+
+    for (const [locale, value] of Object.entries(values)) {
+      if (typeof value === 'string') {
+        valueMap.set(locale, value)
+        valueRanges.set(locale, new vscode.Range(0, 0, 0, 0))
+        placeholdersByLocale.set(locale, extractPlaceholderNames(value))
+      }
+    }
+
+    // Check for missing locale values
+    for (const locale of languages) {
+      if (!valueMap.has(locale)) {
+        diagnostics.push(
+          createDiagnosticWithPayload(
+            new vscode.Range(0, 0, 0, 0),
+            `Missing translation value for locale "${locale}" in key "${key}".`,
+            vscode.DiagnosticSeverity.Warning,
+            DIAGNOSTIC_CODES.missingLocale,
+            { key, locale }
+          )
+        )
+      }
+    }
+
+    entries.push({
+      key,
+      uri: document.uri,
+      format: 'json',
+      keyRange: new vscode.Range(0, 0, 0, 0),
+      entryRange: new vscode.Range(0, 0, 0, 0),
+      values: valueMap,
+      valueRanges,
+      placeholdersByLocale,
+      declaredPlaceholders: [],
+      valueInsertPosition: null,
+    })
+  })
+
+  return {
+    document: {
+      uri: document.uri,
+      format: 'json',
+      languages,
+      sourceLanguage,
+      entries,
+      appendPosition: document.positionAt(content.length),
+    },
     diagnostics,
   }
 }
@@ -1206,6 +1405,9 @@ const inferTranslationFormat = (uri: vscode.Uri): TranslationFormat | null => {
   }
   if (lowerCasePath.endsWith('.csv')) {
     return 'csv'
+  }
+  if (lowerCasePath.endsWith('.json')) {
+    return 'json'
   }
   return null
 }

@@ -14,6 +14,7 @@ const codeSelector: vscode.DocumentSelector = [
 const translationSelector: vscode.DocumentSelector = [
   { language: 'yaml', scheme: 'file' },
   { language: 'csv', scheme: 'file' },
+  { language: 'json', scheme: 'file' },
 ]
 const codeFileGlob = '**/*.{ts,tsx,js,jsx}'
 const excludeGlob = '**/{node_modules,dist,build,.git}/**'
