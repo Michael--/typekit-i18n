@@ -13,7 +13,7 @@ import { writeYamlFileFromIrProject } from './ir/yaml.js'
 import { validateTranslationFile } from './validate.js'
 import type { TypekitI18nConfig } from './types.js'
 
-type CliCommand = 'generate' | 'validate' | 'convert'
+type CliCommand = 'generate' | 'validate' | 'convert' | 'init'
 type TranslationFormat = 'csv' | 'yaml' | 'json'
 
 const PACKAGE_NAME = '@number10/typekit-i18n'
@@ -38,7 +38,10 @@ ${pc.underline('Usage:')}
   typekit-i18n <command> [options]
 
 ${pc.underline('Commands:')}
-  ${pc.bold('generate')}              Generate typed translation modules from CSV/YAML resources.
+  ${pc.bold('init')}                  Scaffold a new typekit-i18n project with default config
+                        and translations directory.
+
+  ${pc.bold('generate')}              Generate typed translation modules from CSV/YAML/JSON resources.
                         Uses config from typekit.config.ts (auto-discovered).
 
   ${pc.bold('validate')}              Validate one translation resource file.
@@ -134,7 +137,12 @@ const resolveCliAction = (argv: ReadonlyArray<string>): ResolvedCliAction => {
   }
 
   const [firstArg, ...restArgs] = argv
-  if (firstArg === 'generate' || firstArg === 'validate' || firstArg === 'convert') {
+  if (
+    firstArg === 'generate' ||
+    firstArg === 'validate' ||
+    firstArg === 'convert' ||
+    firstArg === 'init'
+  ) {
     return { kind: 'command', command: firstArg, args: restArgs }
   }
 
@@ -355,6 +363,82 @@ const runGenerateWatch = (
   )
 }
 
+const DEFAULT_CONFIG_TEMPLATE = `import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
+
+export default defineTypekitI18nConfig({
+  input: ['./translations/*.csv', './translations/*.yaml', './translations/*.json'],
+  output: './src/generated/translationTable.ts',
+  outputKeys: './src/generated/translationKeys.ts',
+  languages: ['en', 'de'] as const,
+  defaultLanguage: 'en',
+})
+`
+
+const DEFAULT_TRANSLATION_TEMPLATE = `key;description;en;de
+greeting;Greeting message;Hello;Hallo
+`
+
+const runInitCommand = async (): Promise<number> => {
+  const cwd = process.cwd()
+  const configPath = resolve(cwd, 'typekit.config.ts')
+  const translationsDir = resolve(cwd, 'translations')
+  const examplePath = resolve(translationsDir, 'example.csv')
+
+  const { stat, writeFile } = await import('node:fs/promises')
+
+  let configExists = false
+  try {
+    await stat(configPath)
+    configExists = true
+  } catch {
+    // File does not exist, proceed
+  }
+
+  if (configExists) {
+    console.warn(pc.yellow(`Config file already exists at "${configPath}". Skipping.`))
+  } else {
+    try {
+      await writeFile(configPath, DEFAULT_CONFIG_TEMPLATE, 'utf-8')
+      process.stdout.write(pc.green(`Created "${configPath}".\n`))
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error(pc.red(`Failed to create config: ${message}`))
+      return 1
+    }
+  }
+
+  let translationsExists = false
+  try {
+    await stat(translationsDir)
+    translationsExists = true
+  } catch {
+    // Directory does not exist, proceed
+  }
+
+  if (translationsExists) {
+    console.warn(
+      pc.yellow(`Translations directory already exists at "${translationsDir}/". Skipping.`)
+    )
+  } else {
+    try {
+      await mkdir(translationsDir, { recursive: true })
+      await writeFile(examplePath, DEFAULT_TRANSLATION_TEMPLATE, 'utf-8')
+      process.stdout.write(pc.green(`Created "${translationsDir}/" with example CSV.\n`))
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error(pc.red(`Failed to create translations directory: ${message}`))
+      return 1
+    }
+  }
+
+  process.stdout.write(
+    pc.dim(
+      `\nNext: add your translation files to "translations/" and run "typekit-i18n generate".\n`
+    )
+  )
+  return 0
+}
+
 const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
   const configArg = resolveArgValue(args, '--config')
   const targets = resolveGenerateTargets(args)
@@ -443,6 +527,9 @@ export const runCli = async (): Promise<number> => {
   }
 
   const { command, args } = action
+  if (command === 'init') {
+    return runInitCommand()
+  }
   if (command === 'generate') {
     return runGenerateCommand(args)
   }
