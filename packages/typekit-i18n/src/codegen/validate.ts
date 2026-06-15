@@ -2,7 +2,6 @@ import { extname } from 'node:path'
 import { toIrProjectFromCsvFile } from './ir/csv.js'
 import { toIrProjectFromJsonFile } from './ir/json.js'
 import { TranslationIrProject } from './ir/types.js'
-import { validateIrProject } from './ir/validation.js'
 import { toIrProjectFromYamlFile } from './ir/yaml.js'
 import { TranslationInputFormat } from './types.js'
 
@@ -64,7 +63,6 @@ export const validateTranslationFile = async <TLanguage extends string = string>
       languages: options.languages,
       sourceLanguage: options.sourceLanguage,
     })
-    validateIrProject(project)
     return {
       format,
       project,
@@ -73,7 +71,6 @@ export const validateTranslationFile = async <TLanguage extends string = string>
 
   if (format === 'json') {
     const project = await toIrProjectFromJsonFile(options.inputPath)
-    validateIrProject(project)
     return {
       format,
       project,
@@ -81,7 +78,6 @@ export const validateTranslationFile = async <TLanguage extends string = string>
   }
 
   const project = await toIrProjectFromYamlFile(options.inputPath)
-  validateIrProject(project)
   return {
     format,
     project,
