@@ -1,19 +1,36 @@
 {
   "name": "typekit-i18n-vscode",
   "displayName": "typekit-i18n",
-  "description": "VSCode extension for typekit-i18n translation workflows.",
+  "description": "VS Code extension for typekit-i18n — inline key suggestions, diagnostics, hover previews, and translation workflow support for TypeScript/JavaScript projects",
   "version": "0.2.1",
   "publisher": "number10",
-  "homepage": "https://github.com/Michael--/typekit-i18n/tree/main/packages/typekit-i18n-vscode",
+  "homepage": "https://michael--.github.io/typekit-i18n/vscode-extension.html",
   "repository": {
     "type": "git",
     "url": "https://github.com/Michael--/typekit-i18n.git",
     "directory": "packages/typekit-i18n-vscode"
   },
   "bugs": {
-    "url": "https://github.com/Michael--/typekit-i18n/issues"
+    "url": "https://github.com/Michael--/typekit-i18n/issues",
+    "email": "mr@number10.de"
   },
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "translation",
+    "vscode-extension",
+    "typekit-i18n",
+    "diagnostics",
+    "completion",
+    "hover",
+    "intellisense",
+    "typescript",
+    "javascript"
+  ],
   "type": "module",
   "files": [
     "dist/extension.cjs",

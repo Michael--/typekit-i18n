@@ -1,8 +1,27 @@
 {
   "name": "@number10/typekit-i18n",
   "version": "0.3.0",
+  "description": "Type-safe internationalization toolkit for TypeScript — runtime APIs, ICU message rendering, and code generation from CSV/YAML resources",
   "private": false,
   "license": "MIT",
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "localization",
+    "l10n",
+    "translation",
+    "icu",
+    "icu-message",
+    "icu-messageformat",
+    "typescript",
+    "codegen",
+    "csv",
+    "yaml",
+    "type-safe",
+    "typekit",
+    "typekit-i18n",
+    "cli"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Michael--/typekit-i18n.git",
