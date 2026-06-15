@@ -17,18 +17,18 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@mantine/core": "^7.17.3",
-    "@mantine/hooks": "^7.17.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@mantine/core": "^9.3.1",
+    "@mantine/hooks": "^9.3.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "@number10/typekit-i18n": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
-    "rollup-plugin-visualizer": "^6.0.5",
-    "typescript": "^5.9.3",
-    "vite": "^6.2.0"
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "rollup-plugin-visualizer": "^7.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
   }
 }
