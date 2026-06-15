@@ -1,4 +1,5 @@
 import { dirname, resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
@@ -7,6 +8,9 @@ const thisFilePath = fileURLToPath(import.meta.url)
 const thisDirPath = dirname(thisFilePath)
 const workspaceRoot = resolve(thisDirPath, '../../../..')
 const playgroundGeneratedPath = resolve(thisDirPath, '../../../playground-ts/generated')
+
+const pkgPath = resolve(thisDirPath, '../../package.json')
+const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version: string }
 
 const envBase = process.env.DOCS_BASE_PATH ?? '/'
 const normalizedBase = envBase.endsWith('/') ? envBase : `${envBase}/`
@@ -74,6 +78,7 @@ export default withMermaid(
       ],
     ],
     themeConfig: {
+      siteTitle: `typekit-i18n (v${pkg.version})`,
       nav: [
         { text: 'Guide', link: '/getting-started' },
         { text: 'VSCode Extension', link: '/vscode-extension' },
