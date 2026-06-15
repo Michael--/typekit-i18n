@@ -2,6 +2,8 @@
 
 import { mkdir } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import pc from 'picocolors'
 import { loadTypekitI18nConfig } from './config.js'
 import { generateTranslations, resolveCodegenTargets, type CodegenTarget } from './generate.js'
@@ -11,6 +13,79 @@ import { validateTranslationFile } from './validate.js'
 
 type CliCommand = 'generate' | 'validate' | 'convert'
 type TranslationFormat = 'csv' | 'yaml'
+
+const PACKAGE_NAME = '@number10/typekit-i18n'
+
+const resolvePackageVersion = (): string => {
+  try {
+    const packageJsonPath = fileURLToPath(new URL('../../package.json', import.meta.url))
+    const content = readFileSync(packageJsonPath, 'utf-8')
+    const parsed = JSON.parse(content) as { version?: string }
+    return parsed.version ?? 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+const HELP_TEXT = `${pc.bold('typekit-i18n')} — Type-safe i18n toolkit for TypeScript
+
+${pc.underline('Usage:')}
+  typekit-i18n <command> [options]
+
+${pc.underline('Commands:')}
+  ${pc.bold('generate')}              Generate typed translation modules from CSV/YAML resources.
+                        Uses config from typekit.config.ts (auto-discovered).
+
+  ${pc.bold('validate')}              Validate one translation resource file.
+                        Requires --input and optional --format.
+
+  ${pc.bold('convert')}               Convert translation resources between formats.
+                        Requires --from, --to, --input, and --output.
+
+${pc.underline('Options:')}
+  --help, -h              Show this help text.
+  --version, -v           Show package version.
+
+${pc.underline('Generate Options:')}
+  --config <path>         Path to config file (default: auto-discovery).
+  --target <name>         Generation target: ts, swift, kotlin (repeatable).
+
+${pc.underline('Validate Options:')}
+  --input <path>          Path to translation resource file.
+  --format <csv|yaml>     Resource format (inferred from extension when omitted).
+  --languages <codes>     Comma-separated language codes (CSV only).
+  --source-language <code> Source language code (CSV only).
+
+${pc.underline('Convert Options:')}
+  --from <csv|yaml>       Source format.
+  --to <csv|yaml>         Target format.
+  --input <path>          Path to source resource file.
+  --output <path>         Path to output file.
+  --languages <codes>     Comma-separated language codes (CSV only).
+  --source-language <code> Source language code (CSV only).
+
+${pc.underline('Examples:')}
+  ${pc.dim('# Generate typed modules')}
+  typekit-i18n generate
+  typekit-i18n generate --target swift --target kotlin
+
+  ${pc.dim('# Validate a resource file')}
+  typekit-i18n validate --input translations/ui.csv --languages=en,de --source-language=en
+  typekit-i18n validate --input translations/features.yaml
+
+  ${pc.dim('# Convert between formats')}
+  typekit-i18n convert --from csv --to yaml --input ui.csv --output ui.yaml
+
+${pc.dim('Documentation: https://typekit-i18n.number10.de/')}
+`
+
+const printHelp = (): void => {
+  process.stdout.write(`${HELP_TEXT}\n`)
+}
+
+const printVersion = (): void => {
+  process.stdout.write(`${PACKAGE_NAME} v${resolvePackageVersion()}\n`)
+}
 
 const resolveArgValue = (args: ReadonlyArray<string>, name: string): string | undefined => {
   const prefixed = `${name}=`
@@ -34,19 +109,30 @@ const resolveRequiredArg = (args: ReadonlyArray<string>, name: string): string =
   return value
 }
 
-const resolveCommand = (argv: ReadonlyArray<string>): { command: CliCommand; args: string[] } => {
-  const [firstArg, ...restArgs] = argv
-  if (firstArg === 'generate' || firstArg === 'validate' || firstArg === 'convert') {
-    return {
-      command: firstArg,
-      args: restArgs,
-    }
+type HelpAction = 'help'
+type VersionAction = 'version'
+type ResolvedCliAction =
+  | { kind: 'command'; command: CliCommand; args: string[] }
+  | { kind: 'help' }
+  | { kind: 'version' }
+
+const hasFlag = (args: ReadonlyArray<string>, flag: string, shorthand?: string): boolean =>
+  args.includes(flag) || (shorthand ? args.includes(shorthand) : false)
+
+const resolveCliAction = (argv: ReadonlyArray<string>): ResolvedCliAction => {
+  if (hasFlag(argv, '--help', '-h')) {
+    return { kind: 'help' }
+  }
+  if (hasFlag(argv, '--version', '-v')) {
+    return { kind: 'version' }
   }
 
-  return {
-    command: 'generate',
-    args: [...argv],
+  const [firstArg, ...restArgs] = argv
+  if (firstArg === 'generate' || firstArg === 'validate' || firstArg === 'convert') {
+    return { kind: 'command', command: firstArg, args: restArgs }
   }
+
+  return { kind: 'command', command: 'generate', args: [...argv] }
 }
 
 const toFormat = (value: string, argumentName: string): TranslationFormat => {
@@ -215,15 +301,25 @@ const runConvertCommand = async (args: ReadonlyArray<string>): Promise<number> =
  */
 export const runCli = async (): Promise<number> => {
   const argv = process.argv.slice(2)
-  const resolved = resolveCommand(argv)
+  const action = resolveCliAction(argv)
 
-  if (resolved.command === 'generate') {
-    return runGenerateCommand(resolved.args)
+  if (action.kind === 'help') {
+    printHelp()
+    return 0
   }
-  if (resolved.command === 'validate') {
-    return runValidateCommand(resolved.args)
+  if (action.kind === 'version') {
+    printVersion()
+    return 0
   }
-  return runConvertCommand(resolved.args)
+
+  const { command, args } = action
+  if (command === 'generate') {
+    return runGenerateCommand(args)
+  }
+  if (command === 'validate') {
+    return runValidateCommand(args)
+  }
+  return runConvertCommand(args)
 }
 
 runCli()
