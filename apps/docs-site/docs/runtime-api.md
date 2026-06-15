@@ -165,16 +165,78 @@ If formatter is missing, fallback is `String(value)`.
 - `formatters` (`null` clears)
 - `collectMissingTranslations`
 
-## Default Runtime Helpers
-
 Also exported:
 
-- `translate(...)`
-- `translateIn(...)`
-- `withCategory(...)`
-- `configureTranslationRuntime(...)`
-- `setLanguage(...)`
-- `getLanguage()`
-- `getCollectedMissingTranslations()`
-- `clearCollectedMissingTranslations()`
-- `createConsoleMissingTranslationReporter(writer?)`
+- `createConsoleMissingTranslationReporter(writer?)` — console warn reporter for missing events
+
+## `onError` Callback (ICU Translators)
+
+Both `createIcuTranslator` and `createFormatjsIcuTranslator` accept an optional `onError` callback:
+
+```ts
+import { createIcuTranslator } from '@number10/typekit-i18n'
+import type { TranslationErrorEvent } from '@number10/typekit-i18n'
+
+const t = createIcuTranslator(table, {
+  onError: (event: TranslationErrorEvent) => {
+    console.warn(`ICU error for key "${event.key}": ${event.error.message}`)
+  },
+})
+```
+
+When `onError` is provided, ICU parse and render errors are reported via the callback
+instead of throwing. The translation returns the raw key as fallback value.
+Without `onError`, errors throw as before.
+
+Error event shape:
+
+- `key` — translation key
+- `language` — requested language
+- `defaultLanguage` — fallback language
+- `reason` — `'icuParseError'` or `'icuRenderError'`
+- `error` — original `Error` object
+
+## Plural Helpers (Basic Translator)
+
+For pluralization without ICU syntax, use the convention-based `pluralKey` helper:
+
+```ts
+import { createTranslator, pluralKey } from '@number10/typekit-i18n'
+
+// Translation table with suffixed keys:
+//   item_count_one:   "{count} item"
+//   item_count_other: "{count} items"
+
+const t = createTranslator(table)
+
+const key = pluralKey('item_count', 5) // → "item_count_other"
+const key = pluralKey('item_count', 1) // → "item_count_one"
+const key = pluralKey('item_count', 0, 'ar') // → "item_count_zero"
+
+t(key, { data: [{ key: 'count', value: 5 }] })
+```
+
+`pluralCategory(count, locale?)` returns the raw `Intl.LDMLPluralRule` if more control is needed.
+
+## React Integration
+
+React hooks are available via `@number10/typekit-i18n/react`:
+
+```tsx
+import { TranslationProvider, useTranslate } from '@number10/typekit-i18n/react'
+
+function App() {
+  return (
+    <TranslationProvider table={translationTable} defaultLanguage="en">
+      <Welcome />
+    </TranslationProvider>
+  )
+}
+
+function Welcome() {
+  const { t, language, setLanguage } = useTranslate()
+  return <h1>{t('greeting_title')}</h1>
+}
+```
+
+ICU variant: `<IcuTranslationProvider localeByLanguage={{ de: 'de-DE' }}>` + `useIcuTranslate()`.

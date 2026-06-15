@@ -16,7 +16,7 @@ Use `defineTypekitI18nConfig` for language inference:
 import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 
 export default defineTypekitI18nConfig({
-  input: ['./translations/*.csv', './translations/*.yaml'],
+  input: ['./translations/*.csv', './translations/*.yaml', './translations/*.json'],
   output: './src/generated/translationTable.ts',
   outputKeys: './src/generated/translationKeys.ts',
   languages: ['en', 'de', 'fr'] as const,
@@ -27,7 +27,7 @@ export default defineTypekitI18nConfig({
 Config fields:
 
 - `input`: file path or glob pattern(s)
-- `format?`: optional force format for all inputs (`csv` or `yaml`)
+- `format?`: optional force format for all inputs (`csv`, `yaml`, or `json`)
 - `output`: generated table file path
 - `outputKeys?`: generated key/language type file path
 - `outputSwift?`: generated Swift output path (used by `--target swift`)
@@ -79,12 +79,25 @@ Generated types include:
 
 Binary name: `typekit-i18n`
 
+### `init`
+
+```bash
+typekit-i18n init
+```
+
+Scaffolds a new project with `typekit.config.ts` and `translations/example.csv`.
+Skips existing files without overwriting.
+
 ### `generate` (default)
 
 ```bash
 typekit-i18n generate --config ./typekit.config.ts
 # or simply
 typekit-i18n
+
+# watch mode (regenerates on file changes):
+typekit-i18n generate --watch
+typekit-i18n generate -w
 
 # explicit target selection
 typekit-i18n generate --target ts
@@ -138,6 +151,20 @@ typekit-i18n convert \
 
 For CSV input conversion, CSV context arguments are required.
 
+### `lint`
+
+```bash
+# Find dead keys (defined but unused in source):
+typekit-i18n lint --source 'src/**/*.tsx'
+
+# CI mode: exit code 1 when dead keys are found:
+typekit-i18n lint --source 'src/**/*.tsx' --strict
+```
+
+Scans source files for string literals matching defined translation keys.
+Reports dead keys and unmatched source keys.
+Default output is warnings (exit code 0); use `--strict` for CI failure.
+
 ## Programmatic API
 
 Also exported:
@@ -152,7 +179,7 @@ Also exported:
 ```mermaid
 flowchart LR
   A["Load config"] --> B["Resolve input files"]
-  B --> C["Validate CSV/YAML structure"]
+  B --> C["Validate CSV/YAML/JSON structure"]
   C --> D["Validate language contract"]
   D --> E["Merge entries + reject duplicate keys"]
   E --> F["Write translationTable.ts"]

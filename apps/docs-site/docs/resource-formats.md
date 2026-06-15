@@ -6,7 +6,7 @@ description: >-
 
 # Resource Formats
 
-`typekit-i18n` supports CSV and YAML translation resources.
+`typekit-i18n` supports CSV, YAML, and JSON translation resources.
 
 ## CSV
 
@@ -102,6 +102,42 @@ entries:
       en: 'Price {amount|currency}'
       de: 'Preis {amount|currency}'
 ```
+
+## JSON
+
+JSON resources follow the same schema as YAML, using JSON syntax:
+
+```json
+{
+  "version": "1",
+  "sourceLanguage": "en",
+  "languages": ["en", "de"],
+  "entries": [
+    {
+      "key": "greeting_title",
+      "category": "home",
+      "description": "Main greeting",
+      "status": "approved",
+      "tags": ["ui", "home"],
+      "placeholders": [{ "name": "name", "type": "string" }],
+      "values": {
+        "en": "Hello {name}",
+        "de": "Hallo {name}"
+      }
+    },
+    {
+      "key": "price_label",
+      "description": "Price label",
+      "values": {
+        "en": "Price {amount|currency}",
+        "de": "Preis {amount|currency}"
+      }
+    }
+  ]
+}
+```
+
+Same validation rules and placeholder consistency checks apply to JSON as to YAML.
 
 ## Placeholder Consistency Rules
 
