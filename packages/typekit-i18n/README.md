@@ -67,8 +67,22 @@ typekit-i18n
 - Fallback or strict error behavior for missing translations
 - Placeholder replacement (`{name}`) and formatter tokens (`{amount|currency}`)
 - ICU-capable translator for `plural`, `select`, `selectordinal`, `number`, `date`, `time`
-- Translation generation from mixed CSV and YAML files
-- Validation and format conversion via CLI
+- Translation generation from mixed CSV, YAML, and JSON files
+- Validation, format conversion, dead key linting, and file watching via CLI
+- React hooks (`useTranslate`, `TranslationProvider`)
+- Swift and Kotlin code generation targets
+
+## CLI Commands
+
+```bash
+typekit-i18n init           # scaffold a new project
+typekit-i18n generate       # generate typed modules from translation files
+typekit-i18n generate -w    # generate and watch for changes
+typekit-i18n validate       # validate a single translation file
+typekit-i18n convert        # convert between CSV, YAML, and JSON
+typekit-i18n lint           # find dead keys and unmatched source keys
+typekit-i18n --help         # show all options
+```
 
 ## Runtime Footprint Guide
 
@@ -91,7 +105,7 @@ If your translations do not require ICU features, use `basic` for the smallest b
 import { defineTypekitI18nConfig } from '@number10/typekit-i18n/codegen'
 
 export default defineTypekitI18nConfig({
-  input: ['./translations/*.csv', './translations/*.yaml'],
+  input: ['./translations/*.csv', './translations/*.yaml', './translations/*.json'],
   output: './src/generated/translationTable.ts',
   outputKeys: './src/generated/translationKeys.ts',
   languages: ['en', 'de', 'fr'] as const,
@@ -214,14 +228,47 @@ interface Placeholder {
 
 Also exported:
 
-- `createTranslationRuntime(table, options?)`
-- `createConsoleMissingTranslationReporter(writer?)`
-- `translate(...)`
-- `configureTranslationRuntime(...)`
-- `getCollectedMissingTranslations()`
-- `clearCollectedMissingTranslations()`
+- `createTranslationRuntime(table, options?)` — Stateful runtime wrapper with configure/collect support.
+- `createConsoleMissingTranslationReporter(writer?)` — Console warn reporter for missing translations.
 
-For application integrations, `createTranslator` or `createIcuTranslator` should be preferred.
+For most application integrations, `createTranslator` or `createIcuTranslator` should be preferred.
+For React apps, use the dedicated hooks from `@number10/typekit-i18n/react`.
+
+## React Integration (`@number10/typekit-i18n/react`)
+
+```tsx
+import { TranslationProvider, useTranslate } from '@number10/typekit-i18n/react'
+import { translationTable } from './generated/translationTable'
+
+// Wrap your app root
+function App() {
+  return (
+    <TranslationProvider table={translationTable} defaultLanguage="en">
+      <Welcome />
+    </TranslationProvider>
+  )
+}
+
+// Use in any descendant component
+function Welcome() {
+  const { t, language, setLanguage } = useTranslate()
+
+  return (
+    <div>
+      <h1>{t('greeting_title')}</h1>
+      <p>{t('greeting_body', { name: 'Developer' })}</p>
+      <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+      </select>
+    </div>
+  )
+}
+```
+
+ICU variant: `<IcuTranslationProvider>` + `useIcuTranslate()`.
+
+`react` is an optional peer dependency (only required when using this entry point).
 
 ## Codegen Config API (`@number10/typekit-i18n/codegen`)
 
@@ -238,7 +285,7 @@ Config shape:
 ```ts
 interface TypekitI18nConfig<TLanguage extends string = string> {
   input: string | ReadonlyArray<string>
-  format?: 'csv' | 'yaml'
+  format?: 'csv' | 'yaml' | 'json'
   output: string
   outputKeys?: string
   outputSwift?: string
@@ -276,12 +323,25 @@ Auto-discovered config file order when `--config` is omitted:
 
 Binary name: `typekit-i18n`
 
+### `init`
+
+```bash
+typekit-i18n init
+```
+
+Creates a `typekit.config.ts` and `translations/` directory with an example CSV file.
+Skips existing files safely.
+
 ### `generate` (default)
 
 ```bash
 typekit-i18n generate --config ./typekit.config.ts
 # or simply:
 typekit-i18n
+
+# watch mode (regenerates on file changes):
+typekit-i18n generate --watch
+typekit-i18n generate -w
 
 # explicit targets:
 typekit-i18n generate --target ts
@@ -362,6 +422,20 @@ typekit-i18n convert \
   --source-language en
 ```
 
+### `lint`
+
+```bash
+# Find dead keys (defined but unused in source)
+typekit-i18n lint --source 'src/**/*.tsx'
+
+# CI mode: exit code 1 when dead keys found
+typekit-i18n lint --source 'src/**/*.tsx' --strict
+```
+
+Scans source files for string literals matching defined translation keys.
+Reports dead keys (defined but never used) and unmatched keys (found in source but not defined).
+Use `--strict` for CI pipelines.
+
 ## Resource Formats
 
 ### CSV
@@ -403,6 +477,31 @@ entries:
     values:
       en: 'Welcome {name}'
       de: 'Willkommen {name}'
+```
+
+### JSON
+
+Same schema as YAML, using JSON syntax:
+
+```json
+{
+  "version": "1",
+  "sourceLanguage": "en",
+  "languages": ["en", "de"],
+  "entries": [
+    {
+      "key": "greeting_title",
+      "description": "Main title",
+      "status": "approved",
+      "tags": ["ui", "home"],
+      "placeholders": [{ "name": "name", "type": "string" }],
+      "values": {
+        "en": "Welcome {name}",
+        "de": "Willkommen {name}"
+      }
+    }
+  ]
+}
 ```
 
 ## Validation Guarantees
