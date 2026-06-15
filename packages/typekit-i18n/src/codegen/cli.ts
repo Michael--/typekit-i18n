@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { mkdir } from 'node:fs/promises'
-import { dirname, extname } from 'node:path'
-import { readFileSync } from 'node:fs'
+import { readFileSync, watch } from 'node:fs'
+import { dirname, extname, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pc from 'picocolors'
 import { loadTypekitI18nConfig } from './config.js'
@@ -10,11 +10,15 @@ import { generateTranslations, resolveCodegenTargets, type CodegenTarget } from 
 import { writeCsvFileFromIrProject } from './ir/csv.js'
 import { writeYamlFileFromIrProject } from './ir/yaml.js'
 import { validateTranslationFile } from './validate.js'
+import type { TypekitI18nConfig } from './types.js'
 
 type CliCommand = 'generate' | 'validate' | 'convert'
 type TranslationFormat = 'csv' | 'yaml'
 
 const PACKAGE_NAME = '@number10/typekit-i18n'
+
+const WATCH_DEBOUNCE_MS = 300
+const SUPPORTED_WATCHED_EXTENSIONS = new Set(['.csv', '.yaml', '.yml', '.json'])
 
 const resolvePackageVersion = (): string => {
   try {
@@ -49,6 +53,7 @@ ${pc.underline('Options:')}
 ${pc.underline('Generate Options:')}
   --config <path>         Path to config file (default: auto-discovery).
   --target <name>         Generation target: ts, swift, kotlin (repeatable).
+  --watch, -w             Watch input files and regenerate on changes.
 
 ${pc.underline('Validate Options:')}
   --input <path>          Path to translation resource file.
@@ -241,9 +246,115 @@ const loadProject = async (
   })
 }
 
+/**
+ * Extracts the longest non-glob directory prefix from a glob pattern.
+ *
+ * @param pattern Glob pattern string.
+ * @returns Resolved directory path for watching.
+ */
+const toWatchDirectory = (pattern: string): string => {
+  const resolved = resolve(pattern)
+  const segments = resolved.split(sep)
+  const globChars = /[*?[\]{}!]/u
+
+  let directorySegments: string[] = []
+  for (const segment of segments) {
+    if (globChars.test(segment)) {
+      break
+    }
+    directorySegments.push(segment)
+  }
+
+  const directoryPath = directorySegments.length > 0 ? directorySegments.join(sep) : resolved
+  return directoryPath || sep
+}
+
+/**
+ * Collects unique watch directories from all input patterns.
+ *
+ * @param config Generator config with input patterns.
+ * @returns Deduplicated directory paths to watch.
+ */
+const resolveWatchDirectories = (config: TypekitI18nConfig): ReadonlyArray<string> => {
+  const patterns = Array.isArray(config.input) ? config.input : [config.input]
+  const directories = new Set<string>()
+  for (const pattern of patterns) {
+    directories.add(toWatchDirectory(pattern))
+  }
+  return Array.from(directories)
+}
+
+/**
+ * Starts a file watcher loop that regenerates translations on input changes.
+ *
+ * @param config Generator config.
+ * @param targets Optional generation targets.
+ * @param signal Abort signal to stop watching.
+ */
+const runGenerateWatch = (
+  config: TypekitI18nConfig,
+  targets: ReadonlyArray<CodegenTarget> | undefined,
+  signal: AbortSignal
+): void => {
+  const directories = resolveWatchDirectories(config)
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined
+
+  const triggerGeneration = async (): Promise<void> => {
+    try {
+      // ANSI escape to clear terminal
+      process.stdout.write('\x1B[2J\x1B[H')
+      await generateTranslations(config, { targets })
+      process.stdout.write(
+        pc.dim(
+          `\nWatching for changes in ${directories.length} director${directories.length === 1 ? 'y' : 'ies'}… (Ctrl+C to stop)\n`
+        )
+      )
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error(pc.red(`Generation failed: ${message}`))
+    }
+  }
+
+  const scheduleGeneration = (): void => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+    }
+    debounceTimer = setTimeout(() => {
+      debounceTimer = undefined
+      void triggerGeneration()
+    }, WATCH_DEBOUNCE_MS)
+  }
+
+  for (const directory of directories) {
+    try {
+      const watcher = watch(directory, { recursive: true }, (_event, filename) => {
+        if (filename) {
+          const extension = extname(filename).toLowerCase()
+          if (SUPPORTED_WATCHED_EXTENSIONS.has(extension)) {
+            scheduleGeneration()
+          }
+        }
+      })
+
+      signal.addEventListener('abort', () => {
+        watcher.close()
+      })
+    } catch {
+      console.warn(pc.yellow(`Unable to watch directory "${directory}".`))
+    }
+  }
+
+  process.stdout.write(
+    pc.dim(
+      `Watching for changes in ${directories.length} director${directories.length === 1 ? 'y' : 'ies'}… (Ctrl+C to stop)\n`
+    )
+  )
+}
+
 const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
   const configArg = resolveArgValue(args, '--config')
   const targets = resolveGenerateTargets(args)
+  const shouldWatch = hasFlag(args, '--watch', '-w')
   const loaded = await loadTypekitI18nConfig(configArg)
 
   if (!loaded) {
@@ -254,6 +365,19 @@ const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> 
   }
 
   await generateTranslations(loaded.config, { targets })
+
+  if (shouldWatch) {
+    const abortController = new AbortController()
+    process.on('SIGINT', () => abortController.abort())
+    process.on('SIGTERM', () => abortController.abort())
+    runGenerateWatch(loaded.config, targets, abortController.signal)
+
+    // Keep the process alive for the watcher
+    await new Promise<void>((resolvePromise) => {
+      abortController.signal.addEventListener('abort', () => resolvePromise())
+    })
+  }
+
   return 0
 }
 
