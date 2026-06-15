@@ -55,6 +55,13 @@ export default withMermaid(
     },
     head: [
       ['meta', { name: 'robots', content: 'index, follow' }],
+      [
+        'meta',
+        {
+          name: 'google-site-verification',
+          content: 'TZwaz1pFYKmSmNj3FBsCZC-9JdSHvmp83ZBR1qthnrk',
+        },
+      ],
       ['meta', { name: 'author', content: 'number10' }],
       ['meta', { property: 'og:type', content: 'website' }],
       ['meta', { property: 'og:site_name', content: 'typekit-i18n' }],
