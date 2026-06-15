@@ -10,11 +10,13 @@ import {
   Select,
   SegmentedControl,
   Stack,
+  Switch,
   Text,
   Title,
 } from '@mantine/core'
 import { createIcuTranslator, createTranslator } from '@number10/typekit-i18n'
 import { createFormatjsIcuTranslator } from '@number10/typekit-i18n/runtime/icu-formatjs'
+import { useTranslate } from '@number10/typekit-i18n/react'
 import type {
   MissingTranslationEvent,
   Placeholder,
@@ -668,7 +670,69 @@ export const App = (): JSX.Element => {
             )}
           </Stack>
         </Paper>
+
+        <HooksDemo />
       </Stack>
     </Container>
+  )
+}
+
+/**
+ * Small demo component using the React hooks API.
+ */
+const HooksDemo = (): React.ReactElement => {
+  const { t, language, setLanguage } = useTranslate()
+  const [showPlaceholders, setShowPlaceholders] = useState(false)
+
+  return (
+    <Paper p="md" withBorder radius="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="center">
+          <Text fw={600}>🧩 React Hooks (useTranslate)</Text>
+          <Badge color="violet" variant="light">
+            new
+          </Badge>
+        </Group>
+        <Text size="sm" c="dimmed">
+          Using the <Code>useTranslate()</Code> hook with{' '}
+          <Code>
+            {'<'}TranslationProvider{'>'}
+          </Code>
+          . Same table, simpler API.
+        </Text>
+
+        <Group gap="xs">
+          <SegmentedControl
+            size="xs"
+            data={['en', 'de', 'es', 'fr', 'ar', 'pl']}
+            value={language}
+            onChange={(value) => setLanguage(value as typeof language)}
+          />
+          <Switch
+            size="xs"
+            label="Placeholders"
+            checked={showPlaceholders}
+            onChange={(event) => setShowPlaceholders(event.currentTarget.checked)}
+          />
+        </Group>
+
+        <Stack gap="xs">
+          <Group gap="xs">
+            <Badge variant="outline" size="sm">
+              basic
+            </Badge>
+            <Code>
+              {showPlaceholders ? t('greeting_body', { name: 'Copilot' }) : t('greeting_title')}
+            </Code>
+          </Group>
+          <Group gap="xs">
+            <Badge variant="outline" size="sm" color="teal">
+              scoped
+            </Badge>
+            <Code>{t('share_button' as never)}</Code>
+          </Group>
+        </Stack>
+      </Stack>
+    </Paper>
   )
 }

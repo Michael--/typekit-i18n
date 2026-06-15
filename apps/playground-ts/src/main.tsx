@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MantineProvider } from '@mantine/core'
+import { TranslationProvider } from '@number10/typekit-i18n/react'
+import { translationTable } from '@gen/translationTable'
 import { App } from './App'
 import '@mantine/core/styles.css'
 
@@ -13,7 +15,9 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <MantineProvider defaultColorScheme="dark">
-      <App />
+      <TranslationProvider table={translationTable} defaultLanguage="en">
+        <App />
+      </TranslationProvider>
     </MantineProvider>
   </StrictMode>
 )

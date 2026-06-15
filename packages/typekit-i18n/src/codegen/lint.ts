@@ -104,7 +104,7 @@ const collectDefinedKeys = async (
   config: TypekitI18nConfig
 ): Promise<ReadonlyArray<{ key: string; category: string }>> => {
   const inputPatterns = Array.isArray(config.input) ? config.input : [config.input]
-  const files = await glob(inputPatterns, { nodir: true })
+  const files = await glob([...inputPatterns], { nodir: true })
   const results: { key: string; category: string }[] = []
 
   for (const filePath of files) {
@@ -141,7 +141,7 @@ const collectDefinedKeys = async (
 const scanSourceFiles = async (
   sourcePatterns: ReadonlyArray<string>
 ): Promise<Map<string, string>> => {
-  const files = await glob(sourcePatterns, { nodir: true })
+  const files = await glob([...sourcePatterns], { nodir: true })
   const sourceFiles = files.filter((file) => SOURCE_EXTENSIONS.has(extname(file).toLowerCase()))
   const found = new Map<string, string>()
 

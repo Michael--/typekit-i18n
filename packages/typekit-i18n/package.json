@@ -73,6 +73,10 @@
     "./codegen": {
       "types": "./dist/src/codegen/index.d.ts",
       "import": "./dist/codegen.js"
+    },
+    "./react": {
+      "types": "./dist/src/react/index.d.ts",
+      "import": "./dist/react.js"
     }
   },
   "scripts": {
@@ -96,14 +100,19 @@
     "yaml": "^2.9.0"
   },
   "peerDependencies": {
-    "intl-messageformat": "^11.1.2"
+    "intl-messageformat": "^11.1.2",
+    "react": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "intl-messageformat": {
       "optional": true
+    },
+    "react": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@types/react": "^19.2.17",
     "intl-messageformat": "^11.2.8",
     "typescript": "^6.0.3",
     "vite": "^8.0.16"
