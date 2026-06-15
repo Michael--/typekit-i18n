@@ -239,4 +239,4 @@ function Welcome() {
 }
 ```
 
-ICU variant: `<IcuTranslationProvider localeByLanguage={{ de: 'de-DE' }}>` + `useIcuTranslate()`.
+ICU variant: <code v-pre>&lt;IcuTranslationProvider localeByLanguage={{ de: 'de-DE' }}&gt;</code> + `useIcuTranslate()`.
