@@ -5,9 +5,8 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
-      "@gen/*": ["generated/*"]
+      "@gen/*": ["./generated/*"]
     },
     "types": ["vite/client", "node"]
   },
