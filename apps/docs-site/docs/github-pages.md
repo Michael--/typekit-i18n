@@ -1,3 +1,9 @@
+---
+description: >-
+  Deploy the typekit-i18n documentation site to GitHub Pages — base path
+  configuration and CI setup.
+---
+
 # GitHub Pages
 
 `docs-site` is configured for GitHub Pages deployment.

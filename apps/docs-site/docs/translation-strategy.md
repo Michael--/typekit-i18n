@@ -1,3 +1,9 @@
+---
+description: >-
+  Recommended translation workflow and strategy with typekit-i18n —
+  authoring, reviewing, and maintaining multi-language resources.
+---
+
 # Translation Strategy
 
 ## Recommended Workflow

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://michael--.github.io/typekit-i18n/sitemap.xml

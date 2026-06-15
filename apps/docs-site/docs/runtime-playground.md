@@ -1,3 +1,9 @@
+---
+description: >-
+  Interactive runtime playground — explore typekit-i18n translation
+  APIs and ICU rendering directly in the browser.
+---
+
 # Runtime Playground
 
 Public docs can now run a Vue-based demo that mirrors selected runtime scenarios from

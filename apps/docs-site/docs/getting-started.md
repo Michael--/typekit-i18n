@@ -1,3 +1,9 @@
+---
+description: >-
+  Get started with typekit-i18n — install the toolkit, configure your
+  workspace, and generate typed translation keys in minutes.
+---
+
 # Getting Started
 
 ## Requirements

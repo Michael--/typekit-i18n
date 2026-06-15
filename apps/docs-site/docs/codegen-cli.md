@@ -1,3 +1,9 @@
+---
+description: >-
+  Code generation and CLI reference for typekit-i18n — generate typed
+  translation keys, validate resources, and convert formats.
+---
+
 # Codegen + CLI
 
 Codegen imports come from `@number10/typekit-i18n/codegen`.

@@ -1,3 +1,9 @@
+---
+description: >-
+  Runtime API reference for @number10/typekit-i18n — translators, language
+  state, placeholder formatting, and ICU message rendering.
+---
+
 # Runtime API
 
 Runtime imports come from `@number10/typekit-i18n`.

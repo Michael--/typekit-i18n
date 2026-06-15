@@ -1,3 +1,9 @@
+---
+description: >-
+  Supported translation resource formats in typekit-i18n — CSV and YAML
+  file structure, conventions, and validation.
+---
+
 # Resource Formats
 
 `typekit-i18n` supports CSV and YAML translation resources.

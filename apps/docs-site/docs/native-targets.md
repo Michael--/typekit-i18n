@@ -1,3 +1,9 @@
+---
+description: >-
+  Native target code generation for typekit-i18n — Swift, Kotlin, and
+  Java interop from shared translation resources.
+---
+
 # Native Targets (Swift + Kotlin + Java Interop)
 
 Native target generation produces:

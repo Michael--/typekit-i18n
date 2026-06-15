@@ -1,3 +1,9 @@
+---
+description: >-
+  VS Code extension for typekit-i18n — inline key suggestions, diagnostics,
+  hover previews, and translation workflow support.
+---
+
 # VSCode Extension
 
 The `typekit-i18n` VSCode extension improves authoring workflows for translation keys and raw translation files (`.yaml`, `.yml`, `.csv`).

@@ -11,6 +11,9 @@ const playgroundGeneratedPath = resolve(thisDirPath, '../../../playground-ts/gen
 const envBase = process.env.DOCS_BASE_PATH ?? '/'
 const normalizedBase = envBase.endsWith('/') ? envBase : `${envBase}/`
 
+const PROD_HOSTNAME = 'https://michael--.github.io'
+const PROD_URL = `${PROD_HOSTNAME}${normalizedBase}`
+
 export default withMermaid(
   defineConfig({
     title: 'typekit-i18n',
@@ -43,6 +46,33 @@ export default withMermaid(
       },
     },
     cleanUrls: true,
+    sitemap: {
+      hostname: PROD_HOSTNAME,
+    },
+    head: [
+      ['meta', { name: 'robots', content: 'index, follow' }],
+      ['meta', { name: 'author', content: 'number10' }],
+      ['meta', { property: 'og:type', content: 'website' }],
+      ['meta', { property: 'og:site_name', content: 'typekit-i18n' }],
+      ['meta', { property: 'og:title', content: 'typekit-i18n' }],
+      [
+        'meta',
+        {
+          property: 'og:description',
+          content: 'Type-safe i18n toolkit for TypeScript with runtime, ICU, and codegen',
+        },
+      ],
+      ['meta', { property: 'og:url', content: PROD_URL }],
+      ['meta', { name: 'twitter:card', content: 'summary' }],
+      ['meta', { name: 'twitter:title', content: 'typekit-i18n' }],
+      [
+        'meta',
+        {
+          name: 'twitter:description',
+          content: 'Type-safe i18n toolkit for TypeScript with runtime, ICU, and codegen',
+        },
+      ],
+    ],
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/getting-started' },
