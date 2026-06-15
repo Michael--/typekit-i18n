@@ -7,13 +7,14 @@ import { fileURLToPath } from 'node:url'
 import pc from 'picocolors'
 import { loadTypekitI18nConfig } from './config.js'
 import { generateTranslations, resolveCodegenTargets, type CodegenTarget } from './generate.js'
+import { lintTranslations } from './lint.js'
 import { writeCsvFileFromIrProject } from './ir/csv.js'
 import { writeJsonFileFromIrProject } from './ir/json.js'
 import { writeYamlFileFromIrProject } from './ir/yaml.js'
 import { validateTranslationFile } from './validate.js'
 import type { TypekitI18nConfig } from './types.js'
 
-type CliCommand = 'generate' | 'validate' | 'convert' | 'init'
+type CliCommand = 'generate' | 'validate' | 'convert' | 'init' | 'lint'
 type TranslationFormat = 'csv' | 'yaml' | 'json'
 
 const PACKAGE_NAME = '@number10/typekit-i18n'
@@ -50,6 +51,10 @@ ${pc.underline('Commands:')}
   ${pc.bold('convert')}               Convert translation resources between formats.
                         Requires --from, --to, --input, and --output.
 
+  ${pc.bold('lint')}                  Analyze translation keys: find dead keys (defined but
+                        unused) and unmatched keys in source code.
+                        Requires --source for source file patterns.
+
 ${pc.underline('Options:')}
   --help, -h              Show this help text.
   --version, -v           Show package version.
@@ -72,6 +77,10 @@ ${pc.underline('Convert Options:')}
   --output <path>         Path to output file.
   --languages <codes>     Comma-separated language codes (CSV only).
   --source-language <code> Source language code (CSV only).
+
+${pc.underline('Lint Options:')}
+  --source <pattern>      Source file glob pattern (repeatable, required).
+  --config <path>         Path to config file (default: auto-discovery).
 
 ${pc.underline('Examples:')}
   ${pc.dim('# Generate typed modules')}
@@ -141,7 +150,8 @@ const resolveCliAction = (argv: ReadonlyArray<string>): ResolvedCliAction => {
     firstArg === 'generate' ||
     firstArg === 'validate' ||
     firstArg === 'convert' ||
-    firstArg === 'init'
+    firstArg === 'init' ||
+    firstArg === 'lint'
   ) {
     return { kind: 'command', command: firstArg, args: restArgs }
   }
@@ -439,6 +449,55 @@ const runInitCommand = async (): Promise<number> => {
   return 0
 }
 
+const runLintCommand = async (args: ReadonlyArray<string>): Promise<number> => {
+  const configArg = resolveArgValue(args, '--config')
+  const sourceValues = resolveArgValues(args, '--source')
+  const sourcePatterns = sourceValues.length > 0 ? sourceValues : ['src/**/*.ts', 'src/**/*.tsx']
+
+  const loaded = await loadTypekitI18nConfig(configArg)
+  if (!loaded) {
+    const resolvedPath =
+      configArg ?? 'typekit.config.ts|json|yaml|yml or typekit-i18n.config.ts|json|yaml|yml'
+    console.error(pc.red(`No config file found at "${resolvedPath}".`))
+    return 1
+  }
+
+  process.stdout.write(pc.dim('Scanning source files…\n'))
+  const result = await lintTranslations(loaded.config, { source: sourcePatterns })
+
+  process.stdout.write(
+    pc.dim(
+      `${result.definedKeyCount} keys defined, ${result.matchedKeyCount} matched, ${result.deadKeys.length} dead.\n\n`
+    )
+  )
+
+  if (result.deadKeys.length > 0) {
+    process.stdout.write(`${pc.bold(pc.yellow('Dead keys'))} (defined but unused in source):\n`)
+    for (const dead of result.deadKeys) {
+      process.stdout.write(`  ${pc.dim(`[${dead.category}]`)} ${dead.key}\n`)
+    }
+    process.stdout.write('\n')
+  }
+
+  if (result.unmatchedKeys.length > 0) {
+    process.stdout.write(
+      `${pc.bold(pc.yellow('Unmatched keys'))} (found in source but not defined):\n`
+    )
+    for (const unmatched of result.unmatchedKeys) {
+      process.stdout.write(`  ${unmatched.value} ${pc.dim(`(${unmatched.file})`)}\n`)
+    }
+    process.stdout.write('\n')
+  }
+
+  if (result.deadKeys.length === 0 && result.unmatchedKeys.length === 0) {
+    process.stdout.write(
+      pc.green('All translation keys are used and all source keys are defined.\n')
+    )
+  }
+
+  return result.deadKeys.length > 0 ? 1 : 0
+}
+
 const runGenerateCommand = async (args: ReadonlyArray<string>): Promise<number> => {
   const configArg = resolveArgValue(args, '--config')
   const targets = resolveGenerateTargets(args)
@@ -529,6 +588,9 @@ export const runCli = async (): Promise<number> => {
   const { command, args } = action
   if (command === 'init') {
     return runInitCommand()
+  }
+  if (command === 'lint') {
+    return runLintCommand(args)
   }
   if (command === 'generate') {
     return runGenerateCommand(args)
