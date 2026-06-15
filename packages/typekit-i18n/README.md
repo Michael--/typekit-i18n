@@ -7,6 +7,7 @@ Type-safe i18n runtime and code generator for TypeScript.
 - GitHub: https://github.com/Michael--/typekit-i18n
 - Documentation: https://typekit-i18n.number10.de/
 - npm: https://www.npmjs.com/package/@number10/typekit-i18n
+- Current release: `0.4.0`
 
 ## Installation
 
@@ -28,6 +29,7 @@ For translation authoring, the repository also ships a dedicated VSCode extensio
 
 - Source: `packages/typekit-i18n-vscode`
 - Marketplace link: https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
+- Current release: `0.3.0`
 
 Local VSIX build:
 

@@ -109,7 +109,7 @@ const scopedTextAlias = t.in('home', 'welcome_title')
 
 ```mermaid
 flowchart LR
-  A["Add CSV/YAML resources"] --> B["Create typekit.config.ts"]
+  A["Add CSV/YAML/JSON resources"] --> B["Create typekit.config.ts"]
   B --> C["Run typekit-i18n generate"]
   C --> D["Use generated translationTable + translationKeys"]
   D --> E["Translate via createTranslator/createIcuTranslator"]

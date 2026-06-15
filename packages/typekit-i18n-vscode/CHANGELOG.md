@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.3.0 - 2026-06-15
+
+Changes since `0.2.1` (baseline commit `d2dd5f3e`).
+
+### Added
+
+- Added JSON translation file discovery through the default `translationGlobs` setting.
+- Added JSON language activation for translation authoring workflows.
+- Added JSON translation diagnostics and quick fixes.
+
+### Fixed
+
+- Fixed JSON diagnostic ranges so reported issues point to the actual source positions.
+- Added missing type annotations for JSON translation document parsing.
+
 ## 0.1.0 - 2026-02-12
 
 - Initial public release of the `typekit-i18n` VSCode extension.

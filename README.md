@@ -4,8 +4,9 @@ Type-safe internationalization toolkit for TypeScript with:
 
 - runtime translation APIs
 - ICU message rendering support
-- code generation from CSV/YAML resources
+- code generation from CSV/YAML/JSON resources
 - CLI for generate, validate, and convert workflows
+- JSON resource input, React hooks, and translation linting
 
 This repository is a `pnpm` workspace with four targets:
 
@@ -19,6 +20,8 @@ This repository is a `pnpm` workspace with four targets:
 - GitHub: https://github.com/Michael--/typekit-i18n
 - Documentation: https://typekit-i18n.number10.de/
 - npm: https://www.npmjs.com/package/@number10/typekit-i18n
+- Current package release: `@number10/typekit-i18n@0.4.0`
+- Current VSCode extension release: `typekit-i18n-vscode@0.3.0`
 
 ## Requirements
 
@@ -98,7 +101,7 @@ The ICU runtime supports a pragmatic subset including:
 ### Codegen and Validation
 
 - config helper: `defineTypekitI18nConfig(...)`
-- translation table generation from mixed CSV and YAML inputs
+- translation table generation from mixed CSV, YAML, and JSON inputs
 - type output generation (`TranslateKey`, `TranslateLanguage`, `LanguageCodes`)
 - schema and placeholder consistency validation
 - duplicate key detection across all input files
@@ -109,9 +112,13 @@ Binary name: `typekit-i18n`
 
 Commands:
 
+- `typekit-i18n init`
 - `typekit-i18n` or `typekit-i18n generate`
+- `typekit-i18n generate --watch`
 - `typekit-i18n validate`
 - `typekit-i18n convert`
+- `typekit-i18n lint`
+- `typekit-i18n --help`
 
 ## Minimal Consumer Example
 
@@ -187,7 +194,7 @@ The repository includes a Pages workflow at `.github/workflows/pages.yml` that p
 
 ## VSCode Extension
 
-The repository includes a first `typekit-i18n` VSCode extension release (`0.1.0`) in:
+The repository includes the `typekit-i18n` VSCode extension release (`0.3.0`) in:
 
 - `packages/typekit-i18n-vscode`
 

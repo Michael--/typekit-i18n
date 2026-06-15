@@ -2,9 +2,34 @@
 
 All notable changes to `@number10/typekit-i18n` are documented in this file.
 
+## 0.4.0 - 2026-06-15
+
+Changes since `v0.3.1` (baseline commit `d2dd5f3e`).
+
+### Added
+
+- Added JSON translation input support for generation, validation, and format conversion.
+- Added `typekit-i18n init` for project scaffolding.
+- Added `typekit-i18n lint` for dead key and unmatched source key analysis, including `--strict` CI mode.
+- Added `--watch` / `-w`, `--help` / `-h`, and `--version` / `-v` CLI support.
+- Added React integration via `TranslationProvider`, `useTranslate`, `IcuTranslationProvider`, and `useIcuTranslate`.
+- Added `pluralKey` and `pluralCategory` helpers for basic translator workflows.
+- Added `onError` callbacks for ICU parse and render failures.
+
+### Changed
+
+- Updated root, package, and docs-site documentation for JSON resources, React hooks, plural helpers, CLI init/lint/watch, and runtime error callbacks.
+- Removed dead singleton exports from the legacy runtime translation module.
+
+### Fixed
+
+- Fixed CLI lint default exit behavior so warnings do not fail unless `--strict` is set.
+- Removed redundant IR project validation from single-file validation.
+- Cached placeholder regex patterns in the basic translator for faster repeated formatting.
+
 ## 0.3.1 - 2026-06-15
 
-Changes since `v.0.3.0`
+Changes since `v0.3.0`
 
 ### Changed
 

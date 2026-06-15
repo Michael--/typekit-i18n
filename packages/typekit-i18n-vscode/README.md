@@ -4,6 +4,7 @@ VSCode extension for `typekit-i18n` authoring workflows.
 
 ## Status
 
+- Current release: `0.3.0`
 - Initial release: `0.1.0`
 - Marketplace link: https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
 
@@ -19,7 +20,7 @@ VSCode extension for `typekit-i18n` authoring workflows.
   - Missing locale values
   - Duplicate keys
   - Placeholder mismatch
-  - CSV/YAML schema and value type checks
+  - CSV/YAML/JSON schema and value type checks
   - ICU plural/selectordinal `other` branch check
 - Completion and hover:
   - Translation-aware key completion

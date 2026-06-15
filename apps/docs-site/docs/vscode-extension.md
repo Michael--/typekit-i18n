@@ -6,11 +6,12 @@ description: >-
 
 # VSCode Extension
 
-The `typekit-i18n` VSCode extension improves authoring workflows for translation keys and raw translation files (`.yaml`, `.yml`, `.csv`).
+The `typekit-i18n` VSCode extension improves authoring workflows for translation keys and raw translation files (`.yaml`, `.yml`, `.csv`, `.json`).
 
 ## Availability
 
 - Marketplace listing: https://marketplace.visualstudio.com/items?itemName=number10.typekit-i18n-vscode
+- Current release: `0.3.0`
 - Local package path in this repository:
   - `packages/typekit-i18n-vscode`
 
@@ -25,7 +26,7 @@ The `typekit-i18n` VSCode extension improves authoring workflows for translation
   - Missing locale values
   - Duplicate key definitions
   - Placeholder mismatch across locales
-  - CSV/YAML schema issues and value type validation
+  - CSV/YAML/JSON schema issues and value type validation
   - ICU plural/selectordinal `other` branch checks
 - Completion + hover:
   - Key completion with translation preview details
@@ -48,7 +49,7 @@ Install in VSCode:
 1. Open Extensions view
 2. Open menu `...`
 3. Select `Install from VSIX...`
-4. Choose `packages/typekit-i18n-vscode/typekit-i18n-vscode-0.1.0.vsix`
+4. Choose `packages/typekit-i18n-vscode/typekit-i18n-vscode-0.3.0.vsix`
 
 ## Extension Settings
 
