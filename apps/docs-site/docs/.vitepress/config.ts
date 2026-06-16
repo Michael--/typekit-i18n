@@ -1,7 +1,7 @@
 import { dirname, resolve } from 'node:path'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vitepress'
+import { defineConfig, type HeadConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const thisFilePath = fileURLToPath(import.meta.url)
@@ -17,6 +17,7 @@ const normalizedBase = envBase.endsWith('/') ? envBase : `${envBase}/`
 
 const PROD_HOSTNAME = 'https://typekit-i18n.number10.de'
 const PROD_URL = `${PROD_HOSTNAME}${normalizedBase}`
+const OG_IMAGE_URL = `${PROD_URL}og-image.svg`
 
 export default withMermaid(
   defineConfig({
@@ -65,15 +66,7 @@ export default withMermaid(
       ['meta', { name: 'author', content: 'number10' }],
       ['meta', { property: 'og:type', content: 'website' }],
       ['meta', { property: 'og:site_name', content: 'typekit-i18n' }],
-      ['meta', { property: 'og:title', content: 'typekit-i18n' }],
-      [
-        'meta',
-        {
-          property: 'og:description',
-          content: 'Type-safe i18n toolkit for TypeScript with runtime, ICU, and codegen',
-        },
-      ],
-      ['meta', { property: 'og:url', content: PROD_URL }],
+      ['meta', { property: 'og:image', content: OG_IMAGE_URL }],
       ['meta', { name: 'twitter:card', content: 'summary' }],
       ['meta', { name: 'twitter:title', content: 'typekit-i18n' }],
       [
@@ -84,6 +77,39 @@ export default withMermaid(
         },
       ],
     ],
+    transformHead(context): HeadConfig[] {
+      const { pageData } = context
+      const is404 = pageData.frontmatter.layout === '404' || pageData.relativePath === '404.md'
+
+      if (is404) {
+        return [['meta', { name: 'robots', content: 'noindex' }]]
+      }
+
+      const relPath = pageData.relativePath.replace(/\.md$/, '')
+      const isHome = relPath === 'index'
+      const pagePath = isHome || relPath === '404' ? '' : relPath
+      const pageUrl = pagePath ? `${PROD_HOSTNAME}${normalizedBase}${pagePath}` : PROD_URL
+
+      const head: HeadConfig[] = []
+
+      // canonical
+      head.push(['link', { rel: 'canonical', href: pageUrl }])
+
+      // og:title — match <title> tag; home page has no site suffix
+      const ogTitle = isHome ? pageData.title : `${pageData.title} | typekit-i18n`
+      head.push(['meta', { property: 'og:title', content: ogTitle }])
+
+      // og:description — match <meta name="description">
+      const pageDesc = pageData.description
+      if (pageDesc) {
+        head.push(['meta', { property: 'og:description', content: pageDesc }])
+      }
+
+      // og:url
+      head.push(['meta', { property: 'og:url', content: pageUrl }])
+
+      return head
+    },
     themeConfig: {
       siteTitle: `typekit-i18n (v${pkg.version})`,
       nav: [

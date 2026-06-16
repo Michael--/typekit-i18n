@@ -1,8 +1,7 @@
 ---
 description: >-
-  typekit-i18n — type-safe internationalization toolkit for TypeScript.
-  Runtime APIs, ICU message rendering, and code generation from CSV/YAML/JSON
-  translation resources.
+  Type-safe i18n toolkit for TypeScript: runtime APIs, ICU rendering, and
+  code generation from CSV/YAML/JSON translation resources.
 ---
 
 # typekit-i18n

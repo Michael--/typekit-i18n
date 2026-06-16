@@ -11,6 +11,7 @@
     "build": "pnpm run docs:build",
     "docs:build": "pnpm run docs:sync-playground && vitepress build docs",
     "docs:preview": "vitepress preview docs --port 4175",
+    "check-seo": "node /Volumes/MR-SX5/projects/check-seo.mjs ./docs/.vitepress/dist --base-url https://typekit-i18n.number10.de",
     "lint": "eslint --no-error-on-unmatched-pattern \"docs/**/*.ts\"",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
